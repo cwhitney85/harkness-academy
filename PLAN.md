@@ -24,7 +24,7 @@ Branching (ledger W4): serial solo work commits directly to `master` at done-con
 
 | Package | Spec | Depends on | Status | Notes |
 |---|---|---|---|---|
-| 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | in progress (master) | 1.1 ✅ 1.2 ✅ · 1.4 runs green on every push (42 tests vs Postgres 17), but *blocking* merges needs rulesets — unavailable on private repos on GitHub Free · **1.3 blocked**: needs a Laravel Cloud project connected to `cwhitney85/open-tutor` |
+| 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | in progress (master) | 1.1 ✅ 1.2 ✅ · 1.4 runs green on every push (42 tests vs Postgres 17); merge-*blocking* deferred to week 3 (2026-08-22, Colin) — rulesets need a paid plan and the gate only bites once lanes open · **1.3 blocked**: needs a Laravel Cloud project connected to `cwhitney85/open-tutor` |
 | 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | not started | **2.4 caching spike is the first build task** |
 | 3 Memory | [docs/specs/03-memory.md](docs/specs/03-memory.md) | 1 | not started | |
 | 4 Course Pipeline | [docs/specs/04-course-pipeline.md](docs/specs/04-course-pipeline.md) | 2, 3 | not started | |
