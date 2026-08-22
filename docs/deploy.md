@@ -32,17 +32,18 @@ Nothing else. Cloud restarts queue workers itself, and `optimize:clear` / `stora
 
 Cloud injects `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` automatically. **Do not set those by hand** — a custom variable overrides the injected one and will silently point production at the wrong database.
 
-**6. Environment variables.** Cloud injects most of these already, and the dashboard warns you when a variable you type would override an injected one. **Only override when the injected value is wrong** — an override is a value you then own, and it silently blocks any later change to Cloud's default. Check the injected list in General Settings first, then fill the gaps.
+**6. Environment variables.** Cloud injects nearly everything this app needs, including `APP_KEY`, `APP_ENV`, `APP_DEBUG`, and — once Postgres is attached — `DB_CONNECTION=pgsql` alongside the credentials. Its own docs list only the four DB credential variables, so trust the dashboard over the docs: the injected list in General Settings is authoritative.
 
+**Only override an injected value when it is wrong.** An override is a value you then own, and it silently blocks any later change to Cloud's default. The dashboard warns you ("You are overwriting 1 injected variable") whenever you are about to take that on.
 
-| Variable | Value | Why |
-|---|---|---|
-| `APP_KEY` | output of `php artisan key:generate --show` | Not injected. Generate a fresh one; do not reuse your local key. |
-| `APP_ENV` | `production` | |
-| `APP_DEBUG` | `false` | |
-| `APP_NAME` | `OpenTutor` | |
-| `APP_URL` | the assigned `*.laravel.cloud` domain | Fill in after the first deploy. |
-| `DB_CONNECTION` | `pgsql` | Only if not already injected. Attaching Postgres injects the credentials; whether it also injects the driver is not stated in the docs — trust the dashboard. |
+In practice you set almost nothing:
+
+| Variable | When |
+|---|---|
+| `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy. |
+| `APP_NAME` | Only if the injected value is not `OpenTutor` — it renders user-visibly through Inertia's shared props. |
+
+Do **not** paste a locally generated `APP_KEY` over Cloud's. Cloud generates and manages one; replacing it buys nothing and puts a production secret through your terminal history.
 
 `QUEUE_CONNECTION`, `CACHE_STORE`, and `SESSION_DRIVER` stay on `database`, as in `.env.example`. Cloud filesystems are ephemeral and unshared per replica, so file-backed drivers are not an option; the attached Postgres covers all three without a separate KV store.
 
