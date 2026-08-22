@@ -45,7 +45,9 @@ Cloud injects `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` automat
 
 `QUEUE_CONNECTION`, `CACHE_STORE`, and `SESSION_DRIVER` stay on `database`, as in `.env.example`. Cloud filesystems are ephemeral and unshared per replica, so file-backed drivers are not an option; the attached Postgres covers all three without a separate KV store.
 
-**7. Compute.** Enable the **scheduler** on the app cluster, and add a **worker** cluster for the queue. Both are required by spec 1.1 and will carry real load from package 4 onward.
+**7. Compute.** Click the App compute cluster on the canvas. Enable the **scheduler** and a **queue worker** there — a separate worker cluster is for splitting load on larger apps and is not needed here. Autoscaling **None**, **Scale to Zero** on.
+
+Leave **Octane** and **Inertia SSR** off. Octane is not in `composer.json` and enabling it fails the build; SSR would also require `npm run build:ssr`. Neither is needed, and Octane's interaction with the SSE constraint below is unknown — not a variable to introduce before 5.1.
 
 **8. Deploy.** Click Deploy. Cloud issues the free `*.laravel.cloud` domain with TLS on the first successful deployment.
 
@@ -64,4 +66,5 @@ Laravel's `eventStream` sends `X-Accel-Buffering: no` and flushes between genera
 ## Notes for later packages
 
 - Laravel Serverless Postgres supports **pgvector**, which keeps the D3a memory-storage decision's "future pgvector" path open at no cost today.
-- Scale-to-zero wakes in a few hundred milliseconds. Acceptable for dogfooding; revisit before real users meet a cold first lesson.
+- Scale-to-zero wakes in a few hundred milliseconds on current Flex sizes. Acceptable for dogfooding; revisit before real users meet a cold first lesson.
+- **Scale-to-zero can interrupt a running queued job** when the sleep timeout elapses. Harmless in package 1 — nothing queues work. It becomes real in package 4, when syllabus generation and summarization go async; the fix is Cloud's Managed Queues, not a longer timeout.
