@@ -15,6 +15,11 @@ class CreateNewUser implements CreatesNewUsers
     /**
      * Validate and create a newly registered user.
      *
+     * Registration requires an 18-or-older attestation bundled into Terms of
+     * Service acceptance (spec 1.2). OpenTutor does not serve under-18
+     * accounts, so an unchecked attestation fails validation and no user row
+     * is created.
+     *
      * @param  array<string, string>  $input
      */
     public function create(array $input): User
@@ -22,12 +27,16 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'tos_accepted' => ['accepted'],
+        ], [
+            'tos_accepted.accepted' => 'You must be 18 or older and accept the Terms of Service to create an account.',
         ])->validate();
 
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'tos_accepted_at' => now(),
         ]);
     }
 }
