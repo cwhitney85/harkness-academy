@@ -47,9 +47,13 @@ Do **not** paste a locally generated `APP_KEY` over Cloud's. Cloud generates and
 
 `QUEUE_CONNECTION`, `CACHE_STORE`, and `SESSION_DRIVER` stay on `database`, as in `.env.example`. Cloud filesystems are ephemeral and unshared per replica, so file-backed drivers are not an option; the attached Postgres covers all three without a separate KV store.
 
-**7. Compute.** Click the App compute cluster on the canvas. Enable the **scheduler** and a **queue worker** there — a separate worker cluster is for splitting load on larger apps and is not needed here. Autoscaling **None**, **Scale to Zero** on.
+**7. Compute.** Click the App compute cluster on the canvas. Flex 512 MiB / 1 vCPU, autoscaling **None**, **Scale to Zero** on with a 5 minute sleep.
 
 Leave **Octane** and **Inertia SSR** off. Octane is not in `composer.json` and enabling it fails the build; SSR would also require `npm run build:ssr`. Neither is needed, and Octane's interaction with the SSE constraint below is unknown — not a variable to introduce before 5.1.
+
+Leave the **scheduler off** and add **no background process** until there is work for them. Nothing in the app is scheduled and nothing dispatches jobs, so both would burn compute for nothing — and a scheduler firing on a cadence holds the environment awake for the whole sleep timeout, defeating Scale to Zero. Spec 1.1's queue/scheduler requirement is met at the application layer (`queue:work` drains, `schedule:run` exits 0); Cloud-side enablement waits for package 4.
+
+When package 4 does queue work, use **managed queues**, not an app-cluster `queue:work` process: with Scale to Zero the App cluster stops at the sleep timeout *even mid-job*, and OpenTutor's queued work is long AI calls. Two prerequisites, both package 4's: add `aws/aws-sdk-php` to `composer.json`, and note that creating a managed queue sets `QUEUE_CONNECTION=cloud` environment-wide, overriding the `database` driver — a ledger-worthy decision, not a checkbox.
 
 **8. Deploy.** Click Deploy. Cloud issues the free `*.laravel.cloud` domain with TLS on the first successful deployment.
 
