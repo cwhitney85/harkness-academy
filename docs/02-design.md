@@ -74,6 +74,18 @@ Chosen workflow:
 5. Parallel worktree lanes only in weeks 3–4, only for decoupled packages (7 PWA, tooling, 6.x against 6.1's fixed contract); founder reviews and merges every lane — never auto-merge.
 6. Parallelism rule: **a lane may open only when every interface it consumes has landed on main.**
 
+## W3. Default branch — **`master`** (founder convention).
+
+## W4. Branching — **hybrid trunk-based**
+
+Serial solo work commits directly to `master` at done-condition granularity (one spec item or small cluster per commit, item number in the message). Branches + founder-reviewed merges only for worktree lanes and risky spikes.
+Rejected: everything-on-master forever (contradicts W2's lane rule — lanes need branches), branch-per-package with self-PRs (review ceremony duplicating the live in-session review AI-augmented work already gets).
+Commit messages carry no signing, co-author trailers, or attribution lines (founder instruction).
+
+## W5. Session start — **`/package <n>` slash command** (`.claude/commands/package.md`)
+
+Scope + boundaries + commit rules + exit ritual, versioned in-repo. Rejected: minimal prompt (scope discipline implicit only), pasted template (drifts outside the repo).
+
 ## Corrections during spec phase
 
 - **GUIDANCE.md is model-facing only** — read by exactly one consumer (lesson engine). User-facing syllabus view renders from the same frozen syllabus JSON; consistency by construction. CI check: no route/component reads GUIDANCE.md.

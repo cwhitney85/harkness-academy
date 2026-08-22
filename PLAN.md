@@ -16,7 +16,9 @@ If any step needs a developer touching the DB, v1 is not done.
                                        6.1 quiz service contract ──────────┘ (6.2 rides 5.4.1)
 ```
 
-Weeks 1–2 are strictly serial (1→2→3). Parallel worktree lanes open only in weeks 3–4, and **a lane may open only when every interface it consumes has landed on main.** Founder reviews and merges every lane; never auto-merge.
+Weeks 1–2 are strictly serial (1→2→3). Parallel worktree lanes open only in weeks 3–4, and **a lane may open only when every interface it consumes has landed on master.** Founder reviews and merges every lane; never auto-merge.
+
+Branching (ledger W4): serial solo work commits directly to `master` at done-condition granularity; branches + founder-reviewed merges only for worktree lanes and risky spikes.
 
 ## Status
 

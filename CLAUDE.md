@@ -20,10 +20,17 @@ LLM personal-tutor PWA. Laravel 13 + Inertia/React + Postgres. Anthropic-direct 
 - Every AI call must log to `usage_events` (spec 2.2) and use a prompt key from the inventory (spec 2.3.2).
 - Anthropic-specific feature usage gets an entry in `docs/anthropic-specific.md` (spec 2.5).
 
+## Git conventions
+
+- Default branch is `master`. Serial solo work commits directly to `master`; branches only for worktree lanes and risky spikes (ledger W4).
+- Commit at done-condition granularity: one spec item (or small cluster) per commit, spec item number in the message (e.g. `2.4: caching spike — workaround for laravel/ai#119`).
+- No signing, co-author trailers, or attribution lines in commit messages.
+
 ## Session ritual
 
+Start a build session with `/package <n>` (see `.claude/commands/package.md`).
 End of session: update PLAN.md status table (package status, done-conditions checked, branch if any).
 
 ## Parallel lanes (worktrees)
 
-A lane may open only when every interface it consumes has landed on main. Colin reviews and merges every lane — never auto-merge.
+A lane may open only when every interface it consumes has landed on master. Colin reviews and merges every lane — never auto-merge.
