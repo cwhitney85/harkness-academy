@@ -57,6 +57,14 @@ Leave **Octane** and **Inertia SSR** off. Octane is not in `composer.json` and e
 - Register an account against the live URL. Registration exercises Postgres writes and the 18+ attestation (spec 1.2) in one step.
 - Confirm `/up` returns 200.
 
+## Cost control
+
+Set a **spending limit** (Organization → Usage), not just a billing alert. Alerts only email you at 50/80/100% and spending continues past them; a spending limit halts new resource provisioning and pauses compute when hit. v1 prototype settings: limit $30, alert $15.
+
+Hitting the limit takes the environment down until it is raised or the billing cycle rolls over. That is the intended behaviour, but it is not a warning-only state.
+
+**Stopping an environment does not stop all charges.** Compute stops billing; attached resources do not. The database's compute scales to zero on its own, but storage bills continuously. To reach zero, delete the database cluster — the schema lives entirely in migrations, so a redeploy rebuilds it.
+
 ## Open constraint — SSE buffering
 
 Design R4 records a hard requirement: **the host must not buffer SSE.** The lesson engine (package 5) streams over `text/event-stream`, and a buffering proxy turns streamed tutoring into a page that sits blank and then dumps.
