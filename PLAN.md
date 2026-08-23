@@ -25,7 +25,7 @@ Branching (ledger W4): serial solo work commits directly to `master` at done-con
 | Package | Spec | Depends on | Status | Notes |
 |---|---|---|---|---|
 | 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | done-conditions passing | 1.1 ✅ 1.2 ✅ 1.3 ✅ ([runbook](docs/deploy.md)) 1.4 ✅ · live at `opentutor-production-ffbp8z.laravel.cloud` · merge-*blocking* for 1.4 deferred to week 3 (2026-08-22, Colin) — rulesets need a paid plan |
-| 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | not started | **2.4 caching spike is the first build task** |
+| 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | in progress | 2.1 ✅ 2.1.1 ✅ 2.2 ✅ 2.3.1 ✅ 2.3.2 ✅ 2.3.3 ✅ 2.3.4 ✅ 2.3.5 ✅ 2.5 ✅ ([ledger](docs/anthropic-specific.md)) · **2.4 structural half ✅, live half open** — needs `ANTHROPIC_API_KEY` then `php artisan ai:cache-spike` |
 | 3 Memory | [docs/specs/03-memory.md](docs/specs/03-memory.md) | 1 | not started | |
 | 4 Course Pipeline | [docs/specs/04-course-pipeline.md](docs/specs/04-course-pipeline.md) | 2, 3 | not started | |
 | 5 Lesson Engine | [docs/specs/05-lesson-engine.md](docs/specs/05-lesson-engine.md) | 2, 3, 4 | not started | |
@@ -53,3 +53,8 @@ Placement quiz & level gating (v1.1) · teaching-style selection (column ships, 
 - [docs/01-research.md](docs/01-research.md) — findings + confidence labels + standing unknowns
 - [docs/02-design.md](docs/02-design.md) — decision ledger (rejected candidates + rationale; don't re-litigate)
 - [docs/03-spec.md](docs/03-spec.md) — spec index
+- [docs/anthropic-specific.md](docs/anthropic-specific.md) — portability ledger (spec 2.5)
+
+## Standing hazard
+
+`composer require` runs `install:features` via `post-update-cmd`, which reverts package 1's auth scaffolding (passkeys, 2FA, `chisel.php`). Seen 2026-08-23 while installing `laravel/ai`; reverted by hand. Check `git status` after any composer install until that script is removed.
