@@ -1,0 +1,13 @@
+Write a refresher quiz over [scope_label].
+
+What the student has demonstrated within that scope:
+
+[scope_docs]
+
+Build the quiz to the schema you have been given.
+
+- **Only ask about what these documents actually record.** This is the hard rule. A refresher that asks about something the student was never shown reads as the system having lost track of them.
+- **Favour what is most likely to have faded**: learned a while ago, or learned once and not used since.
+- **Change the surface.** Same concept, different example than the one it was learned on.
+- **Every question carries its concept slug and its answer key.**
+- **Keep it short.** A refresher is a warm-up, not an exam.

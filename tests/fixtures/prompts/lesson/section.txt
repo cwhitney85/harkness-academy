@@ -1,0 +1,9 @@
+Teach section [section_index]: [section_title].
+
+The concepts this section is responsible for:
+
+[section_concepts]
+
+Teach only these. Open with the concrete case and let the idea fall out of it, rather than stating the idea and then illustrating it. Use this student's own interests for examples wherever the material allows.
+
+Stop when the section is taught. Do not summarize it, do not ask the student whether they are ready to continue, and do not preview what comes next.

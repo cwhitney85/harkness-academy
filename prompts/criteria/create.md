@@ -1,0 +1,22 @@
+---
+key: criteria.create
+tier: mid
+output: markdown
+vars:
+  - interview_transcript
+  - subtopic
+---
+Write a criteria document for a course on {{ subtopic }}, based on this goals interview:
+
+{{ interview_transcript }}
+
+Output markdown with exactly four sections, in this order: `## Goals`, `## Interests`, `## Success`, `## Evaluation style`.
+
+- **Goals** — what the student wants to be able to do, as actions. "Order food and handle the follow-up questions", not "restaurant vocabulary".
+- **Interests** — the concrete contexts, examples and materials worth building lessons around. This is what keeps the course theirs rather than generic.
+- **Success** — the student's own finish line, in their terms. If they gave a deadline or a specific occasion, record it.
+- **Evaluation style** — how much correction they want and how they want it delivered. Be specific enough to change a teaching decision.
+
+Use bullets, one claim per bullet. Where the student said something in their own words that captures it better than a paraphrase would, quote them.
+
+This document is read by the model that plans and teaches the course. Write it for that reader, not for the student.

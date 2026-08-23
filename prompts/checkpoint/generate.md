@@ -1,0 +1,25 @@
+---
+key: checkpoint.generate
+tier: cheap
+output: json/checkpoint.v1
+vars:
+  - section_transcript
+  - guidance_section
+---
+Write a checkpoint for the section that was just taught.
+
+What the section was meant to cover:
+
+{{ guidance_section }}
+
+What was actually taught:
+
+{{ section_transcript }}
+
+Build the checkpoint to the schema you have been given.
+
+- **Test what was taught in this section, not what will be taught later.** If the section drifted from its plan, follow what was actually taught.
+- **Test understanding, not recall of phrasing.** A question the student can answer by pattern-matching against a sentence in the transcript is a wasted question.
+- **Make every distractor a real mistake someone could make.** Obviously wrong options turn a four-option question into a two-option one.
+- **Exactly one option is correct**, and the answer key is part of the output — the application grades this, not the model.
+- **Tag each question with the concept slug it tests.** Use the slugs from the section plan; do not invent new ones.

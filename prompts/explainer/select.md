@@ -1,0 +1,21 @@
+---
+key: explainer.select
+tier: cheap
+output: markdown
+vars:
+  - selection
+  - surrounding_chunk
+  - subtopic
+  - skill_level
+---
+A student studying {{ subtopic }} at the {{ skill_level }} level has highlighted this text and asked what it means:
+
+{{ selection }}
+
+Here is the passage it came from, for context:
+
+{{ surrounding_chunk }}
+
+Explain the highlighted text. Under 200 words, markdown, no heading.
+
+Explain what they highlighted and nothing beyond it. They are mid-lesson and want to get back to it. Answer the question the highlight implies, in plain language, with one concrete example if an example is what makes it land. If the highlight is ambiguous, take the most likely reading and answer that rather than asking which they meant.

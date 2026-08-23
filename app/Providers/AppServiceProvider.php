@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Ai\Prompts\PromptRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            PromptRepository::class,
+            fn (): PromptRepository => new PromptRepository(base_path('prompts')),
+        );
     }
 
     /**

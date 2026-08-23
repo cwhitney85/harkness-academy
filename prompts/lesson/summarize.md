@@ -1,0 +1,30 @@
+---
+key: lesson.summarize
+tier: mid
+output: json/lesson-summary.v1
+vars:
+  - lesson_transcript
+  - guidance_doc
+  - checkpoint_results
+---
+Summarize a completed lesson.
+
+What the lesson was meant to cover:
+
+{{ guidance_doc }}
+
+What happened:
+
+{{ lesson_transcript }}
+
+How the checkpoints went:
+
+{{ checkpoint_results }}
+
+Produce the summary to the schema you have been given. This is the evidence a later refresher quiz will be built from, so an overstated summary becomes a quiz the student cannot answer.
+
+- **Report demonstrated understanding, keyed by concept slug.** A concept the student got right on a checkpoint but fumbled when it came up again in conversation is not learned.
+- **Distinguish taught from landed.** Something covered in the prose but never used by the student is taught, not learned.
+- **Record what the student struggled with**, specifically enough that the next lesson can act on it.
+- **Note anything the student revealed about themselves** that belongs in their working-knowledge document — an interest, a misconception carried in from elsewhere, a constraint.
+- **Use only the concept slugs from the lesson plan.**

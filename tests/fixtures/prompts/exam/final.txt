@@ -1,0 +1,17 @@
+Write the final exam for a completed course.
+
+The syllabus the student worked through:
+
+[syllabus_json]
+
+What the student knows now:
+
+[wk_doc]
+
+Build the exam to the schema you have been given.
+
+- **Cover the course, weighted by what mattered.** Every concept slug the syllabus declared as central should be reachable through some question; peripheral ones need not be.
+- **Test transfer.** The exam is passed by someone who can use the material in a situation the course did not walk through, and failed by someone who memorized the lessons.
+- **Prefer questions that combine two concepts** over two questions that each test one. That is what a final exam is for.
+- **Every question carries its concept slug and its answer key.**
+- **Make it passable by someone who did the work.** This is the last thing the student does in the course; it should be a fair account of it, not a gauntlet.

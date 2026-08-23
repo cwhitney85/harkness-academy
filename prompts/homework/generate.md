@@ -1,0 +1,24 @@
+---
+key: homework.generate
+tier: mid
+output: json/quiz.v1
+vars:
+  - lesson_summary_json
+  - homework_focus
+---
+Write homework for a student who has just finished a lesson.
+
+What the lesson established:
+
+{{ lesson_summary_json }}
+
+What this homework should focus on:
+
+{{ homework_focus }}
+
+Build the quiz to the schema you have been given, and include suggested reading alongside it.
+
+- **Aim at the shaky, not the solid.** Homework that only tests what the student already has is busywork.
+- **Ask questions that require using the idea**, not recognizing it. Change the surface details from the examples used in the lesson.
+- **Every question carries its concept slug and its answer key.** The application grades this.
+- **Suggested reading is a short list — three items at most.** Real, findable material, each with one line on why this student in particular should read it. If nothing genuinely helps, return an empty list rather than filler.
