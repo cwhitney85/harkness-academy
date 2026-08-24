@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Courses\CourseStanding;
 use App\Courses\CourseStatus;
 use App\Courses\SkillLevel;
 use App\Memory\WorkingKnowledge;
@@ -58,6 +59,18 @@ class Course extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The whole story: pipeline position, or the ending that overrode it.
+     *
+     * What a course list, badge or filter should read. `status` alone answers
+     * only half the question -- a withdrawn course still reports the position
+     * it was left on (ledger D7d).
+     */
+    public function standing(): CourseStanding
+    {
+        return CourseStanding::for($this);
     }
 
     /**

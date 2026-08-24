@@ -95,6 +95,18 @@ Accepted cost: the schema now makes completion *look* as reversible as withdrawa
 
 Rider — **superseded attempts' lesson rows point at replaced material.** Colin settled that students return only to the most recent attempt, so attempt numbers stay out of the 4.5.3 GUIDANCE path. Consequence: an earlier attempt's `lessons` rows keep `guidance_path` values whose contents a later attempt has since overwritten (where lesson slugs match) or orphaned (where they differ). Nothing reads them today — the lesson engine (5.1) only ever loads the current lesson of the open course. Any future feature that renders a *past* course's lessons must not read GUIDANCE for a course that is not the highest attempt at its level; it would silently show another course's material. Fixing it later means putting `{attempt}` before `{lesson-slug}` — the attempt scopes the whole syllabus, not one lesson — and migrating existing paths.
 
+## D7d. The complete course vocabulary is derived — `CourseStanding` (resolved 2026-08-24, package 4 session, Colin)
+
+`CourseStatus` keeps only the pipeline (created → … → final_exam). `CourseStanding` adds `withdrawn` and `completed` and is computed from the row on read — never a column.
+
+**The gap Colin named.** After D7c no single value answered "what is going on with this course?"; a caller had to combine `status`, `withdrawn_at` and `completed_at`. Every list, badge and filter would re-derive that, and re-derive it slightly differently. Relying on null checks scattered through app logic is the real cost, and it is a fair objection to D7c as shipped.
+
+**Why the two endings are still not stored in `status`.** Writing `withdrawn` there overwrites the pipeline position — a student who withdrew during `syllabus_revision` has nowhere to be put back, and restoring it needs the `withdrawn_from` column D7b removed. Writing `completed` there gives one fact two homes that can disagree, reconcilable only by a CHECK hardcoding `'completed'` — the literal D7c exists to delete. Deriving costs nothing and cannot drift.
+
+Rejected: a stored generated column (`GENERATED ALWAYS AS … STORED`) computing the same value in Postgres. Drift-free and queryable in SQL, but it buys only `where(...)` on a value nothing filters by yet, at the price of a Postgres-specific feature and the status literals back in the schema. Revisit if a screen needs to sort or paginate by standing.
+
+Accepted cost: two enums whose names are one word apart. Mitigated by tests — every `CourseStatus` case must have a `CourseStanding` of the same value, and the only standings beyond the pipeline must be exactly the two endings.
+
 ## D8. WORKING_KNOWLEDGE scope — **subtopic, not level** (resolved 2026-08-23, package 3 session)
 
 `{module}/{subtopic}/WORKING_KNOWLEDGE.md`. One document per subtopic, accumulating across levels; a completed 101 course is what a 201 course in the same subtopic starts from.
