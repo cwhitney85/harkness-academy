@@ -103,8 +103,6 @@ Rider — **superseded attempts' lesson rows point at replaced material.** Colin
 
 **Why the two endings are still not stored.** Writing `withdrawn` into the column overwrites the pipeline position — a student who withdrew during `syllabus_revision` has nowhere to be put back, and restoring it needs the `withdrawn_from` column D7b removed. Writing `completed` gives one fact two homes that can disagree, reconcilable only by a CHECK hardcoding `'completed'` — the literal D7c exists to delete. Neither value is declared a successor of anything, so the transition service cannot reach them; a test pins that shut.
 
-Rejected: **a second enum** (`CourseStanding`) holding the endings plus copies of the seven pipeline cases — built, then removed the same session. Colin's objection was correct and general: duplicating a list to extend it is wrong in any medium, and the two near-identical names were a smell dressed up as a drift test. A lookup table would have held all nine rows with a flag and never invited the duplication; the enum should have done the same from the start.
-
 Rejected: a stored generated column (`GENERATED ALWAYS AS … STORED`) computing the same value in Postgres. Drift-free and queryable in SQL, but it buys only `where(...)` on a value nothing filters by yet, at the price of a Postgres-specific feature and the status literals back in the schema. Revisit if a screen needs to sort or paginate by standing.
 
 Accepted cost: the enum holds two values the column may not. `isPipelinePosition()` names the distinction, and `CourseTransitionsTest` proves the service cannot write them.
