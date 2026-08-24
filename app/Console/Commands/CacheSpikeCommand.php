@@ -22,7 +22,7 @@ class CacheSpikeCommand extends Command
 {
     protected $signature = 'ai:cache-spike
         {--tier=cheap : Capability tier to spike against (cheap, mid, top)}
-        {--paragraphs=40 : Size of the shared prefix; Anthropic will not cache under ~1024 tokens}';
+        {--paragraphs=80 : Size of the shared prefix; the minimum cacheable length is model-specific (512-4096 tokens) and 40 was too short for haiku}';
 
     protected $description = 'Spec 2.4: verify cache_control reaches Anthropic and a repeated prefix is read from cache';
 
@@ -67,8 +67,8 @@ class CacheSpikeCommand extends Command
 
         $this->components->error(
             'FAIL (spec 2.4): cache_read_input_tokens was 0 on the second call. '
-            .'Either the prefix is under Anthropic\'s minimum cacheable length, or laravel/ai no longer lets '
-            .'provider options override `system` -- see docs/anthropic-specific.md entry #1.'
+            .'Either the prefix is under this model\'s minimum cacheable length (raise --paragraphs), or '
+            .'laravel/ai no longer lets provider options override `system` -- see docs/anthropic-specific.md entry #1.'
         );
 
         return self::FAILURE;

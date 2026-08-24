@@ -13,7 +13,22 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 
 ## 1. Prompt-caching breakpoints, and the workaround for laravel/ai#119
 
-**Status:** live. Spike command: `php artisan ai:cache-spike`. Structural regression test: `tests/Feature/Ai/PromptCachingTest.php`.
+**Status:** live, verified against the real API 2026-08-23. Spike command: `php artisan ai:cache-spike`. Structural regression test: `tests/Feature/Ai/PromptCachingTest.php`.
+
+### Verified result
+
+`php artisan ai:cache-spike --paragraphs=80` against `cheap` (haiku), 21,655 characters of shared prefix:
+
+| | input (uncached) | cache write | cache read | output |
+|---|---|---|---|---|
+| call 1 — warm | 3 | 4,753 | 0 | 4 |
+| call 2 — read | 3 | 11 | **4,742** | 4 |
+
+**These numbers show the system breakpoint is the one doing the work, and that the top-level breakpoint alone would have missed.** The two calls are separate conversations with *different* user messages ("one", "two"), sharing only the system prefix. Call 1 wrote two cacheable prefixes: `[system]` at 4,742 and `[system + "one"]` at 4,753. Call 2's prefix is `[system + "two"]`, which matches the first of those and not the second — hence 4,742 read and only 11 written for its own tail. With top-level `cache_control` alone there would have been a single breakpoint, placed after `"one"`, and call 2 would have read nothing.
+
+That is the cross-conversation case from the design rationale below, measured rather than argued. It is also the case OpenTutor is made of: every lesson in a course is a separate conversation over one shared prefix.
+
+**Minimum cacheable length is higher than the commonly-cited 1,024.** At 40 paragraphs (~2,370 tokens) the prefix did not cache; at 80 (~4,742) it did. laravel/ai's own draft documentation puts the range at 512–4,096 tokens depending on model, and haiku sits at the top of it. The spike's default is 80 paragraphs for that reason. A short prefix fails silently — no error, no warning, just a bill.
 
 ### What Anthropic needs
 
@@ -58,7 +73,21 @@ Provider options are merged **last**, so they can replace any key the builder se
 
 Options are keyed by driver: a non-Anthropic driver gets `[]` and the SDK's own behaviour, unchanged.
 
-Issue #119 is **closed**, resolved in favour of the top-level form alone — a maintainer confirmed `['cache_control' => ['type' => 'ephemeral']]` through `providerOptions()` reaches Anthropic and produces cache hits. The per-block half of what we send is still unsupported API surface, riding on merge order.
+### Upstream status — this workaround has an expiry date
+
+Issue #119 is **closed**, resolved in favour of the top-level form alone: a maintainer confirmed `['cache_control' => ['type' => 'ephemeral']]` through `providerOptions()` reaches Anthropic and produces cache hits. That answer covers caching within a conversation and stops short of the cross-conversation case, which is the one that matters here.
+
+The maintainers reached the same conclusion. [laravel/ai#850](https://github.com/laravel/ai/issues/850) raises exactly this gap, and **[PR #869](https://github.com/laravel/ai/pull/869) (open, last touched 2026-08-21) is our workaround done properly upstream** — a first-class `prompt_cache` provider option:
+
+```php
+return ['prompt_cache' => [PromptCacheTarget::System]];
+```
+
+It emits the system prompt in block form with `cache_control`, stamps the last tool definition so the tool list is covered too, supports per-target TTLs, and does the equivalent thing on Bedrock with `cachePoint`. It composes with the top-level form rather than replacing it.
+
+**When #869 merges, delete the `system` half of `PromptCaching` and pass `prompt_cache` instead.** The `tail` half stays as it is — that is the supported top-level form and #869 leaves it untouched. Watch #869; nothing else here changes.
+
+Until then the per-block half is unsupported API surface riding on merge order.
 
 ### How this breaks, and how you find out
 
@@ -66,7 +95,7 @@ It fails **silently**. If laravel/ai ever merges provider options before the bod
 
 ### Also worth knowing
 
-- **Minimum cacheable prefix** is roughly 1024 tokens (2048 on some smaller models). A shorter prefix silently does not cache — this is the first thing to check when `ai:cache-spike` reports a miss.
+- **Minimum cacheable prefix is model-specific, 512–4,096 tokens**, and haiku sits at the top of that range — see the measured result above. A shorter prefix silently does not cache. This is the first thing to check when `ai:cache-spike` reports a miss, and the thing to check before assuming a small prompt is being cached.
 - **Any byte change anywhere in the prefix invalidates everything after it.** Spec 2.3.1 already accepts that a prompt edit invalidates that prompt's cache prefix on deploy. The thing to watch for is accidental invalidation: a timestamp, a UUID, or a non-deterministically ordered document rendered into the prefix. `ai:cache-spike` builds a deliberately deterministic prefix so it can catch that class of bug.
 - **Max 4 breakpoints per request.** We use 2.
 

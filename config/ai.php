@@ -7,7 +7,16 @@
 |
 | This file is merged over the laravel/ai package defaults, so only the keys
 | OpenTutor overrides appear here. The package's `providers` block already
-| reads ANTHROPIC_API_KEY, so it is inherited untouched.
+| reads ANTHROPIC_API_KEY, so it is inherited untouched -- and inheriting it
+| keeps all sixteen providers configured, which is what makes switching one a
+| change of env vars rather than a change of code.
+|
+| CAUTION: mergeConfigFrom is a SHALLOW array_merge. A top-level key defined
+| here REPLACES the package's key of the same name outright. Adding a partial
+| `providers` block to tweak one Anthropic setting would silently delete the
+| other fifteen providers. If that day comes, publish the package config in
+| full (`php artisan vendor:publish --tag=ai-config`) rather than adding a
+| partial block here.
 |
 | THIS IS THE ONLY FILE IN THE REPOSITORY THAT MAY NAME A MODEL. Call sites
 | name a capability tier (cheap / mid / top) through the AI gateway. Both

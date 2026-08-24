@@ -25,7 +25,7 @@ Branching (ledger W4): serial solo work commits directly to `master` at done-con
 | Package | Spec | Depends on | Status | Notes |
 |---|---|---|---|---|
 | 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | done-conditions passing | 1.1 ✅ 1.2 ✅ 1.3 ✅ ([runbook](docs/deploy.md)) 1.4 ✅ · live at `opentutor-production-ffbp8z.laravel.cloud` · merge-*blocking* for 1.4 deferred to week 3 (2026-08-22, Colin) — rulesets need a paid plan |
-| 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | in progress | 2.1 ✅ 2.1.1 ✅ 2.2 ✅ 2.3.1 ✅ 2.3.2 ✅ 2.3.3 ✅ 2.3.4 ✅ 2.3.5 ✅ 2.5 ✅ ([ledger](docs/anthropic-specific.md)) · **2.4 structural half ✅, live half open** — needs `ANTHROPIC_API_KEY` then `php artisan ai:cache-spike` |
+| 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | done-conditions passing | 2.1 ✅ 2.1.1 ✅ 2.2 ✅ 2.3.1 ✅ 2.3.2 ✅ 2.3.3 ✅ 2.3.4 ✅ 2.3.5 ✅ 2.4 ✅ 2.5 ✅ ([ledger](docs/anthropic-specific.md)) · spike verified live 2026-08-23: 4,742 tokens read from cache on the second call · watch [laravel/ai#869](https://github.com/laravel/ai/pull/869) — it replaces the #119 workaround |
 | 3 Memory | [docs/specs/03-memory.md](docs/specs/03-memory.md) | 1 | not started | |
 | 4 Course Pipeline | [docs/specs/04-course-pipeline.md](docs/specs/04-course-pipeline.md) | 2, 3 | not started | |
 | 5 Lesson Engine | [docs/specs/05-lesson-engine.md](docs/specs/05-lesson-engine.md) | 2, 3, 4 | not started | |
@@ -55,6 +55,8 @@ Placement quiz & level gating (v1.1) · teaching-style selection (column ships, 
 - [docs/03-spec.md](docs/03-spec.md) — spec index
 - [docs/anthropic-specific.md](docs/anthropic-specific.md) — portability ledger (spec 2.5)
 
-## Standing hazard
+## Resolved: the `install:features` incident (2026-08-23)
 
-`composer require` runs `install:features` via `post-update-cmd`, which reverts package 1's auth scaffolding (passkeys, 2FA, `chisel.php`). Seen 2026-08-23 while installing `laravel/ai`; reverted by hand. Check `git status` after any composer install until that script is removed.
+Installing `laravel/ai` fired the starter kit's one-shot `install:features` command through `post-update-cmd`. Running non-interactively it took defaults and stripped package 1's passkey and 2FA scaffolding, then — by design — removed its own hooks from `composer.json` and stopped existing. The scaffolding was restored by hand; the hook removal was kept.
+
+**Not a standing hazard: it cannot fire again.** One loose end — `app/Console/Commands/InstallFeaturesCommand.php` and its `chisel.php` cleanup block survive, unreachable now that nothing invokes them. Package 1's call whether to delete them.
