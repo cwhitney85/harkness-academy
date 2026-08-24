@@ -295,13 +295,4 @@ return Chisel::script(__DIR__)
             $c->npm()->run('lint');
             $c->npm()->run('format');
         }
-
-        $c->file('composer.json')
-            ->removeLinesContaining('"@php artisan install:features --ansi"');
-
-        $c->files(
-            'app/Console/Commands/InstallFeaturesCommand.php',
-            'chisel.php',
-            'chisel-paths.php',
-        )->delete();
     });

@@ -59,4 +59,6 @@ Placement quiz & level gating (v1.1) · teaching-style selection (column ships, 
 
 Installing `laravel/ai` fired the starter kit's one-shot `install:features` command through `post-update-cmd`. Running non-interactively it took defaults and stripped package 1's passkey and 2FA scaffolding, then — by design — removed its own hooks from `composer.json` and stopped existing. The scaffolding was restored by hand; the hook removal was kept.
 
-**Not a standing hazard: it cannot fire again.** One loose end — `app/Console/Commands/InstallFeaturesCommand.php` and its `chisel.php` cleanup block survive, unreachable now that nothing invokes them. Package 1's call whether to delete them.
+**Not a standing hazard: it cannot fire again.** The command and its `chisel.php` self-cleanup block were deleted 2026-08-23.
+
+`chisel.php`, `chisel-paths.php`, the `laravel/chisel` dependency, and the `/* @chisel-* */` markers in eight package-1 files are now unreachable too — nothing requires them. Left in place; removing them is a package-1 decision.
