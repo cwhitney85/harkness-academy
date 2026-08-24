@@ -20,7 +20,7 @@ return new class extends Migration
 
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-            // A path, not a filesystem location: `math/algebra/101/WORKING_KNOWLEDGE.md`.
+            // A path, not a filesystem location: `math/algebra/WORKING_KNOWLEDGE.md`.
             $table->string('path');
 
             $table->text('content');

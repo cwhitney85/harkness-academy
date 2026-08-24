@@ -26,7 +26,7 @@ Branching (ledger W4): serial solo work commits directly to `master` at done-con
 |---|---|---|---|---|
 | 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | done-conditions passing | 1.1 ✅ 1.2 ✅ 1.3 ✅ ([runbook](docs/deploy.md)) 1.4 ✅ · live at `opentutor-production-ffbp8z.laravel.cloud` · merge-*blocking* for 1.4 deferred to week 3 (2026-08-22, Colin) — rulesets need a paid plan |
 | 2 AI Layer | [docs/specs/02-ai-layer.md](docs/specs/02-ai-layer.md) | 1 | done-conditions passing | 2.1 ✅ 2.1.1 ✅ 2.2 ✅ 2.3.1 ✅ 2.3.2 ✅ 2.3.3 ✅ 2.3.4 ✅ 2.3.5 ✅ 2.4 ✅ 2.5 ✅ ([ledger](docs/anthropic-specific.md)) · spike verified live 2026-08-23: 4,742 tokens read from cache on the second call · watch [laravel/ai#869](https://github.com/laravel/ai/pull/869) — it replaces the #119 workaround |
-| 3 Memory | [docs/specs/03-memory.md](docs/specs/03-memory.md) | 1 | not started | |
+| 3 Memory | [docs/specs/03-memory.md](docs/specs/03-memory.md) | 1 (3.3: **also 4.1**) | done-conditions passing except 3.3 | 3.1 ✅ 3.2 ✅ 3.4 ✅ · 3.3 blocked on 4.1 (courses table + catalog) — build it first in the 4.1 session · WK path scope settled as subtopic-level ([D8](docs/02-design.md)) |
 | 4 Course Pipeline | [docs/specs/04-course-pipeline.md](docs/specs/04-course-pipeline.md) | 2, 3 | not started | |
 | 5 Lesson Engine | [docs/specs/05-lesson-engine.md](docs/specs/05-lesson-engine.md) | 2, 3, 4 | not started | |
 | 6 Assessment | [docs/specs/06-assessment.md](docs/specs/06-assessment.md) | 2, 3, 4, 5 | not started | 6.1 contract can land early for parallel lanes |
@@ -37,7 +37,7 @@ Statuses: not started → in progress (note session/branch) → done-conditions 
 ## Order of attack (estimate; acceptance test is the real deadline)
 
 - Week 1: 1.*, 2.1–2.4 (**2.4 spike first** — outcome can reorder caching design)
-- Week 2: 3.*, 4.1–4.3
+- Week 2: 3.*, 4.1–4.3 (3.3 lands with 4.1 — it reads the courses table)
 - Week 3: 4.4–4.5, 5.1–5.4
 - Week 4: 5.5, 6.*, 7.1, polish, full dogfood cycle
 

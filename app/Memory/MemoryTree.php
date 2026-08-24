@@ -92,10 +92,13 @@ final class MemoryTree
      */
     public function list(User $user, ?string $prefix = null): array
     {
+        // Byte order, not the database's locale: a tree render (spec 3.4)
+        // needs a directory's children to stay contiguous, and collations that
+        // weight punctuation loosely can interleave a sibling between them.
         $query = Memory::query()
             ->select('path')
             ->where('user_id', $user->id)
-            ->orderBy('path');
+            ->orderByRaw('path collate "C"');
 
         if ($prefix !== null) {
             $prefix = MemoryPath::parse($prefix);

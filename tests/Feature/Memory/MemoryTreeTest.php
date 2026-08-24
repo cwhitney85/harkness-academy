@@ -19,7 +19,7 @@ class MemoryTreeTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const WK = 'math/algebra/101/WORKING_KNOWLEDGE.md';
+    private const WK = 'math/algebra/WORKING_KNOWLEDGE.md';
 
     #[Test]
     public function a_write_reads_back_and_records_a_version(): void
@@ -82,24 +82,24 @@ class MemoryTreeTest extends TestCase
         $user = User::factory()->create();
 
         foreach ([
-            'math/algebra/101/WORKING_KNOWLEDGE.md',
+            'math/algebra/WORKING_KNOWLEDGE.md',
             'math/algebra/101/COURSE_CRITERIA.md',
-            'math/geometry/201/WORKING_KNOWLEDGE.md',
-            'language/spanish/101/WORKING_KNOWLEDGE.md',
+            'math/geometry/WORKING_KNOWLEDGE.md',
+            'language/spanish/WORKING_KNOWLEDGE.md',
         ] as $path) {
             $this->tree()->put($user, $path, 'x');
         }
 
         $this->assertSame([
-            'language/spanish/101/WORKING_KNOWLEDGE.md',
+            'language/spanish/WORKING_KNOWLEDGE.md',
             'math/algebra/101/COURSE_CRITERIA.md',
-            'math/algebra/101/WORKING_KNOWLEDGE.md',
-            'math/geometry/201/WORKING_KNOWLEDGE.md',
+            'math/algebra/WORKING_KNOWLEDGE.md',
+            'math/geometry/WORKING_KNOWLEDGE.md',
         ], $this->tree()->list($user));
 
         $this->assertSame([
             'math/algebra/101/COURSE_CRITERIA.md',
-            'math/algebra/101/WORKING_KNOWLEDGE.md',
+            'math/algebra/WORKING_KNOWLEDGE.md',
         ], $this->tree()->list($user, 'math/algebra'));
     }
 
@@ -112,6 +112,21 @@ class MemoryTreeTest extends TestCase
         $this->tree()->put($user, 'mathematics/algebra.md', 'out');
 
         $this->assertSame(['math/algebra.md'], $this->tree()->list($user, 'math'));
+    }
+
+    #[Test]
+    public function listing_keeps_a_directorys_documents_contiguous(): void
+    {
+        $user = User::factory()->create();
+
+        // Under a collation that weights punctuation loosely, `math/ay.md`
+        // can land between the two documents inside `math/a` and break the
+        // tree render the inspector (3.4) builds from this order.
+        foreach (['math/a/x.md', 'math/a/z.md', 'math/ay.md'] as $path) {
+            $this->tree()->put($user, $path, 'x');
+        }
+
+        $this->assertSame(['math/a/x.md', 'math/a/z.md', 'math/ay.md'], $this->tree()->list($user));
     }
 
     #[Test]

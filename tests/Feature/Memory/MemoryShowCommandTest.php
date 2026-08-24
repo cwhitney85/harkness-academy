@@ -22,8 +22,8 @@ class MemoryShowCommandTest extends TestCase
 
         foreach ([
             'math/algebra/101/COURSE_CRITERIA.md',
-            'math/algebra/101/WORKING_KNOWLEDGE.md',
-            'math/geometry/201/WORKING_KNOWLEDGE.md',
+            'math/algebra/WORKING_KNOWLEDGE.md',
+            'math/geometry/WORKING_KNOWLEDGE.md',
         ] as $path) {
             $this->tree()->put($user, $path, 'x');
         }
@@ -33,10 +33,9 @@ class MemoryShowCommandTest extends TestCase
             ->expectsOutput('  algebra')
             ->expectsOutput('    101')
             ->expectsOutput('      COURSE_CRITERIA.md')
-            ->expectsOutput('      WORKING_KNOWLEDGE.md')
+            ->expectsOutput('    WORKING_KNOWLEDGE.md')
             ->expectsOutput('  geometry')
-            ->expectsOutput('    201')
-            ->expectsOutput('      WORKING_KNOWLEDGE.md')
+            ->expectsOutput('    WORKING_KNOWLEDGE.md')
             ->assertSuccessful();
     }
 
@@ -45,11 +44,11 @@ class MemoryShowCommandTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->tree()->put($user, 'math/algebra/101/WORKING_KNOWLEDGE.md', "## Solid\n- fractions");
+        $this->tree()->put($user, 'math/algebra/WORKING_KNOWLEDGE.md', "## Solid\n- fractions");
 
         $this->artisan('memory:show', [
             'user' => (string) $user->id,
-            'path' => 'math/algebra/101/WORKING_KNOWLEDGE.md',
+            'path' => 'math/algebra/WORKING_KNOWLEDGE.md',
         ])
             ->expectsOutput("## Solid\n- fractions")
             ->assertSuccessful();
