@@ -80,16 +80,15 @@ class CourseTransitionsTest extends TestCase
     /**
      * Every pair the machine does not declare, including the backwards ones.
      *
-     * Terminal starting points are excluded because they are refused one step
-     * earlier, by the open-course guard rather than the arrow check -- a
-     * sharper diagnosis, covered by its own test below.
+     * The two derived statuses are excluded as starting points: the column
+     * never holds them, so a course cannot stand there to move from.
      *
      * @return iterable<string, array{CourseStatus, CourseStatus}>
      */
     public static function illegalTransitions(): iterable
     {
         foreach (CourseStatus::cases() as $from) {
-            if ($from->isTerminal()) {
+            if ($from->hasEnded()) {
                 continue;
             }
 
@@ -192,6 +191,24 @@ class CourseTransitionsTest extends TestCase
         $this->expectException(CourseNotOpen::class);
 
         $this->transitions()->to($course, CourseStatus::Active);
+    }
+
+    /**
+     * The column holds pipeline positions only -- `withdrawn` and `completed`
+     * are derived from the two dates (ledger D7d). Nothing declares them as a
+     * successor, so the service has no way to write them.
+     */
+    #[Test]
+    public function the_derived_statuses_are_unreachable_by_transition(): void
+    {
+        foreach (CourseStatus::cases() as $from) {
+            foreach ([CourseStatus::Withdrawn, CourseStatus::Completed] as $ending) {
+                $this->assertFalse(
+                    $from->canPrecede($ending),
+                    "[{$from->value}] must not declare [{$ending->value}] as a successor",
+                );
+            }
+        }
     }
 
     private function transitions(): CourseTransitions

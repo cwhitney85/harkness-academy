@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Courses\CourseStanding;
 use App\Courses\CourseStatus;
 use App\Courses\SkillLevel;
 use App\Memory\WorkingKnowledge;
@@ -64,13 +63,21 @@ class Course extends Model
     /**
      * The whole story: pipeline position, or the ending that overrode it.
      *
-     * What a course list, badge or filter should read. `status` alone answers
-     * only half the question -- a withdrawn course still reports the position
-     * it was left on (ledger D7d).
+     * What a course list, badge or filter should read. The `status` column
+     * alone answers only half the question -- a withdrawn course still holds
+     * the position it was left on, which is what resume needs (ledger D7d).
      */
-    public function standing(): CourseStanding
+    public function standing(): CourseStatus
     {
-        return CourseStanding::for($this);
+        if ($this->isCompleted()) {
+            return CourseStatus::Completed;
+        }
+
+        if ($this->isWithdrawn()) {
+            return CourseStatus::Withdrawn;
+        }
+
+        return $this->status;
     }
 
     /**

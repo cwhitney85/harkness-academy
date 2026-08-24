@@ -8,15 +8,21 @@ namespace App\Courses;
  * created → knowledge_interview → goals_interview → syllabus_draft
  *   ⇄ syllabus_revision → active → final_exam
  *
- * The pipeline has no end state. Neither ending is a place a student stands:
- * `courses.withdrawn_at` says they stepped away from wherever they were, and
- * `courses.completed_at` says they passed the exam. Both are dates on the row
- * (ledger D7b), which is what keeps status names out of the open-course index.
+ * ...plus the two ways a course stops. Every state a course can be in is in
+ * this one list (ledger D7d).
+ *
+ * **`withdrawn` and `completed` are never stored in `courses.status`.** They
+ * are derived by `Course::standing()` from `withdrawn_at` and `completed_at`,
+ * because storing `withdrawn` would overwrite the pipeline position a resumed
+ * course returns to, and storing `completed` would give one fact two homes
+ * that can disagree (ledger D7b/D7c). Neither is a successor of anything, so
+ * the transition service cannot reach them -- `CourseTransitionsTest` pins
+ * that shut.
  *
  * An enum rather than a lookup table for now, because a status needs code --
  * a screen, a button, an arrow into it -- before a row means anything. That
- * is a preference, not a constraint: the index no longer reads this column,
- * so nothing here blocks a `status_types` table later.
+ * is a preference, not a constraint: the open-course index no longer reads
+ * this column, so nothing here blocks a `status_types` table later.
  */
 enum CourseStatus: string
 {
@@ -27,6 +33,33 @@ enum CourseStatus: string
     case SyllabusRevision = 'syllabus_revision';
     case Active = 'active';
     case FinalExam = 'final_exam';
+
+    /**
+     * Stepped away, reversibly. Outranks the pipeline position: a student who
+     * withdrew during syllabus revision is withdrawn, not revising.
+     */
+    case Withdrawn = 'withdrawn';
+
+    case Completed = 'completed';
+
+    /**
+     * Whether the course has stopped, for either reason.
+     *
+     * The same question the open-course index asks -- of the two dates, not of
+     * this value, which is why the rule survives a change to this list.
+     */
+    public function hasEnded(): bool
+    {
+        return $this === self::Withdrawn || $this === self::Completed;
+    }
+
+    /**
+     * Whether `courses.status` may hold this value.
+     */
+    public function isPipelinePosition(): bool
+    {
+        return ! $this->hasEnded();
+    }
 
     /**
      * The statuses reachable from here in one step.
@@ -48,6 +81,9 @@ enum CourseStatus: string
             // (spec 6.3). Passing is not a move -- it stamps `completed_at`
             // through CourseTransitions::complete().
             self::FinalExam => [self::Active],
+            // Not reachable, and nothing leads out of them: these two are
+            // derived, never stored.
+            self::Withdrawn, self::Completed => [],
         };
     }
 

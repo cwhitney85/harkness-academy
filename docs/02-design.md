@@ -95,17 +95,19 @@ Accepted cost: the schema now makes completion *look* as reversible as withdrawa
 
 Rider — **superseded attempts' lesson rows point at replaced material.** Colin settled that students return only to the most recent attempt, so attempt numbers stay out of the 4.5.3 GUIDANCE path. Consequence: an earlier attempt's `lessons` rows keep `guidance_path` values whose contents a later attempt has since overwritten (where lesson slugs match) or orphaned (where they differ). Nothing reads them today — the lesson engine (5.1) only ever loads the current lesson of the open course. Any future feature that renders a *past* course's lessons must not read GUIDANCE for a course that is not the highest attempt at its level; it would silently show another course's material. Fixing it later means putting `{attempt}` before `{lesson-slug}` — the attempt scopes the whole syllabus, not one lesson — and migrating existing paths.
 
-## D7d. The complete course vocabulary is derived — `CourseStanding` (resolved 2026-08-24, package 4 session, Colin)
+## D7d. One status vocabulary; two of its values are derived (resolved 2026-08-24, package 4 session, Colin)
 
-`CourseStatus` keeps only the pipeline (created → … → final_exam). `CourseStanding` adds `withdrawn` and `completed` and is computed from the row on read — never a column.
+`CourseStatus` lists all nine states a course can be in: the seven pipeline positions plus `withdrawn` and `completed`. The column stores only the seven. `Course::standing()` returns the ninth-case answer, reading `completed_at` and `withdrawn_at` first and falling back to the stored position.
 
-**The gap Colin named.** After D7c no single value answered "what is going on with this course?"; a caller had to combine `status`, `withdrawn_at` and `completed_at`. Every list, badge and filter would re-derive that, and re-derive it slightly differently. Relying on null checks scattered through app logic is the real cost, and it is a fair objection to D7c as shipped.
+**The gap Colin named.** After D7c no single value answered "what is going on with this course?"; a caller had to combine `status`, `withdrawn_at` and `completed_at`. Every list, badge and filter would re-derive that, and re-derive it slightly differently. Scattered null checks were a fair objection to D7c as shipped.
 
-**Why the two endings are still not stored in `status`.** Writing `withdrawn` there overwrites the pipeline position — a student who withdrew during `syllabus_revision` has nowhere to be put back, and restoring it needs the `withdrawn_from` column D7b removed. Writing `completed` there gives one fact two homes that can disagree, reconcilable only by a CHECK hardcoding `'completed'` — the literal D7c exists to delete. Deriving costs nothing and cannot drift.
+**Why the two endings are still not stored.** Writing `withdrawn` into the column overwrites the pipeline position — a student who withdrew during `syllabus_revision` has nowhere to be put back, and restoring it needs the `withdrawn_from` column D7b removed. Writing `completed` gives one fact two homes that can disagree, reconcilable only by a CHECK hardcoding `'completed'` — the literal D7c exists to delete. Neither value is declared a successor of anything, so the transition service cannot reach them; a test pins that shut.
+
+Rejected: **a second enum** (`CourseStanding`) holding the endings plus copies of the seven pipeline cases — built, then removed the same session. Colin's objection was correct and general: duplicating a list to extend it is wrong in any medium, and the two near-identical names were a smell dressed up as a drift test. A lookup table would have held all nine rows with a flag and never invited the duplication; the enum should have done the same from the start.
 
 Rejected: a stored generated column (`GENERATED ALWAYS AS … STORED`) computing the same value in Postgres. Drift-free and queryable in SQL, but it buys only `where(...)` on a value nothing filters by yet, at the price of a Postgres-specific feature and the status literals back in the schema. Revisit if a screen needs to sort or paginate by standing.
 
-Accepted cost: two enums whose names are one word apart. Mitigated by tests — every `CourseStatus` case must have a `CourseStanding` of the same value, and the only standings beyond the pipeline must be exactly the two endings.
+Accepted cost: the enum holds two values the column may not. `isPipelinePosition()` names the distinction, and `CourseTransitionsTest` proves the service cannot write them.
 
 ## D8. WORKING_KNOWLEDGE scope — **subtopic, not level** (resolved 2026-08-23, package 3 session)
 

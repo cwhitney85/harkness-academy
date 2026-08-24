@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Courses;
 
-use App\Courses\CourseStanding;
 use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
 use App\Models\Course;
@@ -12,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Ledger D7d -- the complete course vocabulary, derived rather than stored.
+ * Ledger D7d -- one status vocabulary, two of whose values are derived.
  */
 class CourseStandingTest extends TestCase
 {
@@ -34,7 +33,9 @@ class CourseStandingTest extends TestCase
     public static function pipelineStatuses(): iterable
     {
         foreach (CourseStatus::cases() as $status) {
-            yield $status->value => [$status];
+            if ($status->isPipelinePosition()) {
+                yield $status->value => [$status];
+            }
         }
     }
 
@@ -47,7 +48,7 @@ class CourseStandingTest extends TestCase
     {
         $course = Course::factory()->status(CourseStatus::SyllabusRevision)->withdrawn()->create();
 
-        $this->assertSame(CourseStanding::Withdrawn, $course->standing());
+        $this->assertSame(CourseStatus::Withdrawn, $course->standing());
         $this->assertTrue($course->standing()->hasEnded());
         $this->assertSame(
             CourseStatus::SyllabusRevision,
@@ -63,7 +64,7 @@ class CourseStandingTest extends TestCase
 
         app(CourseTransitions::class)->resume($course);
 
-        $this->assertSame(CourseStanding::SyllabusRevision, $course->standing());
+        $this->assertSame(CourseStatus::SyllabusRevision, $course->standing());
     }
 
     #[Test]
@@ -71,34 +72,18 @@ class CourseStandingTest extends TestCase
     {
         $course = Course::factory()->completed()->create();
 
-        $this->assertSame(CourseStanding::Completed, $course->standing());
+        $this->assertSame(CourseStatus::Completed, $course->standing());
         $this->assertSame(CourseStatus::FinalExam, $course->status);
     }
 
-    /**
-     * `CourseStanding::for()` resolves a pipeline status by value, so a status
-     * with no matching standing would throw at runtime rather than here.
-     */
     #[Test]
-    public function every_pipeline_status_has_a_standing_of_the_same_name(): void
+    public function exactly_two_statuses_are_derived_rather_than_stored(): void
     {
-        foreach (CourseStatus::cases() as $status) {
-            $this->assertNotNull(
-                CourseStanding::tryFrom($status->value),
-                "CourseStanding is missing a case for the status [{$status->value}]",
-            );
-        }
-    }
-
-    #[Test]
-    public function the_only_standings_beyond_the_pipeline_are_the_two_endings(): void
-    {
-        $pipeline = array_map(fn (CourseStatus $s): string => $s->value, CourseStatus::cases());
-        $extra = array_values(array_diff(
-            array_map(fn (CourseStanding $s): string => $s->value, CourseStanding::cases()),
-            $pipeline,
+        $derived = array_values(array_map(
+            fn (CourseStatus $status): string => $status->value,
+            array_filter(CourseStatus::cases(), fn (CourseStatus $status): bool => $status->hasEnded()),
         ));
 
-        $this->assertSame(['withdrawn', 'completed'], $extra);
+        $this->assertSame(['withdrawn', 'completed'], $derived);
     }
 }
