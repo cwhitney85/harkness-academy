@@ -50,7 +50,7 @@ Entities: users · modules · subtopics · courses (user × subtopic × skill_le
 State machine: created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1.
 Contested cells: transcripts as **messages rows** (not JSON blob — resume, queries, streaming appends); quizzes as **table** (not in-transcript — four features share it).
 
-## D7a. Course exclusivity and exit — **one open course per subtopic; exit deletes the row** (resolved 2026-08-23, package 3 session)
+## D7a. Course exclusivity and exit — **one open course per subtopic; exit deletes the row** (resolved 2026-08-23, package 3 session; **exit-deletes amended by D7b**)
 
 Invariant: for each (user, subtopic) at most one course is *open*, where open = any state short of `completed`. Enforced by a partial unique index, not by the 4.2 transition service alone, so concurrent creation cannot slip past it. A completed 101 alongside an open 201 stays legal — only one course writes.
 Exit deletes the course row and its lessons and quiz attempts, behind a confirmation ("exiting deletes all progress; you start again from the beginning"). `completed` stays the machine's only terminal state.
@@ -59,6 +59,27 @@ Rationale: forbidding concurrency retires D8's accepted cost outright; deleting 
 Riders:
 - Memory is not deleted with the course. The subtopic WK is student state (D8) and survives by design — the knowledge is still true whatever happened to the course. The course's `{level}` documents (CRITERIA, GUIDANCE) regenerate at the same paths on restart; orphans appear only where a regenerated syllabus drifts the lesson slugs. Unread garbage, accepted for v1 — the path API (3.2) has no delete.
 - **4.3 feeds the existing WK in.** `wk.create` overwrites the subtopic document blind today (2.3.2 inputs: transcript/subtopic/skill_level), which under D8 erases accumulated knowledge whenever a *second* course starts in a subtopic — after an exit, and on every 101 → 201 progression. Settled: the prompt gains `prior_wk_doc`, always supplied — the accumulated document, or an explicit "none yet" for the first course in the subtopic. One inventory row rather than a second near-identical prompt, and 2.3.1 has no optional vars, so an explicit empty value is the shape that fits. Landing it updates the 2.3.2 inputs cell, so it lands with 4.3, not before. 5.4.4's erosion guard does not cover this path — it guards `wk.update` — so 4.3 carries its own regression test.
+
+## D7b. Withdrawal replaces deletion; attempts replace lockout — **amends D7a** (resolved 2026-08-24, package 4 session, Colin)
+
+D7a's exit-deletes-the-row is withdrawn. Quitting a course now stamps `courses.withdrawn_at` and keeps the row; `courses.attempt` (scoped to user × subtopic × skill_level) lets a level be taken again.
+
+**What D7a got wrong.** It rejected an `abandoned` status for one reason: D7's unique (user, subtopic, skill_level) would hold the tombstone forever, locking the student out of that level for good. An attempt counter dissolves that reason — attempt 2 of Algebra 101 is a distinct row, so the tombstone blocks nothing. D7a then reached for deletion to escape a constraint that did not have to bind, and paid for it by destroying progress a student might want back. The unique key becomes (user, module_slug, subtopic_slug, skill_level, attempt).
+
+**Withdrawal is not a status.** `status` answers *where in the pipeline*; `withdrawn_at` answers *are they working on it*. Conflating them forces a second column remembering the state to restore, and Colin's resume flow ("pick up where you left off, or start from scratch?") needs that state intact. Keeping them apart makes resume a null-out of one timestamp and restart an insert with `attempt + 1`.
+
+**The exclusivity invariant survives, reworded.** Open = `withdrawn_at IS NULL AND status <> 'completed'`. Still a partial unique index on (user_id, module_slug, subtopic_slug), still enforcing D8's real requirement — one writer per subtopic WORKING_KNOWLEDGE.md — and still catching concurrent creation the 4.2 service alone would miss. Resuming re-occupies the slot, so it fails the index while another course is open. That is correct behaviour, not a bug.
+
+Rejected: `course_status_types` lookup table with an `is_active` column (Colin's proposal). A partial unique index predicate may reference only that row's own columns, so the database rule cannot join to it — enforcement would drop to application code, losing the very floor D7a's index exists to provide. Deeper: a status is a place in the app's behaviour, not content — inserting a `paused` row grants no screen, no transition, no button, so the "new status without a deploy" payoff never arrives. And the arrows between states would stay in code regardless, splitting the machine across two homes. Replaced by a `CourseStatus` PHP enum with `isTerminal()`, which gives the same single-place definition the proposal was after.
+
+Rejected: a `failed` end state (Colin's proposal). 6.3's done-condition already reads "fail records attempt, course stays `active`" — failing the final exam returns the student to studying, so it is not an ending. The pedagogical signal Colin wanted for a second attempt is better served by the `quiz_attempts` row 6.1/6.3 already writes, which names the concepts missed rather than only the verdict. A student who fails repeatedly and gives up has *withdrawn*; two end conditions suffice.
+
+Naming: `withdrawn_at`, not `quit`/`exited`. Academic register matching `completed`, and it avoids `abandoned` — the word D7a attached to the design it rejected.
+
+Riders:
+- **Only the highest-numbered attempt is resumable.** Lesson GUIDANCE paths (4.5.3) carry no attempt number, so attempt 2 overwrites attempt 1's material at the same paths. Resuming attempt 1 afterwards would render attempt 2's teaching notes under attempt 1's lesson rows. Prior versions survive in `memory_versions` (3.1); nothing is destroyed, but `get()` returns the newer text. The rule closes the hole without putting attempt numbers in memory paths.
+- D7a's memory rider stands unchanged: withdrawing does not touch the memory tree. The subtopic WK is student state (D8) and survives by design.
+- Confirmation copy is no longer a deletion warning. On return: "Looks like you tried this once already — pick up where you left off, or start from scratch?"
 
 ## D8. WORKING_KNOWLEDGE scope — **subtopic, not level** (resolved 2026-08-23, package 3 session)
 

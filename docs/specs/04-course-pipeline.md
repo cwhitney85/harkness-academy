@@ -2,7 +2,9 @@
 
 *Provides: course state machine (4.2), syllabus + GUIDANCE artifacts consumed by 5/6. Consumes: 2 (gateway, prompts), 3 (path API). See PLAN.md for status.*
 
-State machine (ledger D7): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1. Exclusivity (ledger D7a): at most one course per (user, subtopic) short of `completed`, held by a partial unique index; exit deletes the course row rather than tombstoning it.
+State machine (ledger D7): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1. Exclusivity (ledger D7a, amended by D7b): at most one course per (user, subtopic) is *open*, where open = `withdrawn_at IS NULL AND status <> 'completed'`, held by a partial unique index. Withdrawing stamps `withdrawn_at` and keeps the row; `attempt` (scoped to user × subtopic × skill_level) lets a level be taken again. Resuming clears the stamp and restores the student to the status they held; only the highest-numbered attempt is resumable.
+
+**NOTE:** Per PLAN.md status - 3.3 is blocked on 4.1 and should be included as part of this section.
 
 - **4.1 MUST** — Preset catalog (Math, Science, History, Language, Econ, Philosophy + subtopics) + free-text creation; mismatch handled at 4.5.7. *Done: both paths create `courses` row in `created`.*
 - **4.2 MUST** — State machine as single transition service; workflows fire on transitions; illegal transitions throw. *Done: per-state side-effect tests.*
