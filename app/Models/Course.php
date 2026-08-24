@@ -111,15 +111,29 @@ class Course extends Model
     }
 
     /**
-     * Courses in one subtopic, at one skill level, for one student.
+     * Every course one student has taken in one subtopic, at any level.
+     *
+     * The scope of the exclusivity rule (ledger D7a/D7b) and of the subtopic
+     * WORKING_KNOWLEDGE.md they all share (D8).
+     *
+     * @param  Builder<Course>  $query
+     */
+    public function scopeForSubtopic(Builder $query, User $student, string $moduleSlug, string $subtopicSlug): void
+    {
+        $query->where('user_id', $student->id)
+            ->where('module_slug', $moduleSlug)
+            ->where('subtopic_slug', $subtopicSlug);
+    }
+
+    /**
+     * Narrower still: one subtopic at one skill level, which is what `attempt`
+     * counts within.
      *
      * @param  Builder<Course>  $query
      */
     public function scopeForLevel(Builder $query, User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): void
     {
-        $query->where('user_id', $student->id)
-            ->where('module_slug', $moduleSlug)
-            ->where('subtopic_slug', $subtopicSlug)
+        $query->forSubtopic($student, $moduleSlug, $subtopicSlug)
             ->where('skill_level', $level->value);
     }
 }
