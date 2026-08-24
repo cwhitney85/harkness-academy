@@ -43,7 +43,19 @@ Within a single conversation the `system` breakpoint adds nothing — the top-le
 
 If real usage shows students doing back-to-back lessons, `ai.prompt_caching.ttl` accepts `1h`. Anthropic charges 2x to write an hour-long cache against 1.25x for five minutes, so that is a change to make with usage data, not before.
 
-**Minimum cacheable length is higher than the commonly-cited 1,024.** At 40 paragraphs (~2,370 tokens) the prefix did not cache; at 80 (~4,742) it did. laravel/ai's own draft documentation puts the range at 512–4,096 tokens depending on model, and haiku sits at the top of it. The spike's default is 80 paragraphs for that reason. A short prefix fails silently — no error, no warning, just a bill.
+**Minimum cacheable length is higher than the commonly-cited 1,024**, and it is not monotonic across model generations. At 40 paragraphs (~2,370 tokens) the prefix did not cache; at 80 (~4,742) it did. The spike's default is 80 paragraphs for that reason. A short prefix fails silently — no error, no warning, `cache_creation_input_tokens: 0`, and a bill.
+
+### Minimums by tier — our cheapest tier has the highest bar
+
+| Tier | Model | Minimum cacheable prefix |
+|---|---|---:|
+| `top` | Claude Opus 5 | 512 tokens |
+| `mid` | Claude Sonnet 5 | 1,024 tokens |
+| `cheap` | Claude Haiku 4.5 | **4,096 tokens** |
+
+**This inverts the intuition, so plan around it.** The `cheap` tier needs an eight-times-longer prefix than `top` before caching engages at all. Its consumers in the 2.3.2 inventory — `checkpoint.generate`, `quiz.refresher`, `explainer.select` — are our *shortest* prompts, so they will very likely never cache no matter what breakpoints we send. That is not a bug to fix; it is a reason not to count on caching when estimating their cost, and a reason not to spend effort optimising prefixes on that tier.
+
+Re-check this table whenever `config/ai.php` changes a tier's model. A model swap can move the floor by 8x in either direction with no other visible change.
 
 ### What Anthropic needs
 
@@ -110,7 +122,8 @@ It fails **silently**. If laravel/ai ever merges provider options before the bod
 
 ### Also worth knowing
 
-- **Minimum cacheable prefix is model-specific, 512–4,096 tokens**, and haiku sits at the top of that range — see the measured result above. A shorter prefix silently does not cache. This is the first thing to check when `ai:cache-spike` reports a miss, and the thing to check before assuming a small prompt is being cached.
+- **Minimum cacheable prefix is model-specific, 512–4,096 tokens** — per-tier table above. A shorter prefix silently does not cache. First thing to check when `ai:cache-spike` reports a miss, and before assuming a small prompt is cached at all.
+- **Two cache lifetimes exist, `5m` and `1h`** — a fixed pair, not a duration. The clock is idle time and resets on every hit, so continuous traffic keeps a 5m entry alive indefinitely. Writing a 1h entry costs 2x against 1.25x, so it needs three reads to break even where 5m needs two. `PromptCaching::cacheControl()` rejects anything else rather than letting the API do it.
 - **Any byte change anywhere in the prefix invalidates everything after it.** Spec 2.3.1 already accepts that a prompt edit invalidates that prompt's cache prefix on deploy. The thing to watch for is accidental invalidation: a timestamp, a UUID, or a non-deterministically ordered document rendered into the prefix. `ai:cache-spike` builds a deliberately deterministic prefix so it can catch that class of bug.
 - **Max 4 breakpoints per request.** We use 2.
 - **Scripted calls send no system prompt**, so they get the `tail` breakpoint only. The gateway puts a rendered prompt in as the user message; `instructions` is set separately and today only the lesson session sets it. A scripted call therefore shares no prefix with anything, which is correct — each one is a different prompt with different inputs. Interviews are the case worth revisiting when package 4 lands: they are conversations, and their instructions may belong in `system` rather than in the first user message.

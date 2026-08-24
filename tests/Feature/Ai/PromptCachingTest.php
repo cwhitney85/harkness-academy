@@ -98,6 +98,17 @@ class PromptCachingTest extends TestCase
         $this->assertSame(['type' => 'ephemeral', 'ttl' => '1h'], PromptCaching::cacheControl());
     }
 
+    #[Test]
+    public function a_ttl_anthropic_does_not_accept_is_refused_here_rather_than_at_the_api(): void
+    {
+        config()->set('ai.prompt_caching.ttl', '30m');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be one of [5m, 1h]');
+
+        PromptCaching::cacheControl();
+    }
+
     /**
      * Drive one real gateway call into a faked Anthropic endpoint and return
      * the JSON body that laravel/ai actually built.

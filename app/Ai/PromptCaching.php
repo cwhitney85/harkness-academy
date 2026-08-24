@@ -2,6 +2,8 @@
 
 namespace App\Ai;
 
+use InvalidArgumentException;
+
 /**
  * The workaround for laravel/ai#119 (spec 2.4). See docs/anthropic-specific.md
  * entry #1 for why this exists and what to delete when it stops being needed.
@@ -24,6 +26,16 @@ namespace App\Ai;
  */
 final class PromptCaching
 {
+    /**
+     * The only two cache lifetimes Anthropic accepts. Not a duration you dial:
+     * `5m` is the default and costs 1.25x to write, `1h` costs 2x.
+     *
+     * @var list<string>
+     */
+    public const TTLS = ['5m', '1h'];
+
+    public const DEFAULT_TTL = '5m';
+
     /**
      * Provider options that place the configured cache breakpoints.
      *
@@ -57,19 +69,27 @@ final class PromptCaching
 
     /**
      * @return array{type: string, ttl?: string}
+     *
+     * @throws InvalidArgumentException if the configured TTL is not one Anthropic accepts.
      */
     public static function cacheControl(): array
     {
-        $control = ['type' => 'ephemeral'];
+        $ttl = config('ai.prompt_caching.ttl', self::DEFAULT_TTL);
 
-        $ttl = config('ai.prompt_caching.ttl');
-
-        // Anthropic's default ephemeral TTL is 5m; sending it explicitly is
-        // redundant and only widens the surface that can invalidate a prefix.
-        if (is_string($ttl) && $ttl !== '' && $ttl !== '5m') {
-            $control['ttl'] = $ttl;
+        // Anthropic takes two fixed values, not a duration. An unrecognised one
+        // is rejected at the API, so catch it here where the message can say why.
+        if (! in_array($ttl, self::TTLS, true)) {
+            throw new InvalidArgumentException(sprintf(
+                'ai.prompt_caching.ttl must be one of [%s]; got [%s].',
+                implode(', ', self::TTLS),
+                is_scalar($ttl) ? (string) $ttl : get_debug_type($ttl),
+            ));
         }
 
-        return $control;
+        // The 5m default is implicit; sending it explicitly is redundant and
+        // only widens the surface that can invalidate a prefix.
+        return $ttl === self::DEFAULT_TTL
+            ? ['type' => 'ephemeral']
+            : ['type' => 'ephemeral', 'ttl' => $ttl];
     }
 }
