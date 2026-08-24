@@ -28,6 +28,21 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 
 That is the cross-conversation case from the design rationale below, measured rather than argued. It is also the case OpenTutor is made of: every lesson in a course is a separate conversation over one shared prefix.
 
+### What each breakpoint is actually worth
+
+The two breakpoints do not split the work evenly, and the second one is gated by the cache TTL:
+
+| | within one lesson | next lesson, < 5 min later | next lesson, tomorrow |
+|---|---|---|---|
+| `tail` (top-level) alone | full benefit | miss | miss |
+| `tail` + `system` (what we send) | same as above | **hit** | miss |
+
+Within a single conversation the `system` breakpoint adds nothing — the top-level one already stores "everything through this turn" and the next turn matches it. The `system` breakpoint earns its place only in the middle column, and a five-minute idle expiry closes that window fast. A student returning the next day pays full price for the prefix no matter what we send.
+
+**Keep it anyway: it is close to free.** Anthropic bills a cached region once regardless of how many breakpoints subdivide it, so adding the `system` breakpoint cost roughly nothing on the measured call (4,753 written with both). The real cost is not tokens but the merge-order fragility described below, which the wire test contains.
+
+If real usage shows students doing back-to-back lessons, `ai.prompt_caching.ttl` accepts `1h`. Anthropic charges 2x to write an hour-long cache against 1.25x for five minutes, so that is a change to make with usage data, not before.
+
 **Minimum cacheable length is higher than the commonly-cited 1,024.** At 40 paragraphs (~2,370 tokens) the prefix did not cache; at 80 (~4,742) it did. laravel/ai's own draft documentation puts the range at 512–4,096 tokens depending on model, and haiku sits at the top of it. The spike's default is 80 paragraphs for that reason. A short prefix fails silently — no error, no warning, just a bill.
 
 ### What Anthropic needs
@@ -98,6 +113,7 @@ It fails **silently**. If laravel/ai ever merges provider options before the bod
 - **Minimum cacheable prefix is model-specific, 512–4,096 tokens**, and haiku sits at the top of that range — see the measured result above. A shorter prefix silently does not cache. This is the first thing to check when `ai:cache-spike` reports a miss, and the thing to check before assuming a small prompt is being cached.
 - **Any byte change anywhere in the prefix invalidates everything after it.** Spec 2.3.1 already accepts that a prompt edit invalidates that prompt's cache prefix on deploy. The thing to watch for is accidental invalidation: a timestamp, a UUID, or a non-deterministically ordered document rendered into the prefix. `ai:cache-spike` builds a deliberately deterministic prefix so it can catch that class of bug.
 - **Max 4 breakpoints per request.** We use 2.
+- **Scripted calls send no system prompt**, so they get the `tail` breakpoint only. The gateway puts a rendered prompt in as the user message; `instructions` is set separately and today only the lesson session sets it. A scripted call therefore shares no prefix with anything, which is correct — each one is a different prompt with different inputs. Interviews are the case worth revisiting when package 4 lands: they are conversations, and their instructions may belong in `system` rather than in the first user message.
 
 ### Cost to leave
 
