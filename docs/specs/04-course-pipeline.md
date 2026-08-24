@@ -2,11 +2,11 @@
 
 *Provides: course state machine (4.2), syllabus + GUIDANCE artifacts consumed by 5/6. Consumes: 2 (gateway, prompts), 3 (path API). See PLAN.md for status.*
 
-State machine (ledger D7): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1.
+State machine (ledger D7): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1. Exclusivity (ledger D7a): at most one course per (user, subtopic) short of `completed`, held by a partial unique index; exit deletes the course row rather than tombstoning it.
 
 - **4.1 MUST** — Preset catalog (Math, Science, History, Language, Econ, Philosophy + subtopics) + free-text creation; mismatch handled at 4.5.7. *Done: both paths create `courses` row in `created`.*
 - **4.2 MUST** — State machine as single transition service; workflows fire on transitions; illegal transitions throw. *Done: per-state side-effect tests.*
-- **4.3 MUST** — Knowledge interview (streamed; ends per 2.3.4) → `wk.create` → `WORKING_KNOWLEDGE.md`. Interview transcript discarded after summarization. *Done: WK file with solid/shaky/gaps.*
+- **4.3 MUST** — Knowledge interview (streamed; ends per 2.3.4) → `wk.create` → `{module}/{subtopic}/WORKING_KNOWLEDGE.md` (subtopic-scoped, ledger D8). Interview transcript discarded after summarization. **Open (D7a)**: the WK is shared across levels, so a second course in the subtopic must not `wk.create` over it blind — branch on whether the document already exists. *Done: WK file with solid/shaky/gaps; a 101→201 progression keeps the 101 document's claims.*
 - **4.4 MUST** — Goals interview → `criteria.create` → `COURSE_CRITERIA.md`. *Done: analogous.*
 
 ## 4.5 Syllabus generation, review, approval

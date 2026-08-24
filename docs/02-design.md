@@ -50,11 +50,21 @@ Entities: users · modules · subtopics · courses (user × subtopic × skill_le
 State machine: created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1.
 Contested cells: transcripts as **messages rows** (not JSON blob — resume, queries, streaming appends); quizzes as **table** (not in-transcript — four features share it).
 
+## D7a. Course exclusivity and exit — **one open course per subtopic; exit deletes the row** (resolved 2026-08-23, package 3 session)
+
+Invariant: for each (user, subtopic) at most one course is *open*, where open = any state short of `completed`. Enforced by a partial unique index, not by the 4.2 transition service alone, so concurrent creation cannot slip past it. A completed 101 alongside an open 201 stays legal — only one course writes.
+Exit deletes the course row and its lessons and quiz attempts, behind a confirmation ("exiting deletes all progress; you start again from the beginning"). `completed` stays the machine's only terminal state.
+Rejected: an `abandoned` status — D7's unique (user, subtopic, skill_level) would keep the tombstone forever, so exiting a level once locks the student out of it for good.
+Rationale: forbidding concurrency retires D8's accepted cost outright; deleting rather than tombstoning frees the level again with no loosening of D7's uniqueness.
+Riders:
+- Memory is not deleted with the course. The subtopic WK is student state (D8) and survives by design — the knowledge is still true whatever happened to the course. The course's `{level}` documents (CRITERIA, GUIDANCE) regenerate at the same paths on restart; orphans appear only where a regenerated syllabus drifts the lesson slugs. Unread garbage, accepted for v1 — the path API (3.2) has no delete.
+- **Open for 4.3**: `wk.create` takes no prior WK (2.3.2 inputs are transcript/subtopic/skill_level), so it overwrites the subtopic document blind. Under D8 that erases accumulated knowledge whenever a *second* course starts in a subtopic — after an exit, and on every 101 → 201 progression. 4.3 must branch on whether a subtopic WK already exists. 5.4.4's erosion guard does not cover this path; it guards `wk.update`.
+
 ## D8. WORKING_KNOWLEDGE scope — **subtopic, not level** (resolved 2026-08-23, package 3 session)
 
 `{module}/{subtopic}/WORKING_KNOWLEDGE.md`. One document per subtopic, accumulating across levels; a completed 101 course is what a 201 course in the same subtopic starts from.
 Rejected: level-scoped (`{module}/{subtopic}/{level}/WORKING_KNOWLEDGE.md`) — symmetric with 4.5.3's GUIDANCE path, but GUIDANCE is per-course *material* while WK is *student state*. Level shards make 4.3's knowledge interview re-elicit at 201 what 101 already recorded, and leave 6.4's subtopic-grain refreshers merging shards at read time.
-Accepted cost: two courses active in one subtopic (D7 permits it) share one document, so 5.4.4's full-document replacement means last-writer-wins. Contained, not silent — 3.1 versions make it diffable and 5.4.4's erosion guard is aimed at exactly this. Second-order: a write invalidates the 5.1 cached prefix of the other course's lesson sessions in that subtopic. Cost, not correctness.
+Accepted cost, since retired by D7a: concurrent courses in one subtopic would have shared the document under 5.4.4's full-document replacement (last-writer-wins, plus 5.1 cached-prefix invalidation). D7a forbids the concurrency, so neither is reachable. The live risk is 4.3's blind `wk.create` instead — recorded as D7a's open item.
 Rider for 3.3: pointer lines dedupe by path — one line per subtopic with at least one completed course, naming the levels completed, not one line per course.
 
 ## R1. Personas — **repo prompt files** (`prompts/styles/*.md`), `courses.style` column stores file key. Prompts are code until users can edit them.
