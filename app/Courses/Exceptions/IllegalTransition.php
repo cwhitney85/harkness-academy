@@ -25,7 +25,21 @@ final class IllegalTransition extends CourseException
             $course->id,
             $from->value,
             $to->value,
-            $allowed === [] ? 'nothing -- it is a terminal status' : '['.implode(', ', $allowed).']',
+            $allowed === [] ? 'nothing' : '['.implode(', ', $allowed).']',
+        ));
+    }
+
+    /**
+     * Completion is gated on the final exam (spec 6.3), so a course cannot be
+     * marked complete from anywhere else in the pipeline.
+     */
+    public static function intoCompletion(Course $course): self
+    {
+        return new self(sprintf(
+            'Course [%d] cannot be completed from [%s]; it must be at [%s].',
+            $course->id,
+            $course->status->value,
+            CourseStatus::FinalExam->value,
         ));
     }
 }

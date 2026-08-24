@@ -119,7 +119,7 @@ final class ModuleRollup
         $completed = Course::query()
             ->where('user_id', $student->id)
             ->where('module_slug', $module->slug)
-            ->where('status', CourseStatus::Completed->value)
+            ->whereNotNull('completed_at')
             ->orderBy('skill_level')
             ->get(['subtopic_slug', 'skill_level']);
 

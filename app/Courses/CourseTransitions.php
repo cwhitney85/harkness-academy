@@ -2,6 +2,7 @@
 
 namespace App\Courses;
 
+use App\Courses\Events\CourseCompleted;
 use App\Courses\Events\CourseResumed;
 use App\Courses\Events\CourseTransitioned;
 use App\Courses\Events\CourseWithdrawn;
@@ -51,6 +52,40 @@ final class CourseTransitions
             $locked->forceFill(['status' => $next])->save();
 
             CourseTransitioned::dispatch($locked, $from, $next);
+        });
+
+        return $course->refresh();
+    }
+
+    /**
+     * Record that the student passed the final exam (spec 6.3).
+     *
+     * Not a transition: `status` stays on `final_exam`, the furthest point the
+     * course reached, and the ending is the date. That is what keeps status
+     * names out of the open-course index (ledger D7b).
+     *
+     * Pre: the course is open and standing at `final_exam`.
+     * Post: `completed_at` is stamped, the subtopic's open slot is free, and
+     *       one CourseCompleted is dispatched.
+     *
+     * @throws CourseNotOpen|IllegalTransition
+     */
+    public function complete(Course $course): Course
+    {
+        DB::transaction(function () use ($course): void {
+            $locked = $this->lock($course);
+
+            if (! $locked->isOpen()) {
+                throw CourseNotOpen::for($locked);
+            }
+
+            if ($locked->status !== CourseStatus::FinalExam) {
+                throw IllegalTransition::intoCompletion($locked);
+            }
+
+            $locked->forceFill(['completed_at' => now()])->save();
+
+            CourseCompleted::dispatch($locked);
         });
 
         return $course->refresh();
@@ -139,10 +174,6 @@ final class CourseTransitions
     {
         if (! $course->isWithdrawn()) {
             throw CourseNotResumable::because($course, 'it was not withdrawn.');
-        }
-
-        if ($course->status->isTerminal()) {
-            throw CourseNotResumable::because($course, "it is already [{$course->status->value}].");
         }
 
         // Lesson guidance paths carry no attempt number (spec 4.5.3), so a

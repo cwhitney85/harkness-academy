@@ -6,17 +6,17 @@ namespace App\Courses;
  * Where a student is in the course pipeline (ledger D7).
  *
  * created → knowledge_interview → goals_interview → syllabus_draft
- *   ⇄ syllabus_revision → active → final_exam → completed
+ *   ⇄ syllabus_revision → active → final_exam
  *
- * This is deliberately an enum and not a lookup table: a partial unique index
- * predicate cannot join to another table, so the "one open course per
- * subtopic" rule could not be enforced by the database if the terminal set
- * lived in rows. A status is also a place in the app's behaviour rather than
- * content -- an unreferenced row would grant no screen and no transition
- * (ledger D7b).
+ * The pipeline has no end state. Neither ending is a place a student stands:
+ * `courses.withdrawn_at` says they stepped away from wherever they were, and
+ * `courses.completed_at` says they passed the exam. Both are dates on the row
+ * (ledger D7b), which is what keeps status names out of the open-course index.
  *
- * Withdrawal is not here. `courses.withdrawn_at` answers whether the student
- * is engaged; this answers where they are (D7b).
+ * An enum rather than a lookup table for now, because a status needs code --
+ * a screen, a button, an arrow into it -- before a row means anything. That
+ * is a preference, not a constraint: the index no longer reads this column,
+ * so nothing here blocks a `status_types` table later.
  */
 enum CourseStatus: string
 {
@@ -27,19 +27,6 @@ enum CourseStatus: string
     case SyllabusRevision = 'syllabus_revision';
     case Active = 'active';
     case FinalExam = 'final_exam';
-    case Completed = 'completed';
-
-    /**
-     * Whether the pipeline ends here.
-     *
-     * Only `completed`. Failing the final exam returns the student to `active`
-     * rather than ending the course (spec 6.3), and a student who gives up has
-     * withdrawn, which is not a status at all (D7b).
-     */
-    public function isTerminal(): bool
-    {
-        return $this === self::Completed;
-    }
 
     /**
      * The statuses reachable from here in one step.
@@ -57,10 +44,10 @@ enum CourseStatus: string
             // A regenerated syllabus is a draft again, awaiting approval.
             self::SyllabusRevision => [self::SyllabusDraft],
             self::Active => [self::FinalExam],
-            // Passing gates `completed`; failing hands the student back their
-            // course to keep studying (spec 6.3).
-            self::FinalExam => [self::Completed, self::Active],
-            self::Completed => [],
+            // Failing hands the student back their course to keep studying
+            // (spec 6.3). Passing is not a move -- it stamps `completed_at`
+            // through CourseTransitions::complete().
+            self::FinalExam => [self::Active],
         };
     }
 

@@ -13,9 +13,11 @@ use Illuminate\Support\Facades\Schema;
  * its documents live under. Freezing them at creation means the catalog can
  * be re-titled later without stranding anybody's knowledge.
  *
- * `status` is where the student is in the pipeline; `withdrawn_at` is whether
- * they are working on it at all (D7b). Keeping them apart is what lets a
- * resumed course land back on the status it held.
+ * `status` is where the student is in the pipeline. Why a course is *not*
+ * open is answered by two dates instead: `withdrawn_at` (they stepped away,
+ * reversibly) and `completed_at` (they passed the final exam). Keeping those
+ * out of `status` is what lets a resumed course land back where it was, and
+ * what lets the open-course rule below name no statuses at all (D7b).
  */
 return new class extends Migration
 {
@@ -47,6 +49,11 @@ return new class extends Migration
 
             $table->timestamp('withdrawn_at')->nullable();
 
+            // Passing the final exam (spec 6.3). A status of `completed` would
+            // put a string literal inside the index predicate below, which
+            // then has to be kept in step with the enum by hand.
+            $table->timestamp('completed_at')->nullable();
+
             $table->timestamps();
 
             // Named explicitly: the generated name would run past Postgres'
@@ -61,16 +68,23 @@ return new class extends Migration
         // At most one *open* course per student per subtopic (D7a, reworded by
         // D7b). This lives in the database, not only in the transition service,
         // so two requests arriving in the same millisecond cannot both pass an
-        // application-side "is anything open?" check and both insert.
+        // application-side "is anything open?" check and both insert -- a
+        // double-tapped Start button is enough.
         //
-        // The terminal-status literal is frozen here on purpose -- a partial
-        // index predicate may only reference this row's own columns, so it
-        // cannot consult CourseStatus. CourseStatusIndexTest asserts the two
-        // never drift apart.
+        // Open is "neither date is filled in", so the predicate names no
+        // statuses. Adding, renaming or removing a status can never leave this
+        // rule quietly wrong, and `status` stays free to become a foreign key
+        // later without the index caring.
         DB::statement(<<<'SQL'
             CREATE UNIQUE INDEX courses_one_open_per_subtopic
                 ON courses (user_id, module_slug, subtopic_slug)
-                WHERE withdrawn_at IS NULL AND status <> 'completed'
+                WHERE withdrawn_at IS NULL AND completed_at IS NULL
+        SQL);
+
+        // A course cannot be both stepped away from and finished.
+        DB::statement(<<<'SQL'
+            ALTER TABLE courses ADD CONSTRAINT courses_not_withdrawn_and_completed
+                CHECK (withdrawn_at IS NULL OR completed_at IS NULL)
         SQL);
     }
 

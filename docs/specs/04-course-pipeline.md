@@ -2,7 +2,7 @@
 
 *Provides: course state machine (4.2), syllabus + GUIDANCE artifacts consumed by 5/6. Consumes: 2 (gateway, prompts), 3 (path API). See PLAN.md for status.*
 
-State machine (ledger D7): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam → completed. Placement states slot in at v1.1. Exclusivity (ledger D7a, amended by D7b): at most one course per (user, subtopic) is *open*, where open = `withdrawn_at IS NULL AND status <> 'completed'`, held by a partial unique index. Withdrawing stamps `withdrawn_at` and keeps the row; `attempt` (scoped to user × subtopic × skill_level) lets a level be taken again. Resuming clears the stamp and restores the student to the status they held; only the highest-numbered attempt is resumable.
+State machine (ledger D7, amended by D7c): created → knowledge_interview → goals_interview → syllabus_draft ⇄ syllabus_revision → active → final_exam. No end state — passing the exam stamps `completed_at` (6.3), failing returns the course to `active`. Placement states slot in at v1.1. Exclusivity (ledger D7a, amended by D7b/D7c): at most one course per (user, subtopic) is *open*, where open = `withdrawn_at IS NULL AND completed_at IS NULL`, held by a partial unique index that names no statuses. Withdrawing stamps `withdrawn_at` and keeps the row; `attempt` (scoped to user × subtopic × skill_level) lets a level be taken again. Resuming clears the stamp and restores the student to the status they held; only the highest-numbered attempt is resumable.
 
 **NOTE:** Per PLAN.md status - 3.3 is blocked on 4.1 and should be included as part of this section.
 

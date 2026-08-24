@@ -190,7 +190,9 @@ class ModuleRollupTest extends TestCase
 
     private function complete(Course $course): void
     {
-        $course->forceFill(['status' => CourseStatus::Completed])->save();
+        $course->forceFill(['status' => CourseStatus::FinalExam])->save();
+
+        app(CourseTransitions::class)->complete($course);
     }
 
     private function module(string $slug): Module

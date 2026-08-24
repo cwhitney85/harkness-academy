@@ -29,6 +29,7 @@ class CourseFactory extends Factory
             'attempt' => 1,
             'status' => CourseStatus::Created,
             'withdrawn_at' => null,
+            'completed_at' => null,
         ];
     }
 
@@ -40,5 +41,17 @@ class CourseFactory extends Factory
     public function withdrawn(): self
     {
         return $this->state(['withdrawn_at' => now()]);
+    }
+
+    /**
+     * Passed the final exam: the status records how far it got, the date
+     * records that it was cleared (ledger D7b).
+     */
+    public function completed(): self
+    {
+        return $this->state([
+            'status' => CourseStatus::FinalExam,
+            'completed_at' => now(),
+        ]);
     }
 }

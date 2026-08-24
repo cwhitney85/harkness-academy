@@ -4,6 +4,7 @@ namespace Tests\Feature\Courses;
 
 use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
+use App\Courses\Events\CourseCompleted;
 use App\Courses\Events\CourseTransitioned;
 use App\Courses\Exceptions\CourseNotOpen;
 use App\Courses\Exceptions\IllegalTransition;
@@ -113,15 +114,49 @@ class CourseTransitionsTest extends TestCase
             CourseStatus::SyllabusDraft,
             CourseStatus::Active,
             CourseStatus::FinalExam,
-            CourseStatus::Completed,
         ];
 
         foreach ($walk as $next) {
             $this->transitions()->to($course, $next);
         }
 
-        $this->assertSame(CourseStatus::Completed, $course->fresh()->status);
+        $this->transitions()->complete($course);
+
+        $this->assertSame(
+            CourseStatus::FinalExam,
+            $course->fresh()->status,
+            'status records the furthest point reached; the ending is a date (D7b)',
+        );
+        $this->assertTrue($course->fresh()->isCompleted());
         $this->assertFalse($course->fresh()->isOpen());
+    }
+
+    #[Test]
+    public function completing_is_gated_on_standing_at_the_final_exam(): void
+    {
+        Event::fake();
+        $course = Course::factory()->status(CourseStatus::Active)->create();
+
+        $this->expectException(IllegalTransition::class);
+
+        $this->transitions()->complete($course);
+    }
+
+    #[Test]
+    public function completing_frees_the_subtopic_and_announces_itself(): void
+    {
+        Event::fake();
+        $course = Course::factory()->status(CourseStatus::FinalExam)->create();
+
+        $this->transitions()->complete($course);
+
+        $this->assertNotNull($course->fresh()->completed_at);
+        $this->assertSame(0, Course::query()->open()->count());
+
+        Event::assertDispatched(
+            CourseCompleted::class,
+            fn (CourseCompleted $event): bool => $event->course->is($course),
+        );
     }
 
     /**
@@ -152,7 +187,7 @@ class CourseTransitionsTest extends TestCase
     #[Test]
     public function a_completed_course_cannot_be_transitioned(): void
     {
-        $course = Course::factory()->status(CourseStatus::Completed)->create();
+        $course = Course::factory()->completed()->create();
 
         $this->expectException(CourseNotOpen::class);
 

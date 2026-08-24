@@ -3,6 +3,7 @@
 namespace Tests\Feature\Courses;
 
 use App\Courses\CourseStatus;
+use App\Courses\CourseTransitions;
 use App\Courses\CreateCourse;
 use App\Courses\Exceptions\SubtopicAlreadyOpen;
 use App\Courses\Exceptions\UnusableSubtopicName;
@@ -157,7 +158,7 @@ class CreateCourseTest extends TestCase
         $algebra = $this->preset('math', 'algebra');
 
         $first = $this->action()->fromCatalog($student, $algebra, SkillLevel::Introductory);
-        $first->forceFill(['status' => CourseStatus::Completed])->save();
+        $this->pass($first);
 
         $second = $this->action()->fromCatalog($student, $algebra, SkillLevel::Introductory);
 
@@ -172,7 +173,7 @@ class CreateCourseTest extends TestCase
         $algebra = $this->preset('math', 'algebra');
 
         $intro = $this->action()->fromCatalog($student, $algebra, SkillLevel::Introductory);
-        $intro->forceFill(['status' => CourseStatus::Completed])->save();
+        $this->pass($intro);
 
         $next = $this->action()->fromCatalog($student, $algebra, SkillLevel::Intermediate);
 
@@ -232,6 +233,26 @@ class CreateCourseTest extends TestCase
         $algebra->update(['slug' => 'algebra-i', 'title' => 'Algebra I']);
 
         $this->assertSame('math/algebra/WORKING_KNOWLEDGE.md', $course->fresh()->workingKnowledgePath());
+    }
+
+    /**
+     * Walk a course to a passed final exam through the real service.
+     */
+    private function pass(Course $course): void
+    {
+        $transitions = app(CourseTransitions::class);
+
+        foreach ([
+            CourseStatus::KnowledgeInterview,
+            CourseStatus::GoalsInterview,
+            CourseStatus::SyllabusDraft,
+            CourseStatus::Active,
+            CourseStatus::FinalExam,
+        ] as $next) {
+            $transitions->to($course, $next);
+        }
+
+        $transitions->complete($course);
     }
 
     private function action(): CreateCourse

@@ -55,7 +55,7 @@ class CourseSchemaTest extends TestCase
     #[Test]
     public function the_database_allows_a_second_course_once_the_first_is_completed(): void
     {
-        $first = Course::factory()->status(CourseStatus::Completed)->create();
+        $first = Course::factory()->completed()->create();
 
         Course::factory()->create([
             'user_id' => $first->user_id,
@@ -96,32 +96,35 @@ class CourseSchemaTest extends TestCase
     }
 
     /**
-     * A partial index predicate cannot consult CourseStatus (ledger D7b), so
-     * the terminal set is written into SQL by hand. This is what stops the two
-     * definitions drifting apart.
+     * The point of expressing both endings as dates (ledger D7b): the rule
+     * names no statuses, so it cannot fall out of step with CourseStatus, and
+     * `status` stays free to change shape later.
      */
     #[Test]
-    public function the_open_course_index_excludes_exactly_the_terminal_statuses(): void
+    public function the_open_course_rule_names_no_statuses(): void
     {
-        $definition = DB::scalar(
+        $definition = (string) DB::scalar(
             "select indexdef from pg_indexes where indexname = 'courses_one_open_per_subtopic'"
         );
 
-        $this->assertStringContainsString('withdrawn_at IS NULL', (string) $definition);
+        $this->assertStringContainsString('withdrawn_at IS NULL', $definition);
+        $this->assertStringContainsString('completed_at IS NULL', $definition);
 
         foreach (CourseStatus::cases() as $status) {
-            $status->isTerminal()
-                ? $this->assertStringContainsString(
-                    "'{$status->value}'",
-                    (string) $definition,
-                    "terminal status [{$status->value}] is missing from the index predicate",
-                )
-                : $this->assertStringNotContainsString(
-                    "'{$status->value}'",
-                    (string) $definition,
-                    "non-terminal status [{$status->value}] must not close the open slot",
-                );
+            $this->assertStringNotContainsString(
+                "'{$status->value}'",
+                $definition,
+                "the open-course rule must not depend on the status [{$status->value}]",
+            );
         }
+    }
+
+    #[Test]
+    public function a_course_cannot_be_both_withdrawn_and_completed(): void
+    {
+        $this->expectException(QueryException::class);
+
+        Course::factory()->completed()->create(['withdrawn_at' => now()]);
     }
 
     /**

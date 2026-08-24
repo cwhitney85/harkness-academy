@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property int $attempt
  * @property CourseStatus $status
  * @property Carbon|null $withdrawn_at
+ * @property Carbon|null $completed_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -47,6 +48,7 @@ class Course extends Model
             'skill_level' => SkillLevel::class,
             'status' => CourseStatus::class,
             'withdrawn_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -65,12 +67,17 @@ class Course extends Model
      */
     public function isOpen(): bool
     {
-        return $this->withdrawn_at === null && ! $this->status->isTerminal();
+        return $this->withdrawn_at === null && $this->completed_at === null;
     }
 
     public function isWithdrawn(): bool
     {
         return $this->withdrawn_at !== null;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->completed_at !== null;
     }
 
     /**
@@ -103,11 +110,7 @@ class Course extends Model
      */
     public function scopeOpen(Builder $query): void
     {
-        $query->whereNull('withdrawn_at')
-            ->whereNotIn('status', array_map(
-                fn (CourseStatus $status): string => $status->value,
-                array_filter(CourseStatus::cases(), fn (CourseStatus $status): bool => $status->isTerminal()),
-            ));
+        $query->whereNull('withdrawn_at')->whereNull('completed_at');
     }
 
     /**

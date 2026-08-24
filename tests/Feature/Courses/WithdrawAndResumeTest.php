@@ -94,7 +94,7 @@ class WithdrawAndResumeTest extends TestCase
         $algebra = $this->preset('math', 'algebra');
 
         $first = app(CreateCourse::class)->fromCatalog($student, $algebra, SkillLevel::Introductory);
-        $first->forceFill(['status' => CourseStatus::Completed])->save();
+        $this->complete($first);
 
         $refresher = app(CreateCourse::class)->fromCatalog($student, $algebra, SkillLevel::Introductory);
 
@@ -199,6 +199,17 @@ class WithdrawAndResumeTest extends TestCase
             $this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory),
             'an open course is carried on, not resumed',
         );
+    }
+
+    /**
+     * Passing the final exam: status records how far the course got, the date
+     * records that it was cleared (ledger D7b).
+     */
+    private function complete(Course $course): void
+    {
+        $course->forceFill(['status' => CourseStatus::FinalExam])->save();
+
+        $this->transitions()->complete($course);
     }
 
     private function transitions(): CourseTransitions
