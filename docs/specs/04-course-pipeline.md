@@ -6,7 +6,7 @@ State machine (ledger D7): created → knowledge_interview → goals_interview �
 
 - **4.1 MUST** — Preset catalog (Math, Science, History, Language, Econ, Philosophy + subtopics) + free-text creation; mismatch handled at 4.5.7. *Done: both paths create `courses` row in `created`.*
 - **4.2 MUST** — State machine as single transition service; workflows fire on transitions; illegal transitions throw. *Done: per-state side-effect tests.*
-- **4.3 MUST** — Knowledge interview (streamed; ends per 2.3.4) → `wk.create` → `{module}/{subtopic}/WORKING_KNOWLEDGE.md` (subtopic-scoped, ledger D8). Interview transcript discarded after summarization. **Open (D7a)**: the WK is shared across levels, so a second course in the subtopic must not `wk.create` over it blind — branch on whether the document already exists. *Done: WK file with solid/shaky/gaps; a 101→201 progression keeps the 101 document's claims.*
+- **4.3 MUST** — Knowledge interview (streamed; ends per 2.3.4) → `wk.create` → `{module}/{subtopic}/WORKING_KNOWLEDGE.md` (subtopic-scoped, ledger D8). Interview transcript discarded after summarization. The WK is shared across levels (D8), so `wk.create` takes `prior_wk_doc` — the accumulated document, or an explicit "none yet" on the first course in the subtopic — and the interview revises what is there rather than replacing it (D7a). Landing this updates `wk.create`'s inputs in the 2.3.2 inventory. *Done: WK file with solid/shaky/gaps; a 101→201 progression keeps the 101 document's claims.*
 - **4.4 MUST** — Goals interview → `criteria.create` → `COURSE_CRITERIA.md`. *Done: analogous.*
 
 ## 4.5 Syllabus generation, review, approval
