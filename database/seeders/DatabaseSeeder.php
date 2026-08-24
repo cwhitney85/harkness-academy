@@ -15,7 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // The preset catalog is not sample data -- without it the course
+        // picker has nothing to offer (spec 4.1).
+        $this->call(CourseCatalogSeeder::class);
 
         User::factory()->create([
             'name' => 'Test User',
