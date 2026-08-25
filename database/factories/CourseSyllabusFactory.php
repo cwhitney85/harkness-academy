@@ -103,7 +103,7 @@ class CourseSyllabusFactory extends Factory
      */
     private function pin(array $attributes, string $which): int
     {
-        $course = Course::query()->findOrFail($attributes['course_id']);
+        $course = Course::query()->whereKey($attributes['course_id'])->firstOrFail();
         $tree = app(MemoryTree::class);
 
         $path = $which === 'wk'

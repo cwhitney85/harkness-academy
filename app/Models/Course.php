@@ -63,6 +63,18 @@ class Course extends Model
     }
 
     /**
+     * The lessons the approved syllabus became, in teaching order (4.5.5.1).
+     *
+     * Empty until approval: a course has no lessons while it still has a draft.
+     *
+     * @return HasMany<Lesson, $this>
+     */
+    public function lessons(): HasMany
+    {
+        return $this->hasMany(Lesson::class)->orderBy('position');
+    }
+
+    /**
      * Every syllabus this course has been shown, oldest first (spec 4.5.4.1).
      *
      * @return HasMany<CourseSyllabus, $this>
