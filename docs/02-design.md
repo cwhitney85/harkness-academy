@@ -264,3 +264,11 @@ Rejected: a `plans` table holding the depth parameters — gives the table real 
 Riders:
 - **The default plan is written down three times**, and that is the design rather than an oversight: `config/courses.php` is the source of truth, the migration needs a schema default baked in at migrate time, and the model needs `$attributes` because a freshly created Eloquent model never reads back what Postgres filled in — without it the first caller to ask a new student for their plan gets null. `CoursesConfigTest` pins all three together.
 - **An unknown plan surfaces at depth resolution and nowhere else**, because that is the only thing in v1 that reads the column. The check lives where the value is consumed rather than at every site that passes it along.
+- **The trigger is narrower than "a plan attribute appears" — sharpened 2026-08-25, same session.** The closing observation of the 4.5 build was that `courses.max_syllabus_revisions` is the obvious first thing a paid plan would vary, so the table would arrive well before billing. That is wrong, and the way it is wrong is what the trigger actually is. Varying the revision cap by plan needs no table and no column: it needs the key rewritten as `max_syllabus_revisions.{plan}`, exactly the shape `depth.{skill_level}.{plan}` already has. Config keying absorbs an arbitrary number of per-plan *constants*, so none of them is the trigger.
+
+  What config cannot do is hold plan data that changes without a deploy, or that another table needs to point at. Concretely, the table becomes necessary at the first of these:
+  - a plan attribute someone edits at runtime rather than in a commit — a Stripe price id, a promotional quota;
+  - anything that needs a foreign key *to* a plan — a subscription row, a per-plan usage report, an audit of who was on what and when;
+  - a plan whose membership is not a static list — trials, grandfathered tiers, per-user overrides.
+
+  Until one of those lands, adding a plan is a config edit and `users.plan` stays a string. Note that the third condition is the one most likely to arrive first and the least likely to be recognised: a single grandfathered user is enough to break a config list, and the temptation will be to special-case it in code rather than admit the list became data.
