@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -58,6 +60,39 @@ class Course extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Every syllabus this course has been shown, oldest first (spec 4.5.4.1).
+     *
+     * @return HasMany<CourseSyllabus, $this>
+     */
+    public function syllabi(): HasMany
+    {
+        return $this->hasMany(CourseSyllabus::class)->orderBy('generation');
+    }
+
+    /**
+     * The generation the student accepted, once they have.
+     *
+     * Held to one row by `course_syllabi_one_approved_per_course`, so this is
+     * a `hasOne` by constraint and not merely by convention.
+     *
+     * @return HasOne<CourseSyllabus, $this>
+     */
+    public function approvedSyllabus(): HasOne
+    {
+        return $this->hasOne(CourseSyllabus::class)->approved();
+    }
+
+    /**
+     * The syllabus the student is currently looking at, if any.
+     *
+     * @return HasOne<CourseSyllabus, $this>
+     */
+    public function latestSyllabus(): HasOne
+    {
+        return $this->hasOne(CourseSyllabus::class)->latestOfMany('generation');
     }
 
     /**
