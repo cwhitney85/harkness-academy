@@ -14,6 +14,7 @@ use App\Ai\UsageRecorder;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Ai\Prompts\AgentPrompt;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\TextResponse;
@@ -46,6 +47,7 @@ class GatewayTest extends TestCase
                 'interview_transcript' => 'Transcript.',
                 'subtopic' => 'Intro',
                 'skill_level' => '101',
+                'prior_wk_doc' => 'None yet.',
             ])
             ->feature('course.knowledge_interview')
             ->generate();
@@ -77,6 +79,58 @@ class GatewayTest extends TestCase
             ->prompt('wk.create', ['subtopic' => 'Intro'])
             ->feature('course.knowledge_interview')
             ->generate();
+    }
+
+    #[Test]
+    public function a_user_turn_carries_the_conversation_and_the_brief_becomes_the_instructions(): void
+    {
+        GatewayAgent::fake(['And what happens if you flip the sign?']);
+
+        $this->interviewTurn('A letter standing in for a number.')
+            ->stream()
+            ->each(fn (): null => null);
+
+        GatewayAgent::assertPrompted(
+            fn (AgentPrompt $call): bool => $call->prompt === 'A letter standing in for a number.'
+                && str_contains($call->agent->instructions(), 'You are interviewing a student'),
+        );
+
+        $this->assertSame(
+            'interview.knowledge',
+            UsageEvent::sole()->prompt_key,
+            'A turn is still attributed to the prompt that framed the conversation.',
+        );
+    }
+
+    #[Test]
+    public function only_a_conversation_takes_a_user_turn(): void
+    {
+        GatewayAgent::fake()->preventStrayPrompts();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('only a streamed prompt takes a user turn');
+
+        $this->gateway()
+            ->prompt('wk.create', [
+                'interview_transcript' => 'Transcript.',
+                'subtopic' => 'Intro',
+                'skill_level' => '101',
+                'prior_wk_doc' => 'None yet.',
+            ])
+            ->feature('course.knowledge_interview')
+            ->userTurn('Something the student typed.')
+            ->generate();
+    }
+
+    #[Test]
+    public function an_empty_user_turn_is_a_caller_bug(): void
+    {
+        GatewayAgent::fake()->preventStrayPrompts();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('nothing to answer');
+
+        $this->interviewTurn('   ')->stream();
     }
 
     #[Test]
@@ -143,6 +197,7 @@ class GatewayTest extends TestCase
                 'interview_transcript' => 'Transcript.',
                 'subtopic' => 'Intro',
                 'skill_level' => '101',
+                'prior_wk_doc' => 'None yet.',
             ])
             ->feature('course.knowledge_interview')
             ->schema(fn ($schema): array => ['ok' => $schema->boolean()])
@@ -276,6 +331,21 @@ class GatewayTest extends TestCase
                 'section_concepts' => 'greeting-formal',
             ])
             ->feature('lesson.section');
+    }
+
+    /**
+     * One turn of a conversation: the brief frames it, the text is the turn.
+     */
+    private function interviewTurn(string $text): PendingCall
+    {
+        return $this->gateway()
+            ->prompt('interview.knowledge', [
+                'module' => 'Maths',
+                'subtopic' => 'Algebra',
+                'skill_level' => '101',
+            ])
+            ->feature('course.knowledge_interview')
+            ->userTurn($text);
     }
 
     private function gateway(): Gateway

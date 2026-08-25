@@ -46,6 +46,8 @@ final class PendingCall
 
     private ?Tier $sessionTier = null;
 
+    private ?string $userTurn = null;
+
     /** @var (Closure(JsonSchema): array<string, Type>)|null */
     private ?Closure $schema = null;
 
@@ -98,6 +100,31 @@ final class PendingCall
     public function messages(iterable $messages): self
     {
         $this->messages = $messages;
+
+        return $this;
+    }
+
+    /**
+     * Send this text as the newest user message, in place of the rendered
+     * prompt body.
+     *
+     * A conversational prompt (`output: stream`) is a brief, not a turn: it
+     * tells the model how to run the conversation, and every turn after the
+     * first carries the person's own words instead. So when a turn is set the
+     * brief renders into the instructions and this text is what the provider
+     * receives as the message. `messages()` supplies everything said before.
+     *
+     * Restricted to streamed prompts on purpose -- it is the one way to send
+     * text a prompt file did not produce, and only a conversation has any.
+     *
+     * Pre: the prompt declares `output: stream` and `$text` is not blank.
+     * Post: the provider gets [rendered brief as instructions | messages() as
+     *       history | this as the newest user message], and the usage row is
+     *       still attributed to this prompt key.
+     */
+    public function userTurn(string $text): self
+    {
+        $this->userTurn = $text;
 
         return $this;
     }
@@ -163,7 +190,7 @@ final class PendingCall
 
         try {
             $response = $agent->prompt(
-                $this->prompt->render($this->vars),
+                $this->outgoing(),
                 model: $model,
                 timeout: $this->timeout,
             );
@@ -197,15 +224,41 @@ final class PendingCall
         $startedAt = hrtime(true);
 
         return $this->agent()
-            ->stream($this->prompt->render($this->vars), model: $model, timeout: $this->timeout)
+            ->stream($this->outgoing(), model: $model, timeout: $this->timeout)
             ->then(fn (AgentResponse $response) => $this->record($tier, $model, $response, $startedAt));
     }
 
     private function agent(): GatewayAgent
     {
+        $instructions = $this->systemPrompt();
+
         return $this->schema instanceof Closure
-            ? new StructuredGatewayAgent($this->instructions, $this->messages, $this->tools, $this->schema)
-            : new GatewayAgent($this->instructions, $this->messages, $this->tools);
+            ? new StructuredGatewayAgent($instructions, $this->messages, $this->tools, $this->schema)
+            : new GatewayAgent($instructions, $this->messages, $this->tools);
+    }
+
+    /**
+     * The text the provider receives as the newest user message.
+     */
+    private function outgoing(): string
+    {
+        return $this->userTurn ?? $this->prompt->render($this->vars);
+    }
+
+    /**
+     * The system prompt.
+     *
+     * A conversation whose caller named no instructions gets the prompt's own
+     * brief -- the turn displaced it from the message slot, and dropping it
+     * would leave the model running the interview with no instructions at all.
+     */
+    private function systemPrompt(): string
+    {
+        if ($this->instructions !== '') {
+            return $this->instructions;
+        }
+
+        return $this->userTurn === null ? '' : $this->prompt->render($this->vars);
     }
 
     private function record(Tier $tier, string $model, AgentResponse $response, int $startedAt): UsageEvent
@@ -268,6 +321,21 @@ final class PendingCall
             throw new LogicException(
                 "Prompt [{$this->prompt->key}] declares output [{$this->prompt->outputContract()}]; call stream() instead."
             );
+        }
+
+        if ($this->userTurn !== null) {
+            if ($this->prompt->output !== PromptOutput::Stream) {
+                throw new LogicException(
+                    "Prompt [{$this->prompt->key}] declares output [{$this->prompt->outputContract()}] and is not a "
+                    .'conversation; only a streamed prompt takes a user turn.'
+                );
+            }
+
+            if (trim($this->userTurn) === '') {
+                throw new LogicException(
+                    "Call to prompt [{$this->prompt->key}] supplies an empty user turn; there is nothing to answer."
+                );
+            }
         }
 
         if ($this->feature === '') {
