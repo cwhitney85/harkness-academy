@@ -25,6 +25,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property string $plan
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -34,6 +35,21 @@ class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * Column defaults this model applies before the database gets a say.
+     *
+     * `plan` is duplicated from `config/courses.php` and from the migration's
+     * schema default, because a freshly created model does not read back what
+     * Postgres filled in -- so without this, the first thing to ask a new
+     * student for their plan gets null (spec 4.5.6.1). CoursesConfigTest pins
+     * all three together.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'plan' => 'standard',
+    ];
 
     /**
      * Get the attributes that should be cast.
