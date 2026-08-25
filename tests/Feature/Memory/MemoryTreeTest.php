@@ -194,6 +194,49 @@ class MemoryTreeTest extends TestCase
         }
     }
 
+    #[Test]
+    public function a_document_read_names_the_version_that_holds_it(): void
+    {
+        $user = User::factory()->create();
+
+        $this->tree()->put($user, self::WK, 'first');
+        $this->tree()->put($user, self::WK, 'second');
+
+        $document = $this->tree()->document($user, self::WK);
+
+        $this->assertNotNull($document);
+        $this->assertSame(self::WK, $document->path);
+        $this->assertSame('second', $document->content);
+
+        // The pin must survive later writes: that is the whole point of
+        // recording it (ledger D10.1).
+        $this->tree()->put($user, self::WK, 'third');
+
+        $pinned = MemoryVersion::query()->findOrFail($document->versionId);
+
+        $this->assertSame('second', $pinned->content);
+        $this->assertSame('third', $this->tree()->get($user, self::WK));
+    }
+
+    #[Test]
+    public function a_document_read_of_an_empty_path_is_null(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertNull($this->tree()->document($user, self::WK));
+    }
+
+    #[Test]
+    public function a_document_read_cannot_see_another_students_file(): void
+    {
+        $mine = User::factory()->create();
+        $theirs = User::factory()->create();
+
+        $this->tree()->put($theirs, self::WK, 'theirs');
+
+        $this->assertNull($this->tree()->document($mine, self::WK));
+    }
+
     private function tree(): MemoryTree
     {
         return app(MemoryTree::class);

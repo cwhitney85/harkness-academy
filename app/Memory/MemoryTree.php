@@ -39,6 +39,39 @@ final class MemoryTree
     }
 
     /**
+     * Read the document at a path, together with the version holding it.
+     *
+     * What `get` returns, plus the identity of the text -- for a caller that
+     * has to record which version it read (spec 4.5.4.1, ledger D10.1).
+     *
+     * Both halves come from the same `memory_versions` row, so the returned
+     * `versionId` cannot name a version whose content is something else.
+     *
+     * @param  string  $path  a valid memory path (spec 3.2); otherwise a caller bug.
+     * @return MemoryDocument|null null when the user has no document there.
+     *
+     * @throws InvalidMemoryPath
+     */
+    public function document(User $user, string $path): ?MemoryDocument
+    {
+        $path = MemoryPath::parse($path);
+
+        $version = MemoryVersion::query()
+            ->join('memories', 'memories.id', '=', 'memory_versions.memory_id')
+            ->where('memories.user_id', $user->id)
+            ->where('memories.path', $path->value)
+            ->orderByDesc('memory_versions.version')
+            ->select('memory_versions.id', 'memory_versions.content')
+            ->first();
+
+        if ($version === null) {
+            return null;
+        }
+
+        return new MemoryDocument($path->value, $version->content, $version->id);
+    }
+
+    /**
      * Write the document at a path, creating it if it does not exist.
      *
      * Post: `get` returns exactly this content, and one version row records
