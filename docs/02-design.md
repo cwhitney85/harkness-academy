@@ -167,3 +167,100 @@ Scope + boundaries + commit rules + exit ritual, versioned in-repo. Rejected: mi
 
 - **GUIDANCE.md is model-facing only** — read by exactly one consumer (lesson engine). User-facing syllabus view renders from the same frozen syllabus JSON; consistency by construction. CI check: no route/component reads GUIDANCE.md.
 - **Skill level ⊥ billing tier** (founder correction): 101/201/301 is pedagogy, price is economics. Depth = f(skill_level, plan); v1 plan is constant. 101 may legitimately be *longer* than 301. Any future depth-gating enters through `plan`, never skill level.
+
+## D10. The syllabus is rows, and four smaller things 4.5 forced (resolved 2026-08-25, package 4 session, Colin)
+
+### D10.1 Syllabus drafts are their own table, pinned to the inputs they saw
+
+`course_syllabi`: one row per generation, carrying the JSON, the feedback that caused it, pointers to the exact WK and CRITERIA versions the model read, and `approved_at` on the one the student accepted. A partial unique index allows one approved row per course; a second index allows one row per generation, so a double-tapped Revise cannot produce two.
+
+Spec 4.5.4 said drafts persist on the course row. The load-bearing half — app state, not memory tree (D7) — is unchanged; only the storage moved. The spec text is amended.
+
+**Why the table.** Colin wants the rejected drafts and the feedback that killed them, as material for prompt tuning. That is a real consumer, and it is the one thing a column cannot serve: a column holds the current draft and forgets the argument that produced it.
+
+**Why the inputs are pinned.** WORKING_KNOWLEDGE accumulates across every course in a subtopic (D8), so a row storing only feedback and output would replay months later against a document the model never saw — training on a pair that never happened. `memory_versions` already records every `put` (3.1), so the pin costs two foreign keys and no new machinery.
+
+**`generation`, 1-based, not `revision`, 0-based.** A counter starting at zero is falsey, and app logic branching on it misreads the first one (Colin). The codebase already agreed: `courses.attempt` defaults to 1 and `memory_versions.version` starts at 1, so 0-based would have been the odd one out. Renaming is what keeps the change honest — "revision 1" would mean the original, which is not a revision. Generation 1 is the first generation, generations 2–4 are the three revisions 4.5.4 caps, and generation 5 never exists.
+
+**Row existence means successful generation.** A failed call writes no row, so the cap counts what the student actually saw rather than what was attempted.
+
+Rejected: three columns on `courses` (`syllabus_json`, `syllabus_revisions`, `syllabus_approved_at`) — literally what the spec said, one migration, no table, and the revision loop only ever needs the previous draft. YAGNI pointed here until prompt tuning was named as a consumer.
+Rejected: a live-draft column plus an append-only history table — one fact with two homes, which is what D7c exists to delete.
+Rejected: storing the fully rendered prompt text rather than version pointers — exact and self-contained, but duplicates content `memory_versions` already holds.
+
+Riders:
+- **The path API gained a version-aware read.** `MemoryTree::get()` returns content only, and `MemoryDoorTest` (3.2) fails any class under `app/` that names `MemoryVersion`, so package 4 could not learn which version it had read. `MemoryTree::document()` returns content and version id from the same row — one read rather than two, so no `put` can land between them and make the pin name a version the caller never used. `MemoryDocument` is the value it returns.
+- **`wk_version_id` gets a database foreign key but no Eloquent relation**, for the same door rule: a `belongsTo(MemoryVersion::class)` in `app/Models/` would trip the test. Package 4 records the identity of what it read and never dereferences it. Whatever eventually resolves a pin back to text goes through the path API.
+
+Revisit if prompt tuning never materialises: the table would then be keeping history nothing reads, and the column form was right.
+
+### D10.2 Concept slugs stay in the JSON; there is no concepts table
+
+The approved syllabus JSON is the slug vocabulary. `SyllabusConcepts` reads it and resolves downstream slugs (5.2.2, 5.4.2, 6.3, 6.4); packages 5 and 6 depend on that class, not on a schema package 4 invented for them.
+
+Rejected: a `course_concepts` table written at approval, with downstream slugs as foreign keys. Database-level integrity and full query-ability, but it designs package 6's schema before 6.4's requirements exist — precisely what D9 refused to do for `messages`. The 2.3.2 inventory gives 6.4 `scope_docs, scope_label`: documents, not concept rows. Nothing queries by concept yet.
+Rejected: test-only checking with no runtime resolution — cheapest, and catches nothing a fixture did not already anticipate.
+
+Rider: one rule the JSON schema cannot state is checked in code before any row is written — every slug in `final_exam_concepts` must be declared by a lesson section. That is 4.5.2's done-condition, and the exam is the first downstream consumer, inside the same document.
+
+Revisit when a screen filters or groups by concept. That is the trigger for the table, and the migration is a write-once backfill from approved JSON.
+
+### D10.3 GUIDANCE.md renders from a PHP class, not a Blade template
+
+A renderer class builds the markdown; a golden file is the contract.
+
+Blade would put model-facing text in `resources/views/`, the directory that holds user-facing things, and 4.5.3's CI check — no route or component reads GUIDANCE.md — would then need an exemption for its own template. A rule that starts life with an exception is weaker than one without.
+
+GUIDANCE also has nested repetition (lessons → sections → concepts), which is where flat-file templating stops paying for itself.
+
+Rejected: Blade in `resources/views/` — Laravel's default, easy golden-file test, fussy about markdown whitespace, and the exemption above.
+Rejected: a frontmatter-free file in a repo-root `templates/`, mirroring `prompts/` — the better answer the day Colin wants to tune teaching notes without touching code, but it needs a template engine for the nesting, and 2.3.2 already records GUIDANCE as *not* a prompt.
+
+Rider — **the `{lesson-slug}` segment is position-prefixed** (`01-letters-as-numbers`). Two lessons in one course may honestly carry the same title — "Practice", "Review" — and a bare title slug would put their notes at the same path, so the second would silently overwrite the first. The position makes the segment unique and sorts in teaching order for free. A title that transliterates to nothing falls back to the position alone.
+
+Revisit if teaching-note wording starts changing more often than the renderer's structure.
+
+### D10.4 A failed generation writes nothing and moves nothing
+
+Generation performs no transition at all. A failure leaves the course exactly where it stood, with no row written; a failed *revision* leaves it at `syllabus_revision` with the previous draft intact, so the student can retry or approve what they already have.
+
+This is D9's interview rule at a second site: transcript kept, course unmoved. `syllabus_draft` means "in the drafting stage", and the existence of a `course_syllabi` row is what answers "is there a draft?" — so there is no null-JSON special case for a caller to interpret.
+
+The one retry is a plain re-issue of the same call.
+
+**Corrected during implementation.** This decision was first drafted as "a failure leaves the course at `goals_interview`". That is unreachable: `GoalsInterview::next()` is `SyllabusDraft`, and `InterviewSession::summarize()` performs that transition inside the same transaction that writes COURSE_CRITERIA.md, so the course is already at `syllabus_draft` before generation is ever called. Following the row-existence rule instead removes the need for any transition here, which is the smaller design.
+
+Rejected: transitioning into `syllabus_draft` only on success — what the first draft said, and impossible without reopening 4.4.
+Rejected: a null draft meaning "generation failed" — a status that no longer means what it says.
+Rejected: an error status — explicit, but adds a state nothing may transition out of, and D7d already had to pin two such states shut.
+Rejected: a repair turn ("your last output was invalid") as the retry — better odds, but it breaks the cached prefix (2.4) and bills the invalid output back as input.
+
+### D10.5 `lessons` carries exactly what D7 listed
+
+Position, status, `guidance_path`, and nothing else. Titles and objectives are read from the approved syllabus JSON — the same source the student's syllabus view renders from, so the two cannot disagree.
+
+D7's organising rule decides it: the app queries position and status, and the model reads the material. `LessonStatus` ships with the two cases 4.5.5 needs, `locked` and `available`; package 5 owns what happens once a lesson is opened, and naming those states here would be package 4 guessing at package 5's lifecycle.
+
+Rejected: denormalising title, objective and slug onto the row — convenient for a lesson list, but the row and the JSON then drift, and a regenerated syllabus has two places to fix.
+Rejected: denormalising the whole lesson JSON — model-facing material in relational columns, against D7 outright.
+
+Revisit if a lesson list needs to sort or paginate by title. Same shape as D7d's deferred generated column, and the same answer for now.
+
+## D11. Plan is a string on `users`; the plans table is deferred with a named trigger (resolved 2026-08-25, package 4 session, Colin)
+
+`users.plan`, a string, defaulting to one configured value. 4.5.6's depth map stays config-keyed in `config/courses.php`, as the spec has it.
+
+The column ships with one value and no price, entitlement or branch attached — the pattern D6 already used for teaching style. Billing remains a v1 WONT.
+
+**Where Colin's instinct beats the D7b precedent.** D7b deferred `course_status_types` on the reasoning that a status needs code — a screen, a button, an arrow into it — before a row means anything. That argument does not transfer: a status's meaning *is* its arrows, which live in code and cannot move into a row, whereas a plan's meaning is its attributes — price, limits, entitlements — which are exactly what a row holds. Plans are a better lookup-table candidate than statuses ever were.
+
+**Why not yet.** Every attribute that would justify the table today is a billing attribute, and billing is a v1 WONT. The table would ship with one row whose only meaningful column is the string `users.plan` already holds, and would charge every user factory in packages 5, 6 and 7 for a seed with no consumer.
+
+**The trigger is named, unlike D7b's.** The foreign-key conversion happens the moment a plan carries its first real attribute — a price, a quota, anything a row can hold that a config key cannot. This is deferred on schedule, not on principle. A future session must read it that way.
+
+Rejected: a `Plan` enum with one case (my proposal) — right about avoiding a bare string, wrong about the eventual shape, since an enum cannot grow attributes and a plan will.
+Rejected: a `plans` table holding the depth parameters — gives the table real content in v1, but contradicts 4.5.6's config-keyed depth map, which would have to be reopened as its own decision.
+
+Riders:
+- **The default plan is written down three times**, and that is the design rather than an oversight: `config/courses.php` is the source of truth, the migration needs a schema default baked in at migrate time, and the model needs `$attributes` because a freshly created Eloquent model never reads back what Postgres filled in — without it the first caller to ask a new student for their plan gets null. `CoursesConfigTest` pins all three together.
+- **An unknown plan surfaces at depth resolution and nowhere else**, because that is the only thing in v1 that reads the column. The check lives where the value is consumed rather than at every site that passes it along.
