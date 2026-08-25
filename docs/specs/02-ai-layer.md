@@ -24,6 +24,7 @@
 | `syllabus.revise` | top | prev_syllabus_json, feedback, wk_doc, criteria_doc, depth_params | `json/syllabus.v1` | 4.5.4 |
 | `lesson.system` | mid | persona, criteria_doc, wk_doc, guidance_doc | system prompt of the one real agent | 5.1 |
 | `lesson.section` | (session) | section_index, section_title, section_concepts | streamed markdown | 5.2 |
+| `lesson.qa` | (session) | question | streamed markdown | 5.2 |
 | `checkpoint.generate` | cheap | section_transcript, guidance_section | `json/checkpoint.v1` | 5.2.1 |
 | `lesson.summarize` | mid | lesson_transcript, guidance_doc, checkpoint_results | `json/lesson-summary.v1` | 5.4 |
 | `wk.update` | mid | prior_wk_doc, lesson_summary_json | markdown (full replacement) | 5.4 |
@@ -32,7 +33,7 @@
 | `quiz.refresher` | cheap | scope_docs, scope_label | `json/quiz.v1` | 6.4/6.5 |
 | `explainer.select` | cheap | selection, surrounding_chunk, subtopic, skill_level | short markdown (≤200 words) | 5.5 |
 
-Deliberate absences: grading (code, 5.2.4), module rollup (derived, 3.3), GUIDANCE.md (template render, 4.5.3). `json/quiz.v1` = checkpoint schema generalized (n questions + scope); one schema, three consumers.
+Deliberate absences: grading (code, 5.2.4), module rollup (derived, 3.3), GUIDANCE.md (template render, 4.5.3). `lesson.qa` is a pass-through by design — the session's instructions are already `lesson.system`, so the file exists to name the call, carry the session tier, and give per-turn framing somewhere to live if tuning ever wants it (package 5 session, 2026-08-25). `json/quiz.v1` = checkpoint schema generalized (n questions + scope); one schema, three consumers.
 *Done: inventory ↔ codebase audit passes.*
 - **2.3.3 Composition & cache order — MUST.** `lesson.system` = [persona | criteria | wk | guidance], most-stable-first (matches 5.1 cached prefix); persona prepends only here. *Done: order unit test; persona edit leaves other prompts byte-identical.*
 - **2.3.4 Interview completion — MUST.** One tool `signal_complete(reason)`; Done button bypasses to same summarization. Provider-neutral. *Done: fake-provider test both paths.*

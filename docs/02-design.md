@@ -295,3 +295,19 @@ Spec 5.4.4 asks for "a regression test asserts every prior concept slug survives
 **It logs and lets the write through.** Spec 4.5.1's rule points this way: `memory_versions` still holds the previous document, so erosion is diffable and recoverable, while failing closed would park a completed lesson's pipeline over a document that is merely worse. Blocking would trade a recoverable problem for an unrecoverable one.
 
 Rider: the vocabulary spans the subtopic, not the course. WK accumulates across skill levels (D8), so a 201 course's update can erase what a 101 course recorded, and a course-scoped guard would not see it.
+
+## D14. A Q&A turn gets its own inventory row (resolved 2026-08-25, package 5 session, Colin)
+
+Ledger D5 makes free Q&A turns part of the lesson lifecycle and 5.2.5 names `qa` as a turn kind, but the 2.3.2 inventory had no prompt row for one. The package 5 build shipped Q&A billing under `lesson.section`'s key with a `lesson.qa` feature label, and flagged it rather than diverging. Colin's call: it gets its own row.
+
+**The case is cost attribution, not tidiness.** Q&A volume is the least predictable driver in a lesson's unit economics — a student who asks ten questions per section costs very differently from one who asks none, and every one of those turns bills at the session tier against a growing transcript. Sharing `lesson.section`'s key merged teaching and questioning into one `usage_events` bucket, so the number most worth knowing before the dogfood cycle was the one number that could not be read.
+
+**The row alone would not have been enough.** `PendingCall::userTurn()` displaces a prompt's body with the caller's text and `instructions()` displaces it again, so a `lesson.qa` file called that way would have had a body that never reached a provider — a label wearing a prompt's clothes, which breaks "prompts are files in `prompts/`" more quietly than the wrong key did. So the lesson path came off `userTurn()`: `lesson.qa`'s body is `{{ question }}` and is rendered as the outgoing message, exactly as `lesson.section`'s body is rendered as "Teach section N: …". Same bytes on the wire, live template, honest key.
+
+Rejected: a `lesson.qa` body carrying framing ("the student has interrupted; answer and return to teaching"). `lesson.system` already says that, and per-turn repetition of a cached instruction is cost with no content. The file is the place to put such framing *if tuning ever wants it*, which is the argument for the file, not for the framing.
+
+Riders:
+- **`tier: session`, and not merely for consistency.** Anthropic's cache is keyed per model, so a Q&A turn at any other tier would miss the whole `[persona | CRITERIA | WK | GUIDANCE]` prefix and pay to rewrite it mid-lesson.
+- **D9's rider survives in substance, not in mechanism.** It reads "`lesson.system` as instructions, the student's message as the turn" — still exactly true — but it was written expecting `userTurn()`. A future session reading D9 should not go looking for `userTurn()` in the lesson path.
+- **`PendingCall::userTurn()` now has one caller: interviews.** D9 introduced it as the general answer to "a conversational prompt is a brief, not a turn", and it is turning out to be interview-specific. Worth watching before package 6 builds a third conversation on it; not worth moving today.
+- **The change surfaced a live defect.** The old call passed the whole transcript as history *and* the question as the turn, so the student's words reached the model twice in two consecutive user turns. `LessonTranscript::messagesPreceding()` now stops the history short of the turn being answered — the same shape `InterviewSession::ask()` has always used. `LessonTranscript::messagesBefore()` was renamed `messagesBeforeSection()` in passing: its docblock claimed "up to and including" while the query excluded, and one of the two had to be wrong.

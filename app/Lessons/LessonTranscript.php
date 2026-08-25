@@ -128,16 +128,42 @@ final class LessonTranscript
     }
 
     /**
-     * Only what was said up to and including a section -- the context a
-     * section turn is regenerated from after a reconnect (5.2.6).
+     * Everything said in earlier sections, and nothing from this one -- the
+     * context a section turn is regenerated from after a reconnect (5.2.6).
      *
      * @return list<Message>
      */
-    public function messagesBefore(int $sectionIndex): array
+    public function messagesBeforeSection(int $sectionIndex): array
+    {
+        return $this->messagesWhere(fn (Builder $query): Builder => $query->where('section_index', '<', $sectionIndex));
+    }
+
+    /**
+     * Everything said before one turn, that turn excluded.
+     *
+     * The history half of a Q&A exchange. The student's question is already in
+     * the transcript by the time the call is built -- it has to be, or the
+     * tutor's reply would land at a lower position than the question it
+     * answers -- and the call sends it as the outgoing message. Handing it
+     * back as history too would put the same words in front of the model
+     * twice, in two consecutive user turns.
+     *
+     * @return list<Message>
+     */
+    public function messagesPreceding(LessonMessage $turn): array
+    {
+        return $this->messagesWhere(fn (Builder $query): Builder => $query->where('position', '<', $turn->position));
+    }
+
+    /**
+     * @param  \Closure(Builder<LessonMessage>): Builder<LessonMessage>  $scope
+     * @return list<Message>
+     */
+    private function messagesWhere(\Closure $scope): array
     {
         $messages = [];
 
-        foreach ($this->turns()->where('section_index', '<', $sectionIndex)->cursor() as $turn) {
+        foreach ($scope($this->turns())->cursor() as $turn) {
             $messages[] = $turn->speaker->message($turn->content);
         }
 

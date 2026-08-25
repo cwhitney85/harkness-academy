@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Lessons;
 
+use App\Ai\Tier;
+use App\Lessons\LessonTranscript;
 use App\Lessons\Speaker;
 use App\Lessons\Streaming\EventStream;
 use App\Lessons\Streaming\TurnKind;
 use App\Models\LessonMessage;
 use App\Models\Quiz;
+use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
@@ -72,6 +75,67 @@ class LessonQuestionTest extends SectionStreamTestCase
         $this->assertArrayNotHasKey('section_index', $start['data'], 'A Q&A turn has no section to draw.');
 
         $this->assertSame('turn.end', $events[count($events) - 1]['name'], 'No checkpoint follows a question.');
+    }
+
+    #[Test]
+    public function the_turn_bills_under_its_own_prompt_key_at_the_session_tier(): void
+    {
+        $this->scriptModel([
+            'A variable is a letter standing in for a number.',
+            $this->checkpointResponse(),
+            'Yes -- a letter can stand for a different number in a different problem.',
+        ]);
+
+        $frames = [];
+        $this->teach(1, $frames);
+
+        $this->ask('Can a letter stand for more than one number?')->assertOk();
+
+        $event = UsageEvent::query()->where('prompt_key', 'lesson.qa')->firstOrFail();
+
+        // Q&A volume is the least predictable cost in a lesson, so it gets its
+        // own bucket rather than sharing `lesson.section`'s (ledger D14).
+        $this->assertSame('lesson.qa', $event->feature);
+        $this->assertSame(Tier::Mid->value, $event->tier, 'Inherited from the session, so the cached prefix still hits.');
+
+        $this->assertSame(
+            1,
+            UsageEvent::query()->where('prompt_key', 'lesson.section')->count(),
+            'The teaching turn and the question are separate rows.',
+        );
+    }
+
+    #[Test]
+    public function the_question_is_sent_once_not_twice(): void
+    {
+        $this->scriptModel([
+            'A variable is a letter standing in for a number.',
+            $this->checkpointResponse(),
+            'Yes -- a letter can stand for a different number in a different problem.',
+        ]);
+
+        $frames = [];
+        $this->teach(1, $frames);
+
+        $question = 'Can a letter stand for more than one number?';
+
+        $this->ask($question)->assertOk();
+
+        // The question is the outgoing message; the history handed alongside
+        // it stops short of the question, so the model does not read the same
+        // words twice in two consecutive user turns.
+        $lesson = $this->lesson->fresh();
+        $transcript = new LessonTranscript($lesson);
+        $asked = LessonMessage::query()->where('speaker', Speaker::Student->value)->firstOrFail();
+
+        $history = $transcript->messagesPreceding($asked);
+
+        $this->assertCount(1, $history, 'Only the taught section precedes the question.');
+        $this->assertStringNotContainsString($question, (string) $history[0]->content);
+
+        // Trimmed: the prompt file's body is one placeholder and a newline,
+        // as every prompt file ends.
+        $this->assertSame($question, trim($this->sent[2]), 'The rendered `lesson.qa` body is the question itself.');
     }
 
     #[Test]

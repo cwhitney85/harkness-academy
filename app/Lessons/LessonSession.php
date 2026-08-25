@@ -127,7 +127,7 @@ final class LessonSession
                 // Everything said in earlier sections, and nothing from this
                 // one: a section is regenerated from the transcript that
                 // preceded it, so re-teaching it cannot see a half-turn.
-                ->messages($this->transcript->messagesBefore($index)),
+                ->messages($this->transcript->messagesBeforeSection($index)),
         );
 
         if ($message === null) {
@@ -145,15 +145,19 @@ final class LessonSession
      * that remembers answering it -- which is the whole reason the lesson is
      * one conversation rather than N independent calls.
      *
-     * Shaped exactly as ledger D9's rider says: `lesson.system` as the
-     * instructions, the student's message as the turn. **The prompt key is
-     * `lesson.section` and its rendered body is discarded**, because the 2.3.2
-     * inventory has no row for a Q&A turn and every call needs a key from it.
-     * The `feature` label is what separates these in the cost report. Worth a
-     * spec question: either 2.3.2 gains a `lesson.qa` row, or it records that
-     * a Q&A turn bills under `lesson.section` on purpose. The vars are passed
-     * anyway so that the call still renders sensibly if the instructions are
-     * ever dropped.
+     * Ledger D9's rider in substance -- `lesson.system` as the instructions,
+     * the student's message as the turn -- but reached by rendering
+     * `lesson.qa` rather than by `PendingCall::userTurn()`. Same bytes on the
+     * wire; the difference is that the prompt file is really a prompt. A key
+     * borrowed from `lesson.section` would have put teaching and questioning
+     * in one `usage_events` bucket, and Q&A volume is the least predictable
+     * cost in a lesson -- the one number you most want separated before
+     * dogfooding (ledger D14).
+     *
+     * `lesson.qa` runs at `tier: session` for a reason beyond consistency:
+     * Anthropic's cache is keyed per model, so a Q&A turn at any other tier
+     * would miss the whole `[persona | CRITERIA | WK | GUIDANCE]` prefix and
+     * pay to rewrite it in the middle of a lesson.
      *
      * @throws LessonNotOpenable
      */
@@ -165,7 +169,9 @@ final class LessonSession
 
         $turnId = (string) Str::uuid();
 
-        $this->transcript->append(
+        // Written down before it is answered, so the tutor's reply cannot land
+        // at a lower position than the question it answers.
+        $question = $this->transcript->append(
             TurnKind::Qa,
             Speaker::Student,
             $text,
@@ -181,16 +187,14 @@ final class LessonSession
             TurnKind::Qa,
             $index,
             $this->gateway
-                ->prompt('lesson.section', [
-                    'section_index' => (string) $index,
-                    'section_title' => $this->sections->title($index),
-                    'section_concepts' => $this->sections->conceptList($index),
-                ])
+                ->prompt('lesson.qa', ['question' => $text])
                 ->feature('lesson.qa')
                 ->for($this->lesson->course->user_id)
                 ->instructions($this->context->systemPromptFor($this->lesson))
-                ->messages($this->transcript->messages())
-                ->userTurn($text),
+                // The question is the outgoing message, so the history stops
+                // short of it -- sending both would put the same words in
+                // front of the model twice.
+                ->messages($this->transcript->messagesPreceding($question)),
         );
     }
 
