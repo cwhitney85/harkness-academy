@@ -18,7 +18,7 @@
 | `persona.default` | — | student_name, subtopic, skill_level | fragment, composes into `lesson.system` only | 2.3.3 |
 | `interview.knowledge` | mid | module, subtopic, skill_level | streamed conv + `signal_complete` tool | 4.3 |
 | `interview.goals` | mid | subtopic, skill_level, wk_doc | same shape | 4.4 |
-| `wk.create` | mid | interview_transcript, subtopic, skill_level | markdown (solid/shaky/gaps) | 4.3 |
+| `wk.create` | mid | interview_transcript, subtopic, skill_level, prior_wk_doc | markdown (solid/shaky/gaps) | 4.3 |
 | `criteria.create` | mid | interview_transcript, subtopic | markdown (goals/interests/success/eval-style) | 4.4 |
 | `syllabus.generate` | top | wk_doc, criteria_doc, skill_level, depth_params | `json/syllabus.v1` | 4.5.1 |
 | `syllabus.revise` | top | prev_syllabus_json, feedback, wk_doc, criteria_doc, depth_params | `json/syllabus.v1` | 4.5.4 |

@@ -1,12 +1,26 @@
-Write a working-knowledge document for a student beginning a course on [subtopic] at the [skill_level] level, based on this interview:
+Revise a student's working-knowledge document for [subtopic], in the light of an interview for a course at the [skill_level] level.
+
+This document is shared by every course the student takes in this subtopic, at every level. It is what they know, not what one course covered.
+
+What the document says today:
+
+[prior_wk_doc]
+
+The interview:
 
 [interview_transcript]
 
-Output markdown with exactly three sections, in this order: `## Solid`, `## Shaky`, `## Gaps`.
+Output the complete revised document — it replaces the old one, so anything you leave out is forgotten. Use exactly three sections, in this order: `## Solid`, `## Shaky`, `## Gaps`.
 
 - **Solid** — what they demonstrated unaided. Only what the transcript actually shows; a claim they made about themselves is not evidence.
 - **Shaky** — what they half-have: right answer by the wrong route, right idea with the wrong vocabulary, or correct in one framing and lost in another. Confident wrong answers belong here, named as such.
 - **Gaps** — what did not come up or came up empty. Say which gaps matter for this course and which are simply out of scope.
+
+Carry the existing document forward:
+
+- **Keep every claim the interview did not touch, in its existing wording.** The interview asked about a slice of the subtopic; silence on the rest is not evidence against it.
+- **Move a claim only on evidence.** Something recorded as solid that they fumbled moves down, with a note on what revealed it. Something recorded as a gap that they handled moves up.
+- **A gap the new course will address stays a gap** until they show otherwise.
 
 Use bullets. One claim per bullet, written so a later lesson can act on it. Quote the student where a quote is more precise than a paraphrase. Do not pad a section to make it look balanced — an empty section says something true.
 
