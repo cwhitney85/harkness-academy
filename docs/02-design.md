@@ -114,6 +114,19 @@ Rejected: level-scoped (`{module}/{subtopic}/{level}/WORKING_KNOWLEDGE.md`) — 
 Accepted cost, since retired by D7a: concurrent courses in one subtopic would have shared the document under 5.4.4's full-document replacement (last-writer-wins, plus 5.1 cached-prefix invalidation). D7a forbids the concurrency, so neither is reachable. The live risk is 4.3's blind `wk.create` instead — recorded as D7a's open item.
 Rider for 3.3: pointer lines dedupe by path — one line per subtopic with at least one completed course, naming the levels completed, not one line per course.
 
+## D9. How a conversation runs, and where its transcript lives (resolved 2026-08-24, package 4 session, Colin)
+
+Two decisions 4.3 forced, both with consequences past package 4.
+
+**A conversational prompt file is a system prompt, not a turn.** `interview.knowledge` and `interview.goals` are briefs — they tell the model how to run the conversation. The gateway could only send a rendered prompt file *as the message*, which is fine for the opening turn and useless after it: there was nowhere to put what the student typed. `PendingCall::userTurn()` sends the student's text as the message and renders the brief into the instructions instead. Restricted to `output: stream` prompts, so it cannot become a general way to send text no prompt file produced — the one guard that keeps "prompts are files in `prompts/`" true. The usage row still names the brief's key, because that is what framed the call.
+Rider for 5.2: lesson Q&A turns take the same shape — `lesson.system` as instructions, the student's message as the turn.
+
+**Interview transcripts get their own short-lived table.** `interview_messages`, keyed to the course and to which of its two interviews, deleted the moment the document they produced is written. Rows, not a JSON blob on the course, per D7.
+Rejected: building the general `messages` table now, shared with 5.2.6's lesson transcripts. Package 4 would be designing package 5's schema before 5.2.6's requirements (replay, reconnect, message ids) are known, and the two have opposite retention rules — lesson turns are kept, because 5.3 resumes from them; interview turns are garbage the moment they are summarized. One table holding both makes "is this row garbage?" a question you answer by reading a discriminator column.
+Rider: summarization runs when the stream *ends*, never inside the `signal_complete` tool call. The model is still writing when it calls the tool, so summarizing there would delete the transcript and then append the model's closing line to nothing. The student's Done button has no stream in flight and summarizes immediately; both doors reach the same method (2.3.4).
+Rider: an empty summary fails **closed** — transcript kept, course unmoved, student can end the interview again. 4.5.1's global rule points the same way here: failing closed destroys no progress, while writing the empty document would erase what earlier courses in the subtopic recorded (D7a).
+Accepted cost: a client that disconnects mid-stream after the model signalled leaves the interview un-summarized. It self-heals — the transcript is intact and the Done button still works — but nothing notices on its own.
+
 ## R1. Personas — **repo prompt files** (`prompts/styles/*.md`), `courses.style` column stores file key. Prompts are code until users can edit them.
 
 ## R2. PWA scope — **minimal**: manifest, icons, installable, responsive, iOS install-instructions page. No offline (v1.2 candidate).
