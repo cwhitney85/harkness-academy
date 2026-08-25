@@ -272,3 +272,26 @@ Riders:
   - a plan whose membership is not a static list — trials, grandfathered tiers, per-user overrides.
 
   Until one of those lands, adding a plan is a config edit and `users.plan` stays a string. Note that the third condition is the one most likely to arrive first and the least likely to be recognised: a single grandfathered user is enough to break a config list, and the temptation will be to special-case it in code rather than admit the list became data.
+
+## D12. The quiz tables land in package 5; package 6.1 lands the service over them (resolved 2026-08-25, package 5 session, Colin)
+
+Spec 6.1 owns "polymorphic `quizzes` + `quiz_attempts` serving all four types through one service". Spec 5.2.2 and 5.2.4 name both tables in **package 5's own** done-conditions — a checkpoint is a quiz, and grading one writes an attempt — so the lesson engine could not reach a done-condition without them. The dependency graph already drew `6.1 → 5` for exactly this reason, and 6.1 had not landed.
+
+**Decision: package 5 lands the schema half; package 6.1 lands the service half.** Both tables ship polymorphic and four-kind from the start, with `App\Assessment\QuizKind`, `QuestionSchema` and the `json/quiz.v1` schema class. Package 5 writes two kinds — `checkpoint` (5.2.1) and `homework` (5.4.1's chain) — and leaves `final` and `refresher` to 6.3 and 6.4.
+
+Rejected: narrow `checkpoints`/`checkpoint_answers` tables now, generalized by 6.1 later. A cleaner package boundary on paper, but it buys that boundary with a rewrite of 5.2.4's endpoint and its tests in the package 6 session, and the four kinds genuinely differ only in what they hang off.
+Rejected: stopping package 5 to run a 6.1-only session first. Strictly correct per the dependency graph and a whole session's cost for a schema that has one honest shape either way.
+
+Riders:
+- **The four kinds are named in the enum now, though package 5 writes two.** A half-listed vocabulary invites a second one.
+- **What a subtopic-grain refresher hangs off is deliberately not decided.** It is the one grain with no obvious row, and guessing at it here would be package 5 designing package 6 — the mistake D10.2 exists to refuse. `quizzable` is a morph; 6.4 decides what goes in it.
+- **`quizzes_one_per_scope` is an expression index, not a plain unique.** `section_index` is null for every kind but a checkpoint, and Postgres treats nulls as distinct, so a plain unique would let one lesson accumulate homework quizzes without limit. `COALESCE(section_index, -1)` needs no Postgres version floor, and −1 cannot collide because sections are numbered from one.
+- **The answer key lives in `payload` and never leaves the server unbidden.** 5.2.3's stripping is a method on the value object that reads the column, not a flag on it, so there is no argument anyone can get wrong.
+
+## D13. `wk.update`'s erosion guard reports and does not block (resolved 2026-08-25, package 5 session)
+
+Spec 5.4.4 asks for "a regression test asserts every prior concept slug survives". A regression test against a *faked* model asserts nothing about the model, so the guard was built as code — `ErosionGuard` diffs the concept vocabulary of every course in the subtopic across the update — and the three-lesson fixture became a regression test of the guard.
+
+**It logs and lets the write through.** Spec 4.5.1's rule points this way: `memory_versions` still holds the previous document, so erosion is diffable and recoverable, while failing closed would park a completed lesson's pipeline over a document that is merely worse. Blocking would trade a recoverable problem for an unrecoverable one.
+
+Rider: the vocabulary spans the subtopic, not the course. WK accumulates across skill levels (D8), so a 201 course's update can erase what a 101 course recorded, and a course-scoped guard would not see it.
