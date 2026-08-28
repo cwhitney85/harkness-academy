@@ -179,14 +179,42 @@ class SelectionExplainerTest extends SectionStreamTestCase
     }
 
     #[Test]
-    public function a_highlight_longer_than_the_cap_is_refused(): void
+    public function a_whole_section_is_a_legitimate_highlight(): void
+    {
+        $this->taughtSection();
+
+        $this->scriptModel(['This section leans on jargon; here it is in plain terms.']);
+
+        // The commonest real use is not a phrase. It is a section that assumed
+        // too much and gave no example, highlighted end to end (Colin,
+        // 2026-08-28). A cap tuned for phrases would refuse exactly that.
+        $this->explain(self::section())->assertOk();
+
+        $this->assertSame(1, UsageEvent::query()->where('prompt_key', 'explainer.select')->count());
+    }
+
+    #[Test]
+    public function a_highlight_longer_than_its_passage_is_refused(): void
+    {
+        $this->taughtSection();
+
+        // Bigger than the passage means it did not come from the passage, so
+        // it is text the client wrote and we are being asked to pay to read.
+        $this->explain(self::section().' And a paragraph the tutor never wrote.')
+            ->assertStatus(422);
+
+        $this->assertSame(0, UsageEvent::query()->where('prompt_key', 'explainer.select')->count());
+    }
+
+    #[Test]
+    public function an_absurd_body_is_refused_before_any_lookup(): void
     {
         $this->taughtSection();
 
         $this->actingAs($this->lesson->course->student)
             ->postJson("/lessons/{$this->lesson->id}/explanations", [
                 'message_id' => LessonMessage::query()->firstOrFail()->id,
-                'selection' => str_repeat('x', SelectionExplainer::MAX_SELECTION + 1),
+                'selection' => str_repeat('x', SelectionExplainer::PREFLIGHT_CEILING + 1),
             ])
             ->assertStatus(422);
     }
