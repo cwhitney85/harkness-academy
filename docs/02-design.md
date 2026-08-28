@@ -329,3 +329,29 @@ D14's defect is the reason this is written down. `InterviewSession::ask()` pops 
 **The trigger for revisiting the split itself:** a third conversation. If one arrives — a v1.1 notes panel, a tutor-initiated check-in, anything with a kept transcript and a turn loop — the rule has been copied twice and the abstraction has earned itself. Until then, copying twenty lines is cheaper than a base class that has to know about retention.
 
 Rejected: extracting a shared `Speaker` enum now. It encodes a fact about the provider (student speaks as user, tutor as assistant) rather than anything either package owns, which is a real argument for sharing it — but it would re-couple the two packages at exactly the seam D9 split, to save twelve lines that have never changed.
+
+## D16. The explainer's context is server state; the client sends only the highlight (resolved 2026-08-28, package 5 session)
+
+`explainer.select` declares four variables — `selection`, `surrounding_chunk`, `subtopic`, `skill_level` — and the obvious reading of a side-tab is that the client, which owns the selection, sends the passage around it too. **It does not.** The request names a `lesson_messages` row and quotes the highlight; the server reads the passage out of that row.
+
+**The case is the bill, not tidiness.** 5.5 is the one endpoint in the product that spends tokens without advancing anything: no section is taught, no progress moves, no row is written. A client-supplied `surrounding_chunk` would have made it an authenticated general-purpose completion — a few kilobytes of arbitrary text per request, on our account, indistinguishable in `usage_events` from honest use. Reading the passage server-side caps the client-authored text in the whole call at one 500-character highlight, and `throttle:20,1` caps the rate. Both bounds are cheap; neither is recoverable after launch if the endpoint ships open.
+
+**The passage is tutor text only.** A student's own Q&A turn is in the same transcript, and pointing at one would have re-opened the same hole through the back door — the student writes that row's content. So the row must be `speaker: tutor`. The cost of the rule is that a student cannot highlight their own question, which is not a thing anyone wants to do.
+
+**A highlight that is not in the source widens rather than failing.** Highlights are made against *rendered* markdown, so one spanning a `**` or a link never appears verbatim in what we stored. Normalising both sides and mapping offsets back is fragile and wrong in a way nothing would notice; a hard 422 makes the signature feature fail on the student's ordinary behaviour. So a miss sends the whole passage instead of a window. The only cost of a miss is tokens, and the model always has real context.
+
+Rejected: taking character offsets from the client and slicing the source with them. Same trust problem in a different coordinate system — offsets are as forgeable as text, and they still do not survive the markdown/rendered mismatch that motivated them.
+
+**The trigger for revisiting:** a student wanting to highlight something that is not a transcript row — a checkpoint option, a homework question, a syllabus line. None of those are in `lesson_messages`, and each would need its own passage source rather than a general "trust the client" escape.
+
+## D17. 5.6 is not strictly front-end; it splits at the first frame (resolved 2026-08-28, package 5 session)
+
+5.6 reads "first token <3s perceived; mobile-usable", with a manual phone check as its done-condition, and the session opened with a fair question: is this simply package 7's? **No — it has a server half, and the seam is the first frame on the wire.**
+
+**What the server owns.** Everything between the request arriving and the first byte leaving is our latency, and none of it is the provider's: session auth, the policy check, the openability pre-flight, the section lookup, the `in_progress` write. After that comes the part we do not control — assembling `[persona | CRITERIA | WK | GUIDANCE]` and waiting on the provider's first token. The engine already puts `turn.start` ahead of that boundary, so a client has a section title and an "N of M" to paint immediately; nothing pinned it there. And R4's "the host must not buffer SSE" is enforced by three headers that no test read. Both are now regression-tested in `StreamingFloorTest`.
+
+**What package 7 owns.** How fast the first token *feels* — a skeleton, a caret, delta paint cadence — and whether the screen is usable one-handed on a phone. That is rendering, and no amount of it can recover a budget the server has already spent.
+
+**What neither owns yet.** The done-condition itself. A phone on LTE is the only instrument that settles "perceived", and there is no device in this session. The engine tests stand in; they do not close the item, and 5.6 stays open until the manual check runs.
+
+**One residual risk, recorded rather than fixed.** Between `turn.start` and the provider's first streamed event the connection is silent, and `heartbeatIfDue()` cannot fire during it — PHP is blocked, and there is no concurrency to fire from. If a provider ever took longer than 15s to its first event, 5.2.6's heartbeat interval would be breached on that one window. In practice Anthropic emits `message_start` almost immediately, so the window is short. `EventStream`'s docblock claims heartbeats happen "around the calls that can stall … the wait for the first token" — read that as *the clock is reset immediately before each stall*, which is the best a synchronous transport can do, not as a beat during one.

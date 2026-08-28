@@ -6,8 +6,8 @@ Design ground rules (ledger D4/D5): the lesson session is the one real agent; co
 
 - **5.1 MUST** — Session bootstrap: context = [persona | CRITERIA | WK | GUIDANCE] cached prefix + transcript. *Done: order test; cache reads observed per 2.4.*
 - **5.3 MUST** — Resume: reopening restores transcript + section index. *Done: kill browser mid-section, resume, complete.*
-- **5.5 MUST** — Select-mode side-tab: selection → stateless `explainer.select` call → side panel; lesson transcript untouched. *Done: transcript byte-identical before/after use.*
-- **5.6 SHOULD** — Streaming UX floor: first token <3s perceived; mobile-usable. *Done: manual phone check over LTE.*
+- **5.5 MUST** — Select-mode side-tab: selection → stateless `explainer.select` call → side panel; lesson transcript untouched. *Done: transcript byte-identical before/after use.* Engine half only in package 5 (`POST /lessons/{lesson}/explanations`); the panel is package 7's, as 4.5.4's screen is. The passage is read server-side out of the transcript rather than sent by the client ([D16](../02-design.md)).
+- **5.6 SHOULD** — Streaming UX floor: first token <3s perceived; mobile-usable. *Done: manual phone check over LTE.* Splits at the first frame ([D17](../02-design.md)): package 5 owns everything before it — nothing whose latency the server does not control precedes `turn.start`, and no intermediary may buffer — and package 7 owns how the rest feels. The done-condition is package 7's to run and needs a phone; regression tests stand in until then.
 
 ## 5.2 Checkpoint contract & SSE vocabulary
 
