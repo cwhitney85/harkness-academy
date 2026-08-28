@@ -242,6 +242,25 @@ class SelectionExplainerTest extends SectionStreamTestCase
     }
 
     #[Test]
+    public function the_published_highlight_limit_is_the_one_actually_enforced(): void
+    {
+        $this->taughtSection();
+
+        $cap = $this->actingAs($this->lesson->course->student)
+            ->getJson("/lessons/{$this->lesson->id}")
+            ->json('limits.highlight_characters');
+
+        $this->assertIsInt($cap);
+
+        $this->scriptModel(['A letter used this way is called a variable.']);
+
+        // The number the screen draws its counter from has to be the number the
+        // server refuses at, or the screen is confidently wrong.
+        $this->explain(str_repeat('x', $cap))->assertOk();
+        $this->explain(str_repeat('x', $cap + 1))->assertStatus(422);
+    }
+
+    #[Test]
     public function another_student_cannot_use_the_side_tab(): void
     {
         $this->taughtSection();

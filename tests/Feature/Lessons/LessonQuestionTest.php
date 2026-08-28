@@ -169,6 +169,31 @@ class LessonQuestionTest extends SectionStreamTestCase
     }
 
     #[Test]
+    public function the_published_question_limit_is_the_one_actually_enforced(): void
+    {
+        $this->scriptModel([
+            'A variable is a letter standing in for a number.',
+            $this->checkpointResponse(),
+            'Yes -- a letter can stand for a different number in a different problem.',
+        ]);
+
+        $frames = [];
+        $this->teach(1, $frames);
+
+        $cap = $this->actingAs($this->lesson->course->student)
+            ->getJson("/lessons/{$this->lesson->id}")
+            ->json('limits.question_characters');
+
+        $this->assertIsInt($cap);
+
+        $this->ask(str_repeat('x', $cap))->assertOk();
+
+        $this->actingAs($this->lesson->course->student)
+            ->postJson("/lessons/{$this->lesson->id}/questions", ['text' => str_repeat('x', $cap + 1)])
+            ->assertStatus(422);
+    }
+
+    #[Test]
     public function another_student_cannot_ask_a_question_in_this_lesson(): void
     {
         $this->actingAs(User::factory()->create())

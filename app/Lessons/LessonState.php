@@ -69,6 +69,32 @@ final readonly class LessonState
             'sections' => $this->sectionRows(),
             'transcript' => $this->transcriptRows(),
             'checkpoints' => $this->checkpointRows(),
+            'limits' => self::limits(),
+        ];
+    }
+
+    /**
+     * The bounds the screen has to respect, in the units it measures in.
+     *
+     * Not state -- the same numbers on every lesson -- but they travel with the
+     * state because the alternative is the screen not knowing them. A limit the
+     * client cannot see is a limit the student discovers by being refused after
+     * they have already committed: highlighted the passage, pressed the button,
+     * waited. Published, the screen can say "that is about as much as the
+     * side-tab explains at once" while the selection is still being dragged.
+     *
+     * Each number is read from the class that enforces it, never restated here.
+     * A published limit that disagreed with the enforced one would be worse
+     * than no published limit at all -- it would make the screen confidently
+     * wrong.
+     *
+     * @return array<string, int>
+     */
+    private static function limits(): array
+    {
+        return [
+            'question_characters' => LessonSession::MAX_QUESTION,
+            'highlight_characters' => SelectionExplainer::MAX_SELECTION,
         ];
     }
 

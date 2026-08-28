@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Lessons\Exceptions\LessonNotOpenable;
 use App\Lessons\LessonProgress;
 use App\Lessons\LessonSections;
+use App\Lessons\LessonSession;
 use App\Lessons\LessonSessions;
 use App\Lessons\Streaming\EventStream;
 use App\Lessons\Streaming\StreamError;
@@ -40,7 +41,7 @@ class LessonQuestionController extends Controller
         $this->authorize('participate', $lesson);
 
         $validated = $request->validate([
-            'text' => ['required', 'string', 'min:1', 'max:4000'],
+            'text' => ['required', 'string', 'min:1', 'max:'.LessonSession::MAX_QUESTION],
         ]);
 
         try {

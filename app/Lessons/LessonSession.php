@@ -41,6 +41,17 @@ use Laravel\Ai\Streaming\Events\TextDelta;
  */
 final class LessonSession
 {
+    /**
+     * The longest question the session will answer.
+     *
+     * Generous, because a student explaining what confuses them is exactly
+     * when they need room, and every character is billed at the session tier
+     * against a growing transcript (ledger D14). Named rather than inlined at
+     * the route so `LessonState` can publish it: a limit the screen cannot see
+     * is a limit the student meets as a failed request.
+     */
+    public const MAX_QUESTION = 4000;
+
     private readonly LessonTranscript $transcript;
 
     private readonly LessonSections $sections;
