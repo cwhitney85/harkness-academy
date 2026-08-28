@@ -4,6 +4,8 @@ use App\Http\Controllers\Assessment\FinalExamController;
 use App\Http\Controllers\Assessment\FinalExamSittingController;
 use App\Http\Controllers\Assessment\HomeworkAnswerController;
 use App\Http\Controllers\Assessment\HomeworkController;
+use App\Http\Controllers\Assessment\RefresherAnswerController;
+use App\Http\Controllers\Assessment\RefresherController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,4 +41,21 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::post('courses/{course}/final-exam/sittings', [FinalExamSittingController::class, 'store'])
         ->name('courses.final-exam.sittings.store');
+
+    // Every one of these generates -- that is what a refresher is -- so every
+    // one of them spends tokens and is throttled. The tier is `cheap`, which
+    // is why the allowance is looser than the exam's.
+    Route::middleware('throttle:12,1')->group(function (): void {
+        Route::post('lessons/{lesson}/refreshers', [RefresherController::class, 'forLesson'])
+            ->name('lessons.refreshers.store');
+
+        Route::post('courses/{course}/refreshers', [RefresherController::class, 'forSubtopic'])
+            ->name('courses.refreshers.store');
+    });
+
+    Route::get('refreshers/{refresher}', [RefresherController::class, 'show'])
+        ->name('refreshers.show');
+
+    Route::post('refreshers/{refresher}/answers', [RefresherAnswerController::class, 'store'])
+        ->name('refreshers.answers.store');
 });
