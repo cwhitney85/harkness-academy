@@ -3,6 +3,7 @@
 namespace App\Lessons\Pipeline;
 
 use App\Ai\Gateway;
+use App\Assessment\HomeworkResults;
 use App\Lessons\Exceptions\LessonSummaryUnusable;
 use App\Memory\MemoryTree;
 use App\Models\Lesson;
@@ -11,8 +12,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * Step two: fold the lesson into what the student knows (spec 5.4.4).
  *
- * Full-document replacement -- prior WK plus the summary JSON in, the whole
- * new WK out. Anything the model leaves out is forgotten, which is why
+ * Full-document replacement -- prior WK, the summary JSON and the student's
+ * homework record for this subtopic in, the whole new WK out. Anything the model leaves out is forgotten, which is why
  * ErosionGuard reads the result before it is written and why every write goes
  * through the path API, which versions it (spec 3.2).
  *
@@ -52,6 +53,11 @@ final class UpdateWorkingKnowledge extends PipelineJob
             ->prompt('wk.update', [
                 'prior_wk_doc' => $prior,
                 'lesson_summary_json' => $summary->encode(),
+                // Homework cannot reach the model through the summary: this
+                // lesson's summary was written at step one and its homework is
+                // generated at step three, so what arrives here is the
+                // homework set after *earlier* lessons (spec 6.2).
+                'homework_results' => HomeworkResults::forSubtopicOf($lesson)->render(),
             ])
             ->feature('lesson.wk_update')
             ->for($lesson->course->user_id)

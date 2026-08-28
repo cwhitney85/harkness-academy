@@ -3,9 +3,11 @@
 namespace App\Lessons\Pipeline;
 
 use App\Ai\Gateway;
+use App\Assessment\QuizDocument;
 use App\Assessment\QuizKind;
 use App\Assessment\QuizSchema;
 use App\Assessment\Quizzes;
+use App\Courses\Syllabus\SyllabusConcepts;
 use App\Lessons\Exceptions\LessonSummaryUnusable;
 use App\Models\Lesson;
 
@@ -18,7 +20,9 @@ use App\Models\Lesson;
  * built from either alone is either off-target or off-syllabus.
  *
  * Serving this quiz to the student, and grading it, is package 6.2's half. All
- * this step owes is the row (ledger D12).
+ * this step owes is a row that can be served: the answer key is checked
+ * against the options here, and a concept slug the syllabus does not declare
+ * is dropped rather than carried into a later refresher (5.2.2's rule).
  */
 final class GenerateHomework extends PipelineJob
 {
@@ -52,13 +56,28 @@ final class GenerateHomework extends PipelineJob
             throw LessonSummaryUnusable::for($lesson, 'the model returned no structured homework.');
         }
 
+        $document = QuizDocument::in($response->structured, QuizKind::Homework);
+
+        // Fails **closed**, unlike a checkpoint. A checkpoint that will not
+        // generate costs the student a quiz they can walk past (5.2.1); an
+        // ungradable homework row is one the student meets later and cannot
+        // answer, and the chain's retries are free at this point because the
+        // lesson is already completed and irrevocable (5.4.5).
+        $defects = $document->defects();
+
+        if ($defects !== []) {
+            throw LessonSummaryUnusable::for($lesson, 'the homework cannot be graded: '.implode(' ', $defects));
+        }
+
         // Created through 6.1's service, which owns the one-per-lesson race
         // a concurrent chain can run (ledger D12).
         app(Quizzes::class)->create(
             QuizKind::Homework,
             $lesson,
             $lesson->course,
-            $response->structured,
+            $document->withResolvedTags(
+                SyllabusConcepts::of($lesson->course->approvedSyllabus)->declared(),
+            )->payload(),
         );
     }
 }
