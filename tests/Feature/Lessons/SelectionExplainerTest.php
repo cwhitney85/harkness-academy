@@ -11,6 +11,7 @@ use App\Models\LessonMessage;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
@@ -179,9 +180,33 @@ class SelectionExplainerTest extends SectionStreamTestCase
     }
 
     #[Test]
-    public function a_highlight_longer_than_the_cap_is_refused(): void
+    public function a_highlight_longer_than_the_cap_is_refused_in_words_a_student_can_act_on(): void
     {
         $this->taughtSection();
+
+        $response = $this->actingAs($this->lesson->course->student)
+            ->postJson("/lessons/{$this->lesson->id}/explanations", [
+                'message_id' => LessonMessage::query()->firstOrFail()->id,
+                'selection' => str_repeat('x', SelectionExplainer::MAX_SELECTION + 1),
+            ])
+            ->assertStatus(422);
+
+        // The client renders this verbatim, so it says what to do next rather
+        // than naming a form field and a number.
+        $message = $response->json('errors.selection.0');
+
+        $this->assertStringContainsString('shorter passage', (string) $message);
+        $this->assertStringNotContainsString('field', (string) $message);
+
+        $this->assertSame(0, UsageEvent::query()->where('prompt_key', 'explainer.select')->count());
+    }
+
+    #[Test]
+    public function an_over_cap_highlight_is_counted_so_the_cap_can_be_revisited(): void
+    {
+        $this->taughtSection();
+
+        Log::spy();
 
         $this->actingAs($this->lesson->course->student)
             ->postJson("/lessons/{$this->lesson->id}/explanations", [
@@ -189,6 +214,31 @@ class SelectionExplainerTest extends SectionStreamTestCase
                 'selection' => str_repeat('x', SelectionExplainer::MAX_SELECTION + 1),
             ])
             ->assertStatus(422);
+
+        // D16 says 500 is a chosen number whose revisit trigger is students
+        // hitting it. A 422 nobody counts makes that trigger unactionable.
+        Log::shouldHaveReceived('info')
+            ->withArgs(function (string $message, array $context): bool {
+                return str_contains($message, 'longer than the cap')
+                    && $context['characters'] === SelectionExplainer::MAX_SELECTION + 1
+                    && $context['cap'] === SelectionExplainer::MAX_SELECTION
+                    && $context['user_id'] === $this->lesson->course->user_id;
+            })
+            ->once();
+    }
+
+    #[Test]
+    public function a_highlight_at_the_cap_is_not_counted(): void
+    {
+        $this->taughtSection();
+
+        Log::spy();
+
+        $this->scriptModel(['A letter used this way is called a variable.']);
+
+        $this->explain(str_repeat('x', SelectionExplainer::MAX_SELECTION))->assertOk();
+
+        Log::shouldNotHaveReceived('info');
     }
 
     #[Test]

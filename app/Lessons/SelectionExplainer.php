@@ -37,6 +37,10 @@ final class SelectionExplainer
      * also the only place a caller could spend our tokens on something that is
      * not lesson text. A highlight is a phrase or a sentence; nothing about
      * the feature wants a page.
+     *
+     * A chosen number, not a default (ledger D16), whose revisit trigger is
+     * students hitting it -- which SelectionExplanationController logs, so the
+     * question has an answer when it is asked.
      */
     public const MAX_SELECTION = 500;
 
