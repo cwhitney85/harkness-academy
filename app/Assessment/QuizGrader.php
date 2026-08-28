@@ -72,7 +72,11 @@ final class QuizGrader
      *      offered by its question. An exam sent with a question missing is
      *      still gradable -- an unanswered question is simply wrong.
      * Post: one `quiz_attempts` row per answer given, all at the same attempt
-     *       number, and nothing about the answer key reaches the caller.
+     *       number, and nothing about the answer key reaches the caller. **Or
+     *       no rows at all**: every answer is checked before any is written,
+     *       so a malformed answer halfway down a submission cannot leave a
+     *       half-recorded sitting that the student's real attempt then has to
+     *       be numbered around.
      *
      * @param  array<string, string>  $answers  question id => option id
      *
@@ -81,18 +85,19 @@ final class QuizGrader
     public function sitting(Quiz $quiz, User $student, array $answers): Sitting
     {
         $document = QuizDocument::of($quiz);
-        $number = $this->nextSitting($quiz, $student);
 
         $marks = [];
 
         foreach ($answers as $questionId => $optionId) {
             $question = $this->answerable($quiz, (string) $questionId, $optionId);
 
-            $correct = $optionId === (string) $question['correct_option_id'];
+            $marks[(string) $questionId] = $optionId === (string) $question['correct_option_id'];
+        }
 
-            $this->record($quiz, $student, (string) $questionId, $optionId, $correct, $number);
+        $number = $this->nextSitting($quiz, $student);
 
-            $marks[(string) $questionId] = $correct;
+        foreach ($marks as $questionId => $correct) {
+            $this->record($quiz, $student, $questionId, $answers[$questionId], $correct, $number);
         }
 
         return Sitting::of($document, $number, $marks);
