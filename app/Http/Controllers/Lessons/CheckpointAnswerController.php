@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Lessons;
 
+use App\Assessment\Exceptions\UnansweredQuestion;
+use App\Assessment\QuizGrader;
 use App\Assessment\QuizKind;
 use App\Http\Controllers\Controller;
-use App\Lessons\Checkpoints\CheckpointGrader;
-use App\Lessons\Exceptions\UnansweredQuestion;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 class CheckpointAnswerController extends Controller
 {
-    public function store(Request $request, Lesson $lesson, Quiz $checkpoint, CheckpointGrader $grader): JsonResponse
+    public function store(Request $request, Lesson $lesson, Quiz $checkpoint, QuizGrader $grader): JsonResponse
     {
         $this->authorize('participate', $lesson);
 

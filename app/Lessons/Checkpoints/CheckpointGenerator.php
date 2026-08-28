@@ -4,13 +4,13 @@ namespace App\Lessons\Checkpoints;
 
 use App\Ai\Gateway;
 use App\Assessment\QuizKind;
+use App\Assessment\Quizzes;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Lessons\Exceptions\CheckpointUnusable;
 use App\Lessons\LessonSections;
 use App\Lessons\LessonTranscript;
 use App\Models\Lesson;
 use App\Models\Quiz;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -35,7 +35,10 @@ final class CheckpointGenerator
 
     private const FEATURE = 'lesson.checkpoint';
 
-    public function __construct(private readonly Gateway $gateway) {}
+    public function __construct(
+        private readonly Gateway $gateway,
+        private readonly Quizzes $quizzes,
+    ) {}
 
     /**
      * The checkpoint for one taught section, generating it if needed.
@@ -81,10 +84,7 @@ final class CheckpointGenerator
      */
     public function existing(Lesson $lesson, int $sectionIndex): ?Quiz
     {
-        return $lesson->quizzes()
-            ->ofKind(QuizKind::Checkpoint)
-            ->where('section_index', $sectionIndex)
-            ->first();
+        return $this->quizzes->existing(QuizKind::Checkpoint, $lesson, $sectionIndex);
     }
 
     /**
@@ -126,30 +126,19 @@ final class CheckpointGenerator
     }
 
     /**
-     * Store the checkpoint, or adopt the one that beat us to it.
+     * Store the checkpoint through 6.1's service.
      *
-     * Two clients reconnecting to the same freshly-taught section can both
-     * reach generation before either has written. The unique index decides,
-     * and the loser reads the winner's row rather than raising at the student.
+     * The create-or-adopt race two reconnecting clients can run lives there,
+     * once, for all four kinds (ledger D12).
      */
     private function persist(Lesson $lesson, int $sectionIndex, Checkpoint $checkpoint): Quiz
     {
-        try {
-            return $lesson->quizzes()->create([
-                'user_id' => $lesson->course->user_id,
-                'course_id' => $lesson->course_id,
-                'kind' => QuizKind::Checkpoint,
-                'section_index' => $sectionIndex,
-                'payload' => $checkpoint->payload(),
-            ]);
-        } catch (QueryException $e) {
-            $winner = $this->existing($lesson, $sectionIndex);
-
-            if ($winner instanceof Quiz) {
-                return $winner;
-            }
-
-            throw $e;
-        }
+        return $this->quizzes->create(
+            QuizKind::Checkpoint,
+            $lesson,
+            $lesson->course,
+            $checkpoint->payload(),
+            $sectionIndex,
+        );
     }
 }

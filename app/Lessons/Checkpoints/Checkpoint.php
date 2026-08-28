@@ -2,6 +2,8 @@
 
 namespace App\Lessons\Checkpoints;
 
+use App\Assessment\QuizDocument;
+use App\Assessment\QuizKind;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Lessons\Exceptions\CheckpointUnusable;
 use App\Models\Quiz;
@@ -9,7 +11,12 @@ use App\Models\Quiz;
 /**
  * One section's checkpoint, as a document (spec 5.2.2, 5.2.3).
  *
- * Two readers, two shapes, and this class is the only place that knows the
+ * The `json/checkpoint.v1` half of `App\Assessment\QuizDocument`: reading a
+ * quiz is the same job whichever kind it is (6.1), and what remains here is
+ * the two things only a checkpoint has -- the section it closes, and 5.2.1's
+ * fail-open acceptance rule.
+ *
+ * Two readers, two shapes, and QuizDocument is the only place that knows the
  * difference:
  *   - `payload()` is what `quizzes.payload` stores -- answer key included,
  *     byte-for-byte what the model produced, so 5.2.2's lossless round-trip
@@ -29,12 +36,9 @@ final readonly class Checkpoint
      *
      * @var list<string>
      */
-    public const ANSWER_KEY = ['correct_option_id', 'explanation'];
+    public const ANSWER_KEY = QuizDocument::ANSWER_KEY;
 
-    /**
-     * @param  array<string, mixed>  $document  a `json/checkpoint.v1` document
-     */
-    private function __construct(private array $document) {}
+    private function __construct(private QuizDocument $document) {}
 
     /**
      * Accept a model response as a checkpoint for this section.
@@ -53,47 +57,21 @@ final readonly class Checkpoint
      */
     public static function fromModel(array $response, int $sectionIndex, SyllabusConcepts $concepts): self
     {
-        $checkpoint = $response['checkpoint'] ?? null;
+        $document = QuizDocument::in($response, QuizKind::Checkpoint);
 
-        if (! is_array($checkpoint) || ! is_array($checkpoint['questions'] ?? null)) {
-            throw new CheckpointUnusable('The model returned no structured checkpoint.');
+        $defects = $document->defects();
+
+        if ($defects !== []) {
+            throw new CheckpointUnusable(implode(' ', $defects));
         }
 
-        // The model is told which section it is writing about, but the index
-        // is ours to know: a checkpoint filed under the wrong section would
-        // be shown after the wrong prose.
-        $checkpoint['section_index'] = $sectionIndex;
-
-        $seen = [];
-
-        foreach ($checkpoint['questions'] as $position => $question) {
-            $id = (string) ($question['id'] ?? '');
-
-            if ($id === '' || isset($seen[$id])) {
-                throw new CheckpointUnusable("Question id [{$id}] is missing or repeated.");
-            }
-
-            $seen[$id] = true;
-
-            $optionIds = array_map(
-                static fn (array $option): string => (string) $option['id'],
-                $question['options'],
-            );
-
-            if (count($optionIds) !== count(array_unique($optionIds))) {
-                throw new CheckpointUnusable("Question [{$id}] repeats an option id.");
-            }
-
-            // Grading compares the student's option id to this one, so a key
-            // pointing at nothing makes every answer wrong forever.
-            if (! in_array((string) $question['correct_option_id'], $optionIds, true)) {
-                throw new CheckpointUnusable("Question [{$id}] keys an option it does not offer.");
-            }
-
-            $checkpoint['questions'][$position]['concept_tag'] = self::resolveTag($question['concept_tag'] ?? null, $concepts);
-        }
-
-        return new self(['checkpoint' => $checkpoint]);
+        return new self(
+            // The model is told which section it is writing about, but the
+            // index is ours to know: a checkpoint filed under the wrong
+            // section would be shown after the wrong prose.
+            $document->withBodyField('section_index', $sectionIndex)
+                ->withResolvedTags($concepts->declared()),
+        );
     }
 
     /**
@@ -105,12 +83,12 @@ final readonly class Checkpoint
      */
     public static function of(Quiz $quiz): self
     {
-        return new self($quiz->payload);
+        return new self(QuizDocument::of($quiz));
     }
 
     public function sectionIndex(): int
     {
-        return (int) $this->document['checkpoint']['section_index'];
+        return (int) $this->document->body()['section_index'];
     }
 
     /**
@@ -120,7 +98,7 @@ final readonly class Checkpoint
      */
     public function payload(): array
     {
-        return $this->document;
+        return $this->document->payload();
     }
 
     /**
@@ -130,16 +108,7 @@ final readonly class Checkpoint
      */
     public function clientPayload(): array
     {
-        $document = $this->document;
-
-        foreach ($document['checkpoint']['questions'] as $position => $question) {
-            $document['checkpoint']['questions'][$position] = array_diff_key(
-                $question,
-                array_flip(self::ANSWER_KEY),
-            );
-        }
-
-        return $document;
+        return $this->document->clientPayload();
     }
 
     /**
@@ -149,13 +118,7 @@ final readonly class Checkpoint
      */
     public function question(string $questionId): ?array
     {
-        foreach ($this->document['checkpoint']['questions'] as $question) {
-            if ((string) $question['id'] === $questionId) {
-                return $question;
-            }
-        }
-
-        return null;
+        return $this->document->question($questionId);
     }
 
     /**
@@ -163,23 +126,6 @@ final readonly class Checkpoint
      */
     public function questions(): array
     {
-        return array_values($this->document['checkpoint']['questions']);
-    }
-
-    /**
-     * Keep a tag the syllabus declares; drop one it does not.
-     *
-     * 5.2.2 makes the tag a SHOULD -- "droppable without breaking the loop".
-     * An invented slug would otherwise flow into the summary and from there
-     * into a refresher quiz keyed on a concept no lesson ever taught, which is
-     * a worse outcome than one untagged question.
-     */
-    private static function resolveTag(mixed $tag, SyllabusConcepts $concepts): ?string
-    {
-        if (! is_string($tag) || $tag === '') {
-            return null;
-        }
-
-        return $concepts->has($tag) ? $tag : null;
+        return $this->document->questions();
     }
 }

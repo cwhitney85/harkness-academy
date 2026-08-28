@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lessons\Checkpoints;
+namespace App\Assessment;
 
 use App\Models\QuizAttempt;
 
@@ -8,8 +8,11 @@ use App\Models\QuizAttempt;
  * What the student learns by answering (spec 5.2.4).
  *
  * Exactly the three fields 5.2.4 names. The answer key travels here and
- * nowhere earlier: 5.2.3 strips it from the streamed checkpoint, and this is
- * the moment the student has earned it.
+ * nowhere earlier: 5.2.3 strips it from the served quiz, and this is the
+ * moment the student has earned it.
+ *
+ * Only the three kinds that teach produce one (QuizKind::disclosesAnswerKey).
+ * A final exam is sat as a whole and answers with an ExamResult instead.
  */
 final readonly class GradedAnswer
 {

@@ -14,6 +14,11 @@ namespace App\Assessment;
  * because the enum is the table's vocabulary and a half-listed vocabulary
  * invites a second one; package 6.1's service is what will write them
  * (ledger D12).
+ *
+ * The three predicates below are where the kinds actually differ. Each is
+ * asked in exactly one place -- the envelope by QuizDocument, the section
+ * index and repeatability by Quizzes -- so a fifth kind is a case arm here
+ * rather than a search for `if ($kind === ...)` across the assessment code.
  */
 enum QuizKind: string
 {
@@ -26,7 +31,7 @@ enum QuizKind: string
     /** Gates course completion (spec 6.3). */
     case Final = 'final';
 
-    /** Draws on recorded knowledge after the fact (spec 6.4). */
+    /** Draws on recorded knowledge after the fact (spec 6.4, 6.5). */
     case Refresher = 'refresher';
 
     /**
@@ -37,5 +42,54 @@ enum QuizKind: string
     public function isSectionScoped(): bool
     {
         return $this === self::Checkpoint;
+    }
+
+    /**
+     * The single top-level key of this kind's stored document.
+     *
+     * `json/checkpoint.v1` wraps its body in `checkpoint`; `json/quiz.v1`
+     * wraps its body in `quiz` (2.3.2 -- the second is the first generalized).
+     * Nothing else about the two documents differs, so this one method is the
+     * whole of what a reader needs to know to read either.
+     */
+    public function envelope(): string
+    {
+        return $this === self::Checkpoint ? 'checkpoint' : 'quiz';
+    }
+
+    /**
+     * Whether answering one question hands back the key to it (spec 5.2.4).
+     *
+     * True for the three kinds that teach: a checkpoint, homework and a
+     * refresher all exist to tell the student where they stand, and the
+     * explanation is the point of answering.
+     *
+     * **False for the final exam.** An exam measures rather than teaches, and
+     * a course may hold only one (`quizzes_one_per_scope`), so disclosing the
+     * key on a failed sitting would make the re-sit passable from memory --
+     * the gate would stop measuring anything. What a failed sitting returns
+     * instead is the score and the concepts missed, which is the signal ledger
+     * D7b named when it rejected a `failed` end state.
+     */
+    public function disclosesAnswerKey(): bool
+    {
+        return $this !== self::Final;
+    }
+
+    /**
+     * Whether one scope may hold more than one quiz of this kind.
+     *
+     * A checkpoint, a homework and a final exam are each written once for
+     * their scope and re-served thereafter -- that is what `quizzes_one_per_scope`
+     * enforces, and why reconnecting to a taught section costs nothing (5.2.6).
+     *
+     * A refresher is the opposite: taking one again next month is the entire
+     * point (6.4), and a stored-forever refresher would ask the same questions
+     * every time. The unique index excludes this kind, and this predicate is
+     * what the index predicate mirrors -- if one changes, so must the other.
+     */
+    public function isRepeatable(): bool
+    {
+        return $this === self::Refresher;
     }
 }

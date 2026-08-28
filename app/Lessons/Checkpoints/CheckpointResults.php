@@ -12,7 +12,7 @@ use App\Models\QuizAttempt;
  *
  * The `checkpoint_results` variable of `lesson.summarize`, and the reason that
  * prompt can say "the model interprets grades, never recomputes them": the
- * marks are already decided by CheckpointGrader, and this renders them.
+ * marks are already decided by QuizGrader, and this renders them.
  * Handing the model the questions and the raw answers instead would let a
  * summary disagree with the mark the student was shown.
  *

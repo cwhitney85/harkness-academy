@@ -5,9 +5,9 @@ namespace App\Lessons\Pipeline;
 use App\Ai\Gateway;
 use App\Assessment\QuizKind;
 use App\Assessment\QuizSchema;
+use App\Assessment\Quizzes;
 use App\Lessons\Exceptions\LessonSummaryUnusable;
 use App\Models\Lesson;
-use Illuminate\Database\QueryException;
 
 /**
  * Step three: homework aimed at what came out shaky (spec 6.2, riding 5.4.1).
@@ -52,21 +52,13 @@ final class GenerateHomework extends PipelineJob
             throw LessonSummaryUnusable::for($lesson, 'the model returned no structured homework.');
         }
 
-        try {
-            $lesson->quizzes()->create([
-                'user_id' => $lesson->course->user_id,
-                'course_id' => $lesson->course_id,
-                'kind' => QuizKind::Homework,
-                'section_index' => null,
-                'payload' => $response->structured,
-            ]);
-        } catch (QueryException $e) {
-            // A concurrent chain already wrote this lesson's homework. The
-            // unique index is the arbiter; one homework quiz is the outcome
-            // either way.
-            if (! $lesson->quizzes()->ofKind(QuizKind::Homework)->exists()) {
-                throw $e;
-            }
-        }
+        // Created through 6.1's service, which owns the one-per-lesson race
+        // a concurrent chain can run (ledger D12).
+        app(Quizzes::class)->create(
+            QuizKind::Homework,
+            $lesson,
+            $lesson->course,
+            $response->structured,
+        );
     }
 }
