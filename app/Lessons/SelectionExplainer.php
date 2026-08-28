@@ -3,7 +3,7 @@
 namespace App\Lessons;
 
 use App\Ai\Gateway;
-use App\Lessons\Exceptions\UnusableSelection;
+use App\Lessons\Exceptions\SelectionNotInLesson;
 use App\Models\Lesson;
 use App\Models\LessonMessage;
 
@@ -23,30 +23,22 @@ use App\Models\LessonMessage;
  * sideways: the tutor never learns it happened, and the summarizer never sees
  * it. The two live in the same UI and are different features.
  *
- * Pre: the student may participate in `$lesson`; `$source` is a tutor turn of
- *      that lesson's transcript; and the highlight is no longer than that
- *      turn, since a highlight is part of the passage it came from.
+ * Pre: the student may participate in `$lesson`, and `$source` is a tutor turn
+ *      of that lesson's transcript.
  * Post: markdown suitable for a side panel, one `usage_events` row under
  *       `explainer.select`, and zero rows written or changed anywhere else.
- *
- * **A whole section is a legitimate highlight.** The commonest real use is not
- * a phrase but a paragraph or a section that assumed too much and gave no
- * example, and a cap tuned for phrases would refuse exactly that (Colin,
- * 2026-08-28). So the bound is the passage, not a number: the highlight is
- * text we generated, and the ceiling on what we generated is the lesson.
  */
 final class SelectionExplainer
 {
     /**
-     * The size a request body is refused at, before any query runs.
+     * The longest highlight the endpoint will explain.
      *
-     * A pre-flight sanity bound, not the rule. The rule is that a highlight
-     * cannot be longer than the passage it came from, and that needs the
-     * passage -- so this stops an absurd body from reaching the database and
-     * `explain()` does the real check. Comfortably above the longest section
-     * a lesson has any business generating.
+     * The selection is the only text in the call the client authors, so it is
+     * also the only place a caller could spend our tokens on something that is
+     * not lesson text. A highlight is a phrase or a sentence; nothing about
+     * the feature wants a page.
      */
-    public const PREFLIGHT_CEILING = 20000;
+    public const MAX_SELECTION = 500;
 
     /**
      * How much of the passage travels on either side of the highlight.
@@ -68,20 +60,12 @@ final class SelectionExplainer
     /**
      * Explain a highlighted phrase, without disturbing the lesson.
      *
-     * @throws UnusableSelection
+     * @throws SelectionNotInLesson
      */
     public function explain(Lesson $lesson, LessonMessage $source, string $selection): string
     {
-        if ($source->lesson_id !== $lesson->id) {
-            throw UnusableSelection::fromAnotherLesson($source->id);
-        }
-
-        if ($source->speaker !== Speaker::Tutor) {
-            throw UnusableSelection::fromTheStudentsOwnWords($source->id);
-        }
-
-        if (mb_strlen($selection) > mb_strlen($source->content)) {
-            throw UnusableSelection::longerThanItsPassage($source->id);
+        if ($source->lesson_id !== $lesson->id || $source->speaker !== Speaker::Tutor) {
+            throw SelectionNotInLesson::message($source->id);
         }
 
         $course = $lesson->course;

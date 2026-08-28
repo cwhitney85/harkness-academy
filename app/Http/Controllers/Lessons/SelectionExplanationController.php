@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Lessons;
 
 use App\Http\Controllers\Controller;
-use App\Lessons\Exceptions\UnusableSelection;
+use App\Lessons\Exceptions\SelectionNotInLesson;
 use App\Lessons\SelectionExplainer;
 use App\Models\Lesson;
 use App\Models\LessonMessage;
@@ -16,11 +16,10 @@ use Illuminate\Http\Request;
  * The request names *which* transcript row the highlight came from and quotes
  * the highlight; it does not send the surrounding passage. The server reads
  * that out of `lesson_messages`, so the context in the call is always text the
- * tutor actually produced, and the highlight is bounded by that passage rather
- * than by a fixed length -- highlighting a whole section is the commonest real
- * use, and a cap tuned for phrases would refuse it. A client-supplied passage
- * would have turned an authenticated endpoint into a general-purpose
- * completion on our bill.
+ * tutor actually produced, and the only client-authored text in the whole call
+ * is a highlight capped at SelectionExplainer::MAX_SELECTION characters. A
+ * client-supplied passage would have turned an authenticated endpoint into a
+ * general-purpose completion on our bill.
  *
  * Not streamed. 5.2.5 permits it ("Explainer MAY ship non-streamed first") and
  * `explainer.select` declares `output: markdown`, which is the same decision
@@ -45,10 +44,7 @@ class SelectionExplanationController extends Controller
 
         $validated = $request->validate([
             'message_id' => ['required', 'integer'],
-            // A pre-flight ceiling only. The rule -- no longer than the
-            // passage it came from -- needs the passage, so SelectionExplainer
-            // enforces it once the row is in hand.
-            'selection' => ['required', 'string', 'min:1', 'max:'.SelectionExplainer::PREFLIGHT_CEILING],
+            'selection' => ['required', 'string', 'min:1', 'max:'.SelectionExplainer::MAX_SELECTION],
         ]);
 
         $source = $lesson->messages()->whereKey($validated['message_id'])->first();
@@ -59,7 +55,7 @@ class SelectionExplanationController extends Controller
 
         try {
             $explanation = $explainer->explain($lesson, $source, $validated['selection']);
-        } catch (UnusableSelection $e) {
+        } catch (SelectionNotInLesson $e) {
             abort(422, $e->getMessage());
         }
 
