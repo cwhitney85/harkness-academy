@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $user_id
- * @property int $course_id
+ * @property int|null $course_id
  * @property QuizKind $kind
  * @property string $quizzable_type
  * @property int $quizzable_id

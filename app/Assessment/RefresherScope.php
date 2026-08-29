@@ -30,7 +30,7 @@ final readonly class RefresherScope
         public RefresherGrain $grain,
         public Model $quizzable,
         public User $student,
-        public Course $course,
+        public ?Course $course,
         public string $label,
         public string $documents,
         public array $vocabulary,

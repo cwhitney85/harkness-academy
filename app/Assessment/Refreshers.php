@@ -5,21 +5,26 @@ namespace App\Assessment;
 use App\Ai\Gateway;
 use App\Assessment\Exceptions\RefresherNotAvailable;
 use App\Assessment\Exceptions\RefresherUnusable;
+use App\Courses\ModuleRollup;
+use App\Courses\SubtopicPointer;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Lessons\SummaryDocument;
 use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Quiz;
+use App\Models\User;
 use Throwable;
 
 /**
  * Quizzes that draw on what was recorded rather than on what was just taught
  * (spec 6.4).
  *
- * Two grains here -- one lesson and one subtopic -- and they differ only in
- * which documents the model is shown and which row the quiz hangs off. That is
- * why RefresherScope exists: build the scope, and generation is one path.
+ * Three grains -- one lesson, one subtopic, one module (6.5) -- and they
+ * differ only in which documents the model is shown and which row the quiz
+ * hangs off. That is why RefresherScope exists: build the scope, and
+ * generation is one path.
  *
  * **Every refresher is a new quiz.** `quizzes_one_per_scope` excludes this
  * kind (6.1's migration) because coming back to the same lesson next month and
@@ -41,6 +46,7 @@ final class Refreshers
         private readonly Gateway $gateway,
         private readonly MemoryTree $memory,
         private readonly Quizzes $quizzes,
+        private readonly ModuleRollup $rollup,
     ) {}
 
     /**
@@ -148,6 +154,60 @@ final class Refreshers
     }
 
     /**
+     * A refresher over a whole module (spec 6.5).
+     *
+     * Built by walking the 3.3 rollup's pointers and reading the document each
+     * one names. That is the point of the rollup being derived rather than
+     * materialised: `{module}/WORKING_KNOWLEDGE.md` is never written, so a
+     * quiz over a module has to be assembled from the subtopic documents that
+     * are, and the pointer list is the index of which those are.
+     *
+     * Hangs off the `modules` row, the one catalog row a course is always
+     * created from -- free text names a *subtopic* within a chosen module
+     * (4.1), so unlike a subtopic a module always exists.
+     *
+     * Anchored to no course: its vocabulary spans every subtopic the rollup
+     * points at, across levels, and naming one course would make
+     * `quizzes.course_id` say something untrue.
+     *
+     * @throws RefresherNotAvailable|RefresherUnusable
+     */
+    public function forModule(User $student, Module $module): Quiz
+    {
+        $label = "the module \"{$module->title}\"";
+
+        $pointers = $this->rollup->pointers($student, $module);
+
+        if ($pointers === []) {
+            throw RefresherNotAvailable::because($label, 'no subtopic under it has a knowledge record yet.');
+        }
+
+        $documents = [];
+
+        foreach ($pointers as $pointer) {
+            $document = $this->memory->get($student, $pointer->path);
+
+            if ($document !== null && trim($document) !== '') {
+                $documents[] = self::section($pointer->path, $document);
+            }
+        }
+
+        if ($documents === []) {
+            throw RefresherNotAvailable::because($label, 'every subtopic record under it is empty.');
+        }
+
+        return $this->generate(new RefresherScope(
+            grain: RefresherGrain::Module,
+            quizzable: $module,
+            student: $student,
+            course: null,
+            label: $label.' ('.$this->subtopicList($pointers).')',
+            documents: implode("\n\n", $documents),
+            vocabulary: $this->vocabularyOf($this->moduleCourses($student, $module)),
+        ));
+    }
+
+    /**
      * Write and store one refresher.
      *
      * @throws RefresherUnusable
@@ -157,6 +217,7 @@ final class Refreshers
         return $this->quizzes->create(
             QuizKind::Refresher,
             $scope->quizzable,
+            $scope->student,
             $scope->course,
             $this->askUntilUsable($scope)->payload(),
         );
@@ -228,6 +289,38 @@ final class Refreshers
         return $untraceable === []
             ? []
             : ['Question(s) ['.implode(', ', $untraceable).'] ask about something these documents do not record.'];
+    }
+
+    /**
+     * What the label names, so the model knows how wide it is casting.
+     *
+     * @param  list<SubtopicPointer>  $pointers
+     */
+    private function subtopicList(array $pointers): string
+    {
+        return implode(', ', array_map(
+            static fn (SubtopicPointer $pointer): string => $pointer->title,
+            $pointers,
+        ));
+    }
+
+    /**
+     * Every course this student has taken anywhere in the module, oldest first.
+     *
+     * @return list<Course>
+     */
+    private function moduleCourses(User $student, Module $module): array
+    {
+        /** @var list<Course> $courses */
+        $courses = Course::query()
+            ->where('user_id', $student->id)
+            ->where('module_slug', $module->slug)
+            ->with('approvedSyllabus')
+            ->orderBy('id')
+            ->get()
+            ->all();
+
+        return $courses;
     }
 
     /**

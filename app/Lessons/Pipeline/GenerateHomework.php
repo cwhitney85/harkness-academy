@@ -74,6 +74,7 @@ final class GenerateHomework extends PipelineJob
         app(Quizzes::class)->create(
             QuizKind::Homework,
             $lesson,
+            $lesson->course->student,
             $lesson->course,
             $document->withResolvedTags(
                 SyllabusConcepts::of($lesson->course->approvedSyllabus)->declared(),

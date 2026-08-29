@@ -279,7 +279,7 @@ class FinalExamTest extends AssessmentTestCase
         $this->scriptModel([$this->examResponse()]);
         $first = app(FinalExam::class)->open($course);
 
-        $second = app(Quizzes::class)->create(QuizKind::Final, $course, $course, $this->examResponse());
+        $second = app(Quizzes::class)->create(QuizKind::Final, $course, $course->student, $course, $this->examResponse());
 
         $this->assertSame($first->id, $second->id);
     }

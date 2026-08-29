@@ -106,4 +106,32 @@ abstract class AssessmentTestCase extends LessonEngineTestCase
     {
         return LessonSections::of($lesson)->declaredConcepts();
     }
+
+    /**
+     * A `json/quiz.v1` refresher, one question per slug.
+     *
+     * @param  list<string>  $slugs
+     * @return array<string, mixed>
+     */
+    protected function refresherResponse(array $slugs): array
+    {
+        return [
+            'quiz' => [
+                'scope' => 'A warm-up',
+                'questions' => array_map(static fn (string $slug): array => [
+                    'id' => "r-{$slug}",
+                    'prompt' => "A question about {$slug}, on a different example.",
+                    'options' => [
+                        ['id' => 'a', 'text' => 'The right answer'],
+                        ['id' => 'b', 'text' => 'A plausible mistake'],
+                        ['id' => 'c', 'text' => 'Another plausible mistake'],
+                    ],
+                    'correct_option_id' => 'a',
+                    'explanation' => "Because of {$slug}.",
+                    'concept_tag' => $slug,
+                ], $slugs),
+                'suggested_reading' => [],
+            ],
+        ];
+    }
 }

@@ -10,6 +10,7 @@ use App\Assessment\Refreshers;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,16 @@ class RefresherController extends Controller
         $this->authorize('participate', $course);
 
         return $this->generated(fn (): Quiz => $refreshers->forSubtopic($course));
+    }
+
+    public function forModule(Request $request, Module $module, Refreshers $refreshers): JsonResponse
+    {
+        // No policy: a module is catalog, and the refresher is built from this
+        // student's own records under it. There is nothing here belonging to
+        // anyone else to authorize against.
+        $student = $request->user();
+
+        return $this->generated(fn (): Quiz => $refreshers->forModule($student, $module));
     }
 
     public function show(Request $request, Quiz $refresher): JsonResponse

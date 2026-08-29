@@ -93,6 +93,7 @@ final class FinalExam
         $exam = $this->exam($course) ?? $this->quizzes->create(
             QuizKind::Final,
             $course,
+            $course->student,
             $course,
             $this->askUntilUsable($course)->payload(),
         );

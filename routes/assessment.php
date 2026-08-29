@@ -51,6 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
         Route::post('courses/{course}/refreshers', [RefresherController::class, 'forSubtopic'])
             ->name('courses.refreshers.store');
+
+        Route::post('modules/{module}/refreshers', [RefresherController::class, 'forModule'])
+            ->name('modules.refreshers.store');
     });
 
     Route::get('refreshers/{refresher}', [RefresherController::class, 'show'])

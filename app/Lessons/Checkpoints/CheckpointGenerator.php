@@ -136,6 +136,7 @@ final class CheckpointGenerator
         return $this->quizzes->create(
             QuizKind::Checkpoint,
             $lesson,
+            $lesson->course->student,
             $lesson->course,
             $checkpoint->payload(),
             $sectionIndex,

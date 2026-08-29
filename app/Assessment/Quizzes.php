@@ -4,6 +4,7 @@ namespace App\Assessment;
 
 use App\Models\Course;
 use App\Models\Quiz;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -49,7 +50,8 @@ final class Quizzes
     public function create(
         QuizKind $kind,
         Model $quizzable,
-        Course $course,
+        User $student,
+        ?Course $course,
         array $payload,
         ?int $sectionIndex = null,
     ): Quiz {
@@ -60,9 +62,13 @@ final class Quizzes
             );
         }
 
+        if ($course instanceof Course && $course->user_id !== $student->id) {
+            throw new InvalidArgumentException("Course [{$course->id}] does not belong to this student.");
+        }
+
         $attributes = [
-            'user_id' => $course->user_id,
-            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'course_id' => $course?->id,
             'kind' => $kind,
             'quizzable_type' => $quizzable->getMorphClass(),
             'quizzable_id' => $quizzable->getKey(),

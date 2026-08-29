@@ -32,10 +32,10 @@ class QuizServiceTest extends AssessmentTestCase
         $quizzes = app(Quizzes::class);
 
         $created = [
-            $quizzes->create(QuizKind::Checkpoint, $lesson, $course, $this->checkpointResponse(1), 1),
-            $quizzes->create(QuizKind::Homework, $lesson, $course, $this->quizResponse()),
-            $quizzes->create(QuizKind::Final, $course, $course, $this->quizResponse()),
-            $quizzes->create(QuizKind::Refresher, $lesson, $course, $this->quizResponse()),
+            $quizzes->create(QuizKind::Checkpoint, $lesson, $course->student, $course, $this->checkpointResponse(1), 1),
+            $quizzes->create(QuizKind::Homework, $lesson, $course->student, $course, $this->quizResponse()),
+            $quizzes->create(QuizKind::Final, $course, $course->student, $course, $this->quizResponse()),
+            $quizzes->create(QuizKind::Refresher, $lesson, $course->student, $course, $this->quizResponse()),
         ];
 
         $this->assertSame(
@@ -74,8 +74,8 @@ class QuizServiceTest extends AssessmentTestCase
         $lesson = $this->lesson($course);
         $quizzes = app(Quizzes::class);
 
-        $first = $quizzes->create(QuizKind::Homework, $lesson, $course, $this->quizResponse());
-        $second = $quizzes->create(QuizKind::Homework, $lesson, $course, $this->quizResponse());
+        $first = $quizzes->create(QuizKind::Homework, $lesson, $course->student, $course, $this->quizResponse());
+        $second = $quizzes->create(QuizKind::Homework, $lesson, $course->student, $course, $this->quizResponse());
 
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Quiz::query()->ofKind(QuizKind::Homework)->count());
@@ -88,8 +88,8 @@ class QuizServiceTest extends AssessmentTestCase
         $lesson = $this->lesson($course);
         $quizzes = app(Quizzes::class);
 
-        $first = $quizzes->create(QuizKind::Refresher, $lesson, $course, $this->quizResponse());
-        $second = $quizzes->create(QuizKind::Refresher, $lesson, $course, $this->quizResponse());
+        $first = $quizzes->create(QuizKind::Refresher, $lesson, $course->student, $course, $this->quizResponse());
+        $second = $quizzes->create(QuizKind::Refresher, $lesson, $course->student, $course, $this->quizResponse());
 
         $this->assertNotSame($first->id, $second->id);
         $this->assertSame($second->id, $quizzes->latest(QuizKind::Refresher, $lesson)->id);
@@ -125,14 +125,14 @@ class QuizServiceTest extends AssessmentTestCase
         $this->assertTrue(QuizKind::Checkpoint->isSectionScoped());
 
         try {
-            $quizzes->create(QuizKind::Checkpoint, $lesson, $course, $this->checkpointResponse(1));
+            $quizzes->create(QuizKind::Checkpoint, $lesson, $course->student, $course, $this->checkpointResponse(1));
             $this->fail('A checkpoint without a section index should be refused.');
         } catch (InvalidArgumentException $e) {
             $this->assertStringContainsString('needs a section index', $e->getMessage());
         }
 
         try {
-            $quizzes->create(QuizKind::Final, $course, $course, $this->quizResponse(), 1);
+            $quizzes->create(QuizKind::Final, $course, $course->student, $course, $this->quizResponse(), 1);
             $this->fail('A final exam with a section index should be refused.');
         } catch (InvalidArgumentException $e) {
             $this->assertStringContainsString('has no section to index', $e->getMessage());
@@ -181,7 +181,7 @@ class QuizServiceTest extends AssessmentTestCase
         $course = $this->activeCourse();
         $lesson = $this->lesson($course);
 
-        $quiz = app(Quizzes::class)->create(QuizKind::Homework, $lesson, $course, $this->quizResponse());
+        $quiz = app(Quizzes::class)->create(QuizKind::Homework, $lesson, $course->student, $course, $this->quizResponse());
 
         $graded = app(QuizGrader::class)->grade($quiz, $course->student, 'h1', 'a');
 
@@ -200,7 +200,7 @@ class QuizServiceTest extends AssessmentTestCase
     public function an_answer_that_does_not_fit_its_question_is_a_malformed_request(): void
     {
         $course = $this->activeCourse();
-        $quiz = app(Quizzes::class)->create(QuizKind::Homework, $this->lesson($course), $course, $this->quizResponse());
+        $quiz = app(Quizzes::class)->create(QuizKind::Homework, $this->lesson($course), $course->student, $course, $this->quizResponse());
 
         $this->expectException(UnansweredQuestion::class);
 
@@ -211,7 +211,7 @@ class QuizServiceTest extends AssessmentTestCase
     public function a_final_exam_refuses_to_be_graded_one_answer_at_a_time(): void
     {
         $course = $this->activeCourse();
-        $quiz = app(Quizzes::class)->create(QuizKind::Final, $course, $course, $this->quizResponse());
+        $quiz = app(Quizzes::class)->create(QuizKind::Final, $course, $course->student, $course, $this->quizResponse());
 
         $this->expectException(LogicException::class);
 
