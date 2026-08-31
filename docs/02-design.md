@@ -361,3 +361,50 @@ Rejected: taking character offsets from the client and slicing the source with t
 **What neither owns yet.** The done-condition itself. A phone on LTE is the only instrument that settles "perceived", and there is no device in this session. The engine tests stand in; they do not close the item, and 5.6 stays open until the manual check runs.
 
 **One residual risk, recorded rather than fixed.** Between `turn.start` and the provider's first streamed event the connection is silent, and `heartbeatIfDue()` cannot fire during it — PHP is blocked, and there is no concurrency to fire from. If a provider ever took longer than 15s to its first event, 5.2.6's heartbeat interval would be breached on that one window. In practice Anthropic emits `message_start` almost immediately, so the window is short. `EventStream`'s docblock claims heartbeats happen "around the calls that can stall … the wait for the first token" — read that as *the clock is reset immediately before each stall*, which is the best a synchronous transport can do, not as a beat during one.
+
+## D18. What the quiz service owns, and what `quizzable` holds at each grain (resolved 2026-08-28, package 6 session)
+
+D12 split spec 6.1 in two and left three questions for this session. All three are answered here.
+
+**The service is the only writer.** `App\Assessment\Quizzes` creates every quiz and `App\Assessment\QuizGrader` writes every attempt — the rule MemoryTree holds for memory and CourseTransitions holds for `courses.status`. Package 5's `CheckpointGenerator` and `GenerateHomework` each carried their own copy of the create-or-adopt race; both now call the service, and `CheckpointGrader` is gone. Colin approved editing package 5's call sites for this: leaving them alone would have satisfied "do not modify other packages" while making 6.1's done-condition false by inspection.
+
+Consolidating found a defect in that duplicated race. A losing insert aborts the surrounding Postgres transaction, so the adopting SELECT that follows fails with "current transaction is aborted" and the loser raises at the student after all — the exact outcome the adopt was written to prevent. It only bites when the caller has opened a transaction, which is why the test suite (`RefreshDatabase`) found it and production had not. The service inserts inside a savepoint.
+
+**`quizzes_one_per_scope` excludes refreshers.** The index was written for the three kinds generated once and re-served. A refresher is the opposite: coming back to the same lesson next month is the point, and re-serving last month's questions is the "system has lost track of me" failure the prompt is written to avoid. A partial index (`WHERE kind <> 'refresher'`) rather than a new column, because the kind already says whether the scope is exclusive. The predicate mirrors `QuizKind::isRepeatable()`, and `QuizServiceTest` reads `pg_indexes` to hold the two together.
+
+**What each refresher grain hangs off**, the question D12 explicitly deferred:
+
+| Grain | `quizzable` | `course_id` |
+|---|---|---|
+| Lesson (6.4) | the `Lesson` | its course |
+| Subtopic (6.4) | the newest `Course` in the subtopic | that course |
+| Module (6.5) | the `Module` | **null** |
+
+Rejected for the subtopic grain: a `subtopics` row. A catalog row is a suggestion and not identity — a subtopic typed freehand has none at all (4.1) — so half of every student's subtopics would have nothing to hang from. Rejected: the `memories` row holding the subtopic's WORKING_KNOWLEDGE.md. It is the most accurate answer available and it is forbidden: a morph to `memories.id` is memory access outside the path API (3.2).
+
+`quizzes.course_id` becomes nullable for the module grain. The column means "the course whose syllabus declares the vocabulary these tags resolve against", and a module quiz spans every subtopic the rollup points at; naming one of them would make the column say something untrue rather than say nothing. Null means "more than one course", never "unknown".
+
+## D19. Homework reaches working knowledge as its own prompt variable, cumulatively (resolved 2026-08-28, package 6 session, Colin)
+
+6.2 says the homework result "feeds next WK update", and it cannot reach it through the summary: `lesson.summarize` runs at chain step one and `homework.generate` at step three, so lesson N's summary is finished before lesson N's homework exists. **`wk.update` gains a third input, `homework_results`** (2.3.2 updated, `prompts/wk/update.md` and `UpdateWorkingKnowledge` with it), rendered by code the way `checkpoint_results` is — the model interprets grades and never recomputes them.
+
+Rejected: firing a standalone `wk.update` when homework is submitted. No inventory change, but it doubles WK write frequency and cost, and "feeds next WK update" reads as feeding a call that already happens rather than adding one.
+
+**The variable is the student's whole homework record for the subtopic, not a delta.** The delta version has to decide whether an attempt predates the last WK update, and the only available comparison is `quiz_attempts.created_at` against `lesson_pipeline_steps.completed_at` — two clocks owned by different subsystems, written milliseconds apart, into `timestamp(0)` columns. Ordering them is a coin flip that either drops a student's homework or double-counts it. Widening both columns was tried and abandoned: Laravel's model date format truncates to the second regardless, so the fix would have been a migration *and* a `$dateFormat` override on two package-5 models, all to buy a delta that was never worth its own failure mode.
+
+The record is ordered structurally instead — course id, then lesson position, which is a total order because only one course per subtopic may be open at a time (D7a) — and the prompt is told it is a record rather than news. Late homework is picked up whenever it is finally done, and a full-document replacement re-reading evidence it has already absorbed changes nothing. The lesson's own homework is excluded: at step two it does not exist, and after a retry it exists unanswered, so reporting it would put "not answered" against every question of a quiz the student has not been shown.
+
+Rider: `AnsweredQuestions` now holds the first-attempt rule both `checkpoint_results` and `homework_results` depend on. Two copies of "the first attempt is the one that counts" is exactly the rule that drifts.
+
+## D20. An exam measures; it does not teach (resolved 2026-08-28, package 6 session, Colin)
+
+`quizzes_one_per_scope` holds a course to one final exam, so a re-sit after a failure is the same exam. That only measures anything if the first sitting did not hand back the answers.
+
+**A final exam never discloses `correct_option_id` or `explanation`** (`QuizKind::disclosesAnswerKey`), and it is sat as a whole rather than a question at a time — passing is a property of the set, and a per-question endpoint would hand out the answers mid-exam. What a sitting returns is the score and the concepts missed, which is precisely the signal D7b named when it rejected a `failed` end state: "the `quiz_attempts` row 6.1/6.3 already writes, which names the concepts missed rather than only the verdict."
+
+Rejected: full disclosure like a checkpoint (5.2.4). One grading path and simpler, but then the re-sit is passable from memory of the explanations and the gate stops measuring. Rejected: regenerating a fresh exam per sitting. It fixes the memorisation hole properly, but needs the index relaxed for `final` too and spends a `top`-tier generation per attempt.
+
+Two riders:
+
+- **"Scoped by `final_exam_concepts`" is checked in code**, not hoped for in the prompt: every concept the syllabus declared for the exam has to be reachable through some question, or the exam is regenerated once and then refused. Refused means the course has not moved and nothing was written (D10.4) — the exam fails *closed*, unlike a checkpoint, because nothing the student did is lost and failing open would put the meaning of the gate itself in doubt. A refresher fails closed too, and even more cheaply: it gates nothing.
+- **A sitting is all-or-nothing.** Every answer is validated before any is written, so a malformed answer halfway down a submission cannot leave a half-recorded sitting that the student's real attempt then has to be numbered around.
