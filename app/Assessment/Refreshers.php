@@ -238,7 +238,7 @@ final class Refreshers
                     ->prompt('quiz.refresher', $scope->promptVars())
                     ->feature(self::FEATURE)
                     ->for($scope->student)
-                    ->schema(QuizSchema::definition())
+                    ->schema(QuizSchema::definition(QuizLength::refresher()))
                     ->generate();
 
                 if (! is_array($response->structured)) {

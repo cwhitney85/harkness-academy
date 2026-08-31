@@ -14,4 +14,5 @@ Build the exam to the schema you have been given.
 - **Test transfer.** The exam is passed by someone who can use the material in a situation the course did not walk through, and failed by someone who memorized the lessons.
 - **Prefer questions that combine two concepts** over two questions that each test one. That is what a final exam is for.
 - **Every question carries its concept slug and its answer key.**
+- **Write between 8 and 12 questions.** The application passes or fails the student on the fraction they get right, so the number of questions decides what that fraction demands — a short exam turns every question into a make-or-break one.
 - **Make it passable by someone who did the work.** This is the last thing the student does in the course; it should be a fair account of it, not a gauntlet.

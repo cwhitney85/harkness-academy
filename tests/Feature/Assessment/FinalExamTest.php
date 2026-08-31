@@ -73,6 +73,30 @@ class FinalExamTest extends AssessmentTestCase
     }
 
     #[Test]
+    public function an_exam_too_short_to_grade_against_a_fraction_is_refused(): void
+    {
+        $course = $this->taughtCourse();
+
+        // Three questions covering all three concepts: correctly scoped, and
+        // still ungradable -- at a 0.7 pass mark it silently demands a perfect
+        // score, which is not the number anyone configured.
+        $short = $this->examResponse();
+        $short['quiz']['questions'] = array_slice($short['quiz']['questions'], 0, 3);
+
+        $this->scriptModel([$short, $short]);
+
+        try {
+            app(FinalExam::class)->open($course);
+            $this->fail('An exam too short to grade against a fraction should be refused.');
+        } catch (ExamUnusable $e) {
+            $this->assertStringContainsString('between 8 and 12 questions', $e->getMessage());
+        }
+
+        $this->assertSame(0, Quiz::query()->ofKind(QuizKind::Final)->count());
+        $this->assertSame(CourseStatus::Active, $course->refresh()->status);
+    }
+
+    #[Test]
     public function a_course_with_lessons_left_may_not_open_its_exam(): void
     {
         $course = $this->activeCourse();
@@ -90,9 +114,7 @@ class FinalExamTest extends AssessmentTestCase
         $this->scriptModel([$this->examResponse()]);
         app(FinalExam::class)->open($course);
 
-        $result = app(FinalExam::class)->sit($course->refresh(), [
-            'e1' => 'a', 'e2' => 'a', 'e3' => 'a',
-        ]);
+        $result = app(FinalExam::class)->sit($course->refresh(), $this->allCorrect());
 
         $this->assertTrue($result->passed);
         $this->assertSame(1.0, $result->sitting->score());
@@ -116,14 +138,15 @@ class FinalExamTest extends AssessmentTestCase
         $this->scriptModel([$this->examResponse()]);
         $exam = app(FinalExam::class)->open($course);
 
+        // Five of eight is 0.625, below the 0.7 pass mark.
         $result = app(FinalExam::class)->sit($course->refresh(), [
-            'e1' => 'a', 'e2' => 'b', 'e3' => 'b',
+            ...$this->allCorrect(), 'e2' => 'b', 'e3' => 'b', 'e4' => 'b',
         ]);
 
         $this->assertFalse($result->passed);
-        $this->assertSame(1, $result->sitting->correct);
-        $this->assertSame(3, $result->sitting->total);
-        $this->assertSame(['equation', 'inverse-operation'], $result->sitting->conceptsMissed);
+        $this->assertSame(5, $result->sitting->correct);
+        $this->assertSame(8, $result->sitting->total);
+        $this->assertSame(['equation', 'inverse-operation', 'variable'], $result->sitting->conceptsMissed);
         $this->assertSame(CourseStatus::Active, $result->standing);
 
         $course->refresh();
@@ -135,7 +158,7 @@ class FinalExamTest extends AssessmentTestCase
         // One row per answer, all at the same sitting number.
         $attempts = QuizAttempt::query()->where('quiz_id', $exam->id)->get();
 
-        $this->assertCount(3, $attempts);
+        $this->assertCount(8, $attempts);
         $this->assertSame([1], array_values(array_unique($attempts->pluck('attempt')->all())));
     }
 
@@ -150,7 +173,7 @@ class FinalExamTest extends AssessmentTestCase
         // raise the score.
         $result = app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a']);
 
-        $this->assertSame(3, $result->sitting->total);
+        $this->assertSame(8, $result->sitting->total);
         $this->assertSame(1, $result->sitting->correct);
         $this->assertFalse($result->passed);
     }
@@ -162,7 +185,7 @@ class FinalExamTest extends AssessmentTestCase
         $this->scriptModel([$this->examResponse()]);
         $first = app(FinalExam::class)->open($course);
 
-        app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a', 'e2' => 'b', 'e3' => 'b']);
+        app(FinalExam::class)->sit($course->refresh(), ['e1' => 'b', 'e2' => 'b', 'e3' => 'b']);
 
         // Nothing is generated a second time -- the model is not scripted for
         // another call, so a regeneration would fail this test loudly.
@@ -171,7 +194,7 @@ class FinalExamTest extends AssessmentTestCase
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Quiz::query()->ofKind(QuizKind::Final)->count());
 
-        $result = app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a', 'e2' => 'a', 'e3' => 'a']);
+        $result = app(FinalExam::class)->sit($course->refresh(), $this->allCorrect());
 
         $this->assertTrue($result->passed);
         $this->assertSame(2, $result->sitting->number);
@@ -207,11 +230,11 @@ class FinalExamTest extends AssessmentTestCase
         $course = $this->taughtCourse();
         $this->scriptModel([$this->examResponse()]);
         app(FinalExam::class)->open($course);
-        app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a', 'e2' => 'a', 'e3' => 'a']);
+        app(FinalExam::class)->sit($course->refresh(), $this->allCorrect());
 
         $this->expectException(ExamNotAvailable::class);
 
-        app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a', 'e2' => 'a', 'e3' => 'a']);
+        app(FinalExam::class)->sit($course->refresh(), $this->allCorrect());
     }
 
     #[Test]
@@ -235,7 +258,7 @@ class FinalExamTest extends AssessmentTestCase
         // is the score and the concepts missed (ledger D7b).
         $result = $this->actingAs($course->student)
             ->postJson("/courses/{$course->id}/final-exam/sittings", [
-                'answers' => ['e1' => 'b', 'e2' => 'b', 'e3' => 'b'],
+                'answers' => array_map(static fn (): string => 'b', $this->allCorrect()),
             ])
             ->assertOk()
             ->json();
@@ -285,6 +308,22 @@ class FinalExamTest extends AssessmentTestCase
     }
 
     /**
+     * Every question answered correctly.
+     *
+     * @return array<string, string>
+     */
+    private function allCorrect(): array
+    {
+        $answers = [];
+
+        foreach ($this->examResponse()['quiz']['questions'] as $question) {
+            $answers[$question['id']] = 'a';
+        }
+
+        return $answers;
+    }
+
+    /**
      * A `json/quiz.v1` exam covering all three of the syllabus's exam concepts.
      *
      * @return array<string, mixed>
@@ -293,11 +332,19 @@ class FinalExamTest extends AssessmentTestCase
     {
         $questions = [];
 
-        foreach ([
+        // Eight questions: the three tagged ones the scope check reads, plus
+        // five more so the exam is a legal length (QuizLength::exam).
+        $rows = [
             ['e1', 'variable', 'What does the letter in 3n + 2 stand for?'],
             ['e2', 'equation', 'Which of these is an equation?'],
             ['e3', 'inverse-operation', 'To undo "add 7", what do you do?'],
-        ] as [$id, $slug, $prompt]) {
+        ];
+
+        foreach (range(4, 8) as $n) {
+            $rows[] = ["e{$n}", 'variable', "A further question about variables, number {$n}."];
+        }
+
+        foreach ($rows as [$id, $slug, $prompt]) {
             $questions[] = [
                 'id' => $id,
                 'prompt' => $prompt,

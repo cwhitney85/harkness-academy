@@ -5,6 +5,7 @@ namespace Tests\Feature\Lessons;
 use App\Ai\Prompts\PromptRepository;
 use App\Ai\Tier;
 use App\Assessment\QuestionSchema;
+use App\Assessment\QuizLength;
 use App\Assessment\QuizSchema;
 use App\Lessons\Checkpoints\CheckpointSchema;
 use App\Lessons\LessonSummarySchema;
@@ -72,7 +73,7 @@ class CheckpointContractTest extends TestCase
         // Inventory 2.3.2: "one schema, three consumers". Both contracts build
         // their questions from QuestionSchema, so a change to what a question
         // is cannot land in one and miss the other.
-        $this->assertSame(['quiz'], array_keys(QuizSchema::definition()(new JsonSchemaTypeFactory)));
+        $this->assertSame(['quiz'], array_keys(QuizSchema::definition(QuizLength::homework())(new JsonSchemaTypeFactory)));
 
         foreach (['exam.final', 'quiz.refresher', 'homework.generate'] as $key) {
             $this->assertSame(QuizSchema::CONTRACT, $this->prompts()->get($key)->outputContract(), $key);

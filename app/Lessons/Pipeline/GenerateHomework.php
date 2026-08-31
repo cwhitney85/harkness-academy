@@ -5,6 +5,7 @@ namespace App\Lessons\Pipeline;
 use App\Ai\Gateway;
 use App\Assessment\QuizDocument;
 use App\Assessment\QuizKind;
+use App\Assessment\QuizLength;
 use App\Assessment\QuizSchema;
 use App\Assessment\Quizzes;
 use App\Courses\Syllabus\SyllabusConcepts;
@@ -49,7 +50,7 @@ final class GenerateHomework extends PipelineJob
             ])
             ->feature('lesson.homework')
             ->for($lesson->course->user_id)
-            ->schema(QuizSchema::definition())
+            ->schema(QuizSchema::definition(QuizLength::homework()))
             ->generate();
 
         if (! is_array($response->structured) || ! is_array($response->structured['quiz'] ?? null)) {

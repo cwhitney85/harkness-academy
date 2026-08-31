@@ -238,7 +238,7 @@ final class FinalExam
                     ->prompt('exam.final', $vars)
                     ->feature(self::FEATURE)
                     ->for($course->user_id)
-                    ->schema(QuizSchema::definition())
+                    ->schema(QuizSchema::definition(QuizLength::exam()))
                     ->generate();
 
                 if (! is_array($response->structured)) {
@@ -249,7 +249,11 @@ final class FinalExam
 
                 $document = QuizDocument::in($response->structured, QuizKind::Final)->withResolvedTags($scope);
 
-                $defects = [...$document->defects(), ...$this->uncovered($document, $scope)];
+                $defects = [
+                    ...$document->defects(),
+                    ...$this->uncovered($document, $scope),
+                    ...$this->misjudgedLength($document),
+                ];
 
                 if ($defects === []) {
                     return $document;
@@ -277,5 +281,30 @@ final class FinalExam
         return $missing === []
             ? []
             : ['It asks nothing about ['.implode(', ', $missing).'].'];
+    }
+
+    /**
+     * An exam the wrong length to grade against a fraction.
+     *
+     * The schema already states the range, and a provider that honours it will
+     * never reach this. It is checked again here because this is the one quiz
+     * whose length changes what passing means: `pass_mark` is a fraction, so a
+     * three-question exam quietly turns 0.7 into "get all three right". The
+     * two kinds that do not gate anything are left to the schema alone --
+     * failing a homework generation over a question count would park a
+     * completed lesson's pipeline for a cosmetic reason (5.4.5).
+     *
+     * @return list<string>
+     */
+    private function misjudgedLength(QuizDocument $document): array
+    {
+        $length = QuizLength::exam();
+        $asked = count($document->questions());
+
+        if ($asked >= $length->min && $asked <= $length->max) {
+            return [];
+        }
+
+        return ["It asks {$asked} questions; an exam graded against a pass mark needs {$length->describe()}."];
     }
 }
