@@ -1,5 +1,5 @@
 ---
-description: Start a package-8 interface session scoped to one section (usage: /interface 8.6, optionally /interface 8.6 items 8.6.1-8.6.3)
+description: Start a package-8 interface session scoped to one section (usage: /interface 8.7, optionally /interface 8.7 items 8.7.1-8.7.3)
 ---
 
 Build section $ARGUMENTS of `docs/specs/08-interface.md`. The design is settled — this session translates it, it does not redesign it.
@@ -24,11 +24,11 @@ If the browser tools are unavailable, say so and work from `docs/design/canvas/*
 | 8.2 Design language | `ALesson` (the full token set in its `:root`) |
 | 8.3 Material system | `QuizPhotocopy`, `ExamClosed`, `ExamBlueBook` |
 | 8.4 Application shell | `ALesson`, `LessonPhone` |
-| 8.5 Package 4's HTTP layer | **none — no mockup exists.** Derive from 8.2's language. The syllabus screens on page "First directions" are in *rejected* palettes; use them for layout only, never for colour or type. |
-| 8.6 Lesson screens | `ALesson`, `LessonPhone`, `CheckpointOptions` (C is chosen), `CheckpointPhone` (P1 is chosen) |
-| 8.7 Assessment screens | `QuizPhotocopy`, `ExamClosed`, `ExamBlueBook` |
-| 8.8 Course surfaces | **none — no mockup exists.** Derive from 8.2's language. |
-| 8.9 Flow map | none — read `routes/` |
+| 8.6 Package 4's HTTP layer | **none — no mockup exists.** Derive from 8.2's language. The syllabus screens on page "First directions" are in *rejected* palettes; use them for layout only, never for colour or type. |
+| 8.7 Lesson screens | `ALesson`, `LessonPhone`, `CheckpointOptions` (C is chosen), `CheckpointPhone` (P1 is chosen) |
+| 8.8 Assessment screens | `QuizPhotocopy`, `ExamClosed`, `ExamBlueBook` |
+| 8.9 Course surfaces | **none — no mockup exists.** Derive from 8.2's language. |
+| 8.5 Flow map | none — read `routes/`; **run this before 8.6** |
 
 Pages "A · dosage" and "First directions" are **superseded**. They record what was cut. Never copy from them.
 
@@ -55,6 +55,6 @@ Check every screen at 1440px **and** 390px before calling an item done. Browser-
 - Scope is section $ARGUMENTS only. Do not modify other packages.
 - If a spec gap appears, or a recorded decision looks wrong in practice, stop and ask — never diverge silently.
 - **If the visual language itself changes, `docs/design/canvas/` and `resources/css/app.css` change in the same commit** (8.1.3). Re-seed the canvas from the committed source and republish to the URL above; never extract the published page.
-- Commit at done-condition granularity, spec item number in the message (e.g. `8.6.3: the checkpoint asks from the margin`). No signing, co-author trailers, or attribution lines.
+- Commit at done-condition granularity, spec item number in the message (e.g. `8.7.3: the checkpoint asks from the margin`). No signing, co-author trailers, or attribution lines.
 
 End of session: update PLAN.md's package 8 row with which done-conditions now pass.

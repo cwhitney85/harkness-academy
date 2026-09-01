@@ -39,40 +39,42 @@
 - **8.4.5 WONT** — Dark mode (v1.1). Only light tokens are defined; the `.dark` block comes out of `app.css`. *Done: no `.dark` selector remains.*
 - **8.4.6 MUST** — The appearance switcher is hidden, since 8.4.5 leaves it nothing to switch to. The component stays in the tree for v1.1. *Done: `settings/appearance` is unreachable from the UI.*
 
-## 8.5 Package 4's missing HTTP layer
+## 8.5 Flow map
+
+*Built before 8.6, not after it: five of the twelve screens have no routes yet, so this map decides package 4's URL structure once and as a whole rather than one controller at a time.*
+
+- **8.5.1 MUST** — One diagram in this spec showing every transition between the twelve screens, including resume and failure paths, and naming the URL of each. *Done: every route in `routes/` appears as at least one edge, and every screen 8.6 will build has a URL named here before its controller is written.*
+
+## 8.6 Package 4's missing HTTP layer
 
 *Inherited, not new: package 4 shipped engine-only, so these routes have never existed. Package 4 owns them by subject and package 8 by schedule; recorded here so nothing falls between.*
 
-- **8.5.1 MUST** — Course creation: catalog browse, free-text creation, skill-level choice, over `CreateCourse::fromCatalog` / `::fromFreeText`. *Done: a course row exists after one pass with no developer touching the DB.*
-- **8.5.2 MUST** — Knowledge interview: streamed conversation with an always-visible Done button, over `Interviews::knowledge`. *Done: the transcript survives a reload; Done writes the WK document.*
-- **8.5.3 MUST** — Goals interview, same shape, over `Interviews::goals`. *Done: as 8.5.2, writing CRITERIA.*
-- **8.5.4 MUST** — Syllabus approve/revise (4.5.4) including the revision request field. *Done: approve advances the course; revise regenerates against the typed request.*
-- **8.5.5 MUST** — Level-mismatch banner (4.5.7) when `subtopic_mismatch` is non-null, non-blocking. *Done: a mismatched course still approves.*
+- **8.6.1 MUST** — Course creation: catalog browse, free-text creation, skill-level choice, over `CreateCourse::fromCatalog` / `::fromFreeText`. *Done: a course row exists after one pass with no developer touching the DB.*
+- **8.6.2 MUST** — Knowledge interview: streamed conversation with an always-visible Done button, over `Interviews::knowledge`. *Done: the transcript survives a reload; Done writes the WK document.*
+- **8.6.3 MUST** — Goals interview, same shape, over `Interviews::goals`. *Done: as 8.6.2, writing CRITERIA.*
+- **8.6.4 MUST** — Syllabus approve/revise (4.5.4) including the revision request field. *Done: approve advances the course; revise regenerates against the typed request.*
+- **8.6.5 MUST** — Level-mismatch banner (4.5.7) when `subtopic_mismatch` is non-null, non-blocking. *Done: a mismatched course still approves.*
 
-## 8.6 Lesson screens
+## 8.7 Lesson screens
 
-- **8.6.1 MUST** — Lesson screen consuming `LessonState`. *Done: reopening restores section and transcript (5.3).*
-- **8.6.2 MUST** — Streaming render off the five events (`turn.start`, `turn.delta`, `turn.end`, `checkpoint.ready`, `stream.error`), painting section title and "N of M" from `turn.start` before the first token. *Done: the header is populated while the body is still empty.*
-- **8.6.3 MUST** — Checkpoint as the margin question; at ≤767px it reduces to P1 — the hand becomes the question's lead-in line, brass rule beside the options (D23). *Done: at 390px the checkpoint is distinguishable from body prose without a container.*
-- **8.6.4 MUST** — Selection explainer over `POST /lessons/{}/explanations`, warning at the 500-character cap from `limits` while the selection is being dragged. *Done: an over-cap selection is refused client-side before a request is sent.*
-- **8.6.5 MUST** — Q&A composer honouring `limits.question_characters`. *Done: the counter reads the server's number, never a duplicated constant.*
-- **8.6.6 SHOULD** — Lesson completion state. *Done: completing advances the course and the rail updates without a reload.*
+- **8.7.1 MUST** — Lesson screen consuming `LessonState`. *Done: reopening restores section and transcript (5.3).*
+- **8.7.2 MUST** — Streaming render off the five events (`turn.start`, `turn.delta`, `turn.end`, `checkpoint.ready`, `stream.error`), painting section title and "N of M" from `turn.start` before the first token. *Done: the header is populated while the body is still empty.*
+- **8.7.3 MUST** — Checkpoint as the margin question; at ≤767px it reduces to P1 — the hand becomes the question's lead-in line, brass rule beside the options (D23). *Done: at 390px the checkpoint is distinguishable from body prose without a container.*
+- **8.7.4 MUST** — Selection explainer over `POST /lessons/{}/explanations`, warning at the 500-character cap from `limits` while the selection is being dragged. *Done: an over-cap selection is refused client-side before a request is sent.*
+- **8.7.5 MUST** — Q&A composer honouring `limits.question_characters`. *Done: the counter reads the server's number, never a duplicated constant.*
+- **8.7.6 SHOULD** — Lesson completion state. *Done: completing advances the course and the rail updates without a reload.*
 
-## 8.7 Assessment screens
+## 8.8 Assessment screens
 
-- **8.7.1 MUST** — Homework on the photocopy sheet, explanation revealed only after answering. *Done: the pre-answer DOM contains no `explanation` or `correct_option_id`.*
-- **8.7.2 MUST** — Final exam: closed book → opened, sat whole, handed in once. *Done: no per-question feedback appears before hand-in (6.3, D20).*
-- **8.7.3 MUST** — Exam result and the gate it holds, stating the 70% mark. *Done: pass and fail each render; a re-sit reopens the same exam.*
-- **8.7.4 MUST** — Refreshers at all three grains on the photocopy sheet. *Done: lesson, subtopic and module grains render from one component.*
+- **8.8.1 MUST** — Homework on the photocopy sheet, explanation revealed only after answering. *Done: the pre-answer DOM contains no `explanation` or `correct_option_id`.*
+- **8.8.2 MUST** — Final exam: closed book → opened, sat whole, handed in once. *Done: no per-question feedback appears before hand-in (6.3, D20).*
+- **8.8.3 MUST** — Exam result and the gate it holds, stating the 70% mark. *Done: pass and fail each render; a re-sit reopens the same exam.*
+- **8.8.4 MUST** — Refreshers at all three grains on the photocopy sheet. *Done: lesson, subtopic and module grains render from one component.*
 
-## 8.8 Course surfaces
+## 8.9 Course surfaces
 
-- **8.8.1 MUST** — Dashboard replacing the starter-kit placeholder: courses in progress, next action per course. *Done: `placeholder-pattern.tsx` has no remaining import.*
-- **8.8.2 SHOULD** — Module rollup view over `ModuleRollup`. *Done: a completed course's knowledge appears under its module.*
-
-## 8.9 Flow map
-
-- **8.9.1 MUST** — One diagram in this spec showing every transition between the twelve screens, including resume and failure paths. *Done: every route in `routes/` appears as at least one edge.*
+- **8.9.1 MUST** — Dashboard replacing the starter-kit placeholder: courses in progress, next action per course. *Done: `placeholder-pattern.tsx` has no remaining import.*
+- **8.9.2 SHOULD** — Module rollup view over `ModuleRollup`. *Done: a completed course's knowledge appears under its module.*
 
 ## 8.10 Amendments to existing plan documents
 
