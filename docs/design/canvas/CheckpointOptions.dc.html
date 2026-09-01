@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Instrument+Serif&family=Courier+Prime:wght@400;700&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
+      --rule:oklch(0.87 0.012 95); --pen:oklch(0.34 0.105 255);
+      --sheet:oklch(0.955 0.003 100); --toner:oklch(0.30 0.006 260);
+      --card:oklch(0.975 0.008 92); --cardline:oklch(0.885 0.030 245); --cardred:oklch(0.62 0.155 25);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .mono{font-family:"Courier Prime","Courier New",monospace;color:var(--toner)}
+    .pen{font-family:"Caveat",cursive;color:var(--wine)}
+    .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--wine);
+      border-bottom:1px solid var(--wine);padding-bottom:4px;margin-bottom:16px;display:block}
+    .lead{color:var(--muted);font-size:16px;margin:0 0 20px}
+    .act{font-family:"Newsreader",Georgia,serif;font-size:14px;letter-spacing:.13em;text-transform:uppercase;
+      background:var(--wine);color:oklch(0.97 0.010 60);border:none;padding:10px 24px;cursor:pointer}
+  </style>
+</helmet>
+
+<div style="width:1000px; padding:44px 60px 60px; background:var(--ground)">
+
+  <div class="disp" style="font-size:34px; margin-bottom:6px">The in-lesson checkpoint</div>
+  <p class="lead" style="max-width:640px">The same question, four treatments. It arrives mid-column, between two paragraphs of streamed prose, and answering it continues the lesson.</p>
+
+  <!-- shared preceding prose -->
+  <div style="max-width:640px; margin-bottom:34px; color:oklch(0.62 0.020 145)">
+    <p style="margin:0">…«La sopa es buena» says the soup is a good soup — well made, a good recipe. «La sopa está buena» says the soup tastes good right now, in this bowl, in front of you.</p>
+  </div>
+
+  <!-- A: paper card -->
+  <div style="max-width:640px; margin-bottom:44px">
+    <span class="tag">A · paper card — current</span>
+    <div style="border:1px solid var(--rule); border-top:3px solid var(--wine); background:var(--surface); padding:20px 24px 22px">
+      <div class="lab" style="color:var(--wine); margin-bottom:11px">Checkpoint</div>
+      <p style="margin:0 0 15px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+      <div style="display:flex; flex-direction:column; gap:3px">
+        <label style="display:flex; gap:12px; align-items:baseline; padding:8px 12px; border:1px solid var(--rule); cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es buena.»</span></label>
+        <label style="display:flex; gap:12px; align-items:baseline; padding:8px 12px; border:1px solid var(--rule); cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está buena.»</span></label>
+        <label style="display:flex; gap:12px; align-items:baseline; padding:8px 12px; border:1px solid var(--rule); cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es bien.»</span></label>
+        <label style="display:flex; gap:12px; align-items:baseline; padding:8px 12px; border:1px solid var(--rule); cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está bien.»</span></label>
+      </div>
+      <button class="act" style="margin-top:18px">Answer</button>
+    </div>
+  </div>
+
+  <!-- B: torn slip -->
+  <div style="max-width:640px; margin-bottom:44px">
+    <span class="tag">B · torn slip — same stock as the homework sheet</span>
+    <div style="background:var(--sheet); transform:rotate(-0.5deg); box-shadow:0 10px 26px oklch(0.45 0.010 260 / .20);
+                padding:22px 26px 34px;
+                clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),95% 100%,90% calc(100% - 9px),85% 100%,80% calc(100% - 11px),74% 99%,68% calc(100% - 8px),61% 100%,55% calc(100% - 12px),48% 99%,41% calc(100% - 7px),35% 100%,28% calc(100% - 11px),21% 99%,14% calc(100% - 8px),7% 100%,0 calc(100% - 10px))">
+      <div class="mono" style="font-size:12.5px; font-weight:700; letter-spacing:.08em; margin-bottom:12px">CHECKPOINT — SECTION 2</div>
+      <div class="mono" style="font-size:14.5px; line-height:1.9">
+        <div style="margin-bottom:6px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</div>
+        <div>a) «La sopa es buena.»</div>
+        <div>b) «La sopa está buena.»</div>
+        <div>c) «La sopa es bien.»</div>
+        <div>d) «La sopa está bien.»</div>
+      </div>
+      <button class="act" style="margin-top:16px">Answer</button>
+    </div>
+  </div>
+
+  <!-- C: margin question -->
+  <div style="max-width:790px; margin-bottom:44px; margin-left:-150px; padding-left:150px; position:relative">
+    <span class="tag" style="position:absolute; left:150px; top:0; width:640px">C · margin question — the tutor interrupts in the margin</span>
+    <div style="padding-top:34px; position:relative">
+      <div class="pen" style="position:absolute; left:0; top:38px; width:132px; font-size:21px; line-height:1.3; transform:rotate(-2deg); text-align:right">
+        quick — which one?
+        <div style="height:1px; background:var(--wine); opacity:.45; width:56px; margin:6px 0 0 auto; transform:rotate(4deg)"></div>
+      </div>
+      <div style="max-width:640px; margin-left:150px">
+        <p style="margin:0 0 12px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+        <div style="display:flex; flex-direction:column; gap:1px; border-left:2px solid var(--brass); padding-left:16px">
+          <label style="display:flex; gap:11px; align-items:baseline; padding:4px 0; cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es buena.»</span></label>
+          <label style="display:flex; gap:11px; align-items:baseline; padding:4px 0; cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está buena.»</span></label>
+          <label style="display:flex; gap:11px; align-items:baseline; padding:4px 0; cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es bien.»</span></label>
+          <label style="display:flex; gap:11px; align-items:baseline; padding:4px 0; cursor:pointer"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está bien.»</span></label>
+        </div>
+        <button class="act" style="margin-top:16px">Answer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D: index card -->
+  <div style="max-width:640px">
+    <span class="tag">D · index card — a desk object dropped on the page</span>
+    <div style="width:520px; background:var(--card); transform:rotate(1.4deg); box-shadow:0 12px 30px oklch(0.45 0.020 100 / .26); padding:0 26px 22px; position:relative;
+                background-image:repeating-linear-gradient(to bottom, transparent 0 25px, var(--cardline) 25px 26px); background-position:0 52px">
+      <div style="height:44px; border-bottom:1.5px solid var(--cardred); margin:0 -26px 8px; padding:0 26px; display:flex; align-items:center">
+        <div class="lab" style="color:var(--cardred)">Checkpoint · section 2</div>
+      </div>
+      <div style="line-height:26px">
+        <div style="margin-bottom:0">A friend hands you soup, you taste it, it is delicious.</div>
+        <div style="margin-bottom:0">Which do you say?</div>
+        <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer; line-height:26px"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es buena.»</span></label>
+        <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer; line-height:26px"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está buena.»</span></label>
+        <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer; line-height:26px"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa es bien.»</span></label>
+        <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer; line-height:26px"><span style="width:10px;height:10px;border:1px solid var(--muted);flex:0 0 10px"></span><span>«La sopa está bien.»</span></label>
+      </div>
+      <button class="act" style="margin-top:18px">Answer</button>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

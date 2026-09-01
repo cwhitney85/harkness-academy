@@ -11,9 +11,11 @@
 | 5 Lesson Engine (incl. 5.2 wire protocol, 5.4 completion pipeline) | [specs/05-lesson-engine.md](specs/05-lesson-engine.md) |
 | 6 Assessment | [specs/06-assessment.md](specs/06-assessment.md) |
 | 7 PWA Shell | [specs/07-pwa.md](specs/07-pwa.md) |
+| 8 Interface (incl. 8.2 design language, 8.3 material system) | [specs/08-interface.md](specs/08-interface.md) |
 
 Cross-package rules that live in the packages but bind globally:
 - **Fail-open rule** (4.5.1): fail open only when failing closed would destroy student progress.
 - **Concept-slug vocabulary** (4.5.2): declared in the syllabus, consumed by checkpoints, summaries, exams, refreshers.
 - **Tier indirection** (2.1.1): no model IDs outside `config/ai.php`.
 - **Memory door** (3.2): no memory access outside the path API.
+- **Design source of record** (8.1.3): the canvas in `docs/design/canvas/` and `resources/css/app.css` change together.

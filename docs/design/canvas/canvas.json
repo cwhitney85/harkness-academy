@@ -1,0 +1,244 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "A \u00b7 materials"
+    },
+    {
+      "id": "page-2",
+      "name": "A \u00b7 dosage"
+    },
+    {
+      "id": "page-3",
+      "name": "First directions"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "ALesson.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Lesson \u2014 settled"
+    },
+    {
+      "file": "QuizPhotocopy.dc.html",
+      "page": "page-1",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Quizzes \u2014 photocopy (chosen)"
+    },
+    {
+      "file": "ExamClosed.dc.html",
+      "page": "page-1",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Exam \u2014 closed book"
+    },
+    {
+      "file": "ExamBlueBook.dc.html",
+      "page": "page-1",
+      "x": 4680,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Exam \u2014 opened"
+    },
+    {
+      "file": "CheckpointOptions.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 1120,
+      "w": 1000,
+      "h": 1780,
+      "title": "Checkpoint \u2014 four treatments"
+    },
+    {
+      "file": "QuizLegalPad.dc.html",
+      "page": "page-1",
+      "x": 3670,
+      "y": 1120,
+      "w": 1440,
+      "h": 900,
+      "title": "Legal pad \u2014 parked for notes (v1.1)"
+    },
+    {
+      "file": "CheckpointPhone.dc.html",
+      "page": "page-1",
+      "x": 1200,
+      "y": 1120,
+      "w": 1350,
+      "h": 1060,
+      "title": "Checkpoint C \u2014 at 390px"
+    },
+    {
+      "file": "LessonPhone.dc.html",
+      "page": "page-1",
+      "x": 2650,
+      "y": 1120,
+      "w": 920,
+      "h": 1060,
+      "title": "Lesson \u2014 at 390px"
+    },
+    {
+      "file": "ARestrained.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A1 \u2014 Restrained"
+    },
+    {
+      "file": "ASpirited.dc.html",
+      "page": "page-2",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A2 \u2014 Spirited"
+    },
+    {
+      "file": "AFull.dc.html",
+      "page": "page-2",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A3 \u2014 Full"
+    },
+    {
+      "file": "ChalkboardLesson.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A \u2014 Chalkboard \u00b7 Lesson"
+    },
+    {
+      "file": "ChalkboardSyllabus.dc.html",
+      "page": "page-3",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A \u2014 Chalkboard \u00b7 Syllabus"
+    },
+    {
+      "file": "ChalkboardQuiz.dc.html",
+      "page": "page-3",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "A \u2014 Chalkboard \u00b7 Homework"
+    },
+    {
+      "file": "Main.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 1080,
+      "w": 1440,
+      "h": 900,
+      "title": "B \u2014 Foolscap \u00b7 Lesson"
+    },
+    {
+      "file": "FoolscapSyllabus.dc.html",
+      "page": "page-3",
+      "x": 1560,
+      "y": 1080,
+      "w": 1440,
+      "h": 900,
+      "title": "B \u2014 Foolscap \u00b7 Syllabus"
+    },
+    {
+      "file": "FoolscapQuiz.dc.html",
+      "page": "page-3",
+      "x": 3120,
+      "y": 1080,
+      "w": 1440,
+      "h": 900,
+      "title": "B \u2014 Foolscap \u00b7 Homework"
+    },
+    {
+      "file": "AssemblyHallLesson.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 2160,
+      "w": 1440,
+      "h": 900,
+      "title": "D \u2014 Assembly Hall \u00b7 Lesson"
+    },
+    {
+      "file": "AssemblyHallSyllabus.dc.html",
+      "page": "page-3",
+      "x": 1560,
+      "y": 2160,
+      "w": 1440,
+      "h": 900,
+      "title": "D \u2014 Assembly Hall \u00b7 Syllabus"
+    },
+    {
+      "file": "AssemblyHallQuiz.dc.html",
+      "page": "page-3",
+      "x": 3120,
+      "y": 2160,
+      "w": 1440,
+      "h": 900,
+      "title": "D \u2014 Assembly Hall \u00b7 Homework"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "mat-note",
+      "x": 0,
+      "y": -340,
+      "w": 1060,
+      "page": "page-1",
+      "text": "SETTLED  \u00b7  lesson as it stands; photocopy for practice; blue book for the exam; margin question (C) for the in-lesson checkpoint.\n\nBLUE BOOK  \u00b7  interior on a strict 30px rhythm so type sits on the rules, red vertical margin, spine shadow on both leaves. Closed book, then opened; the page turn between them is motion, not layout.\n\nCHECKPOINT C AT 390px  \u00b7  three reductions, since the margin does not exist on a phone. P1 lead-in line, P2 tinted band, P3 the brass rule becomes the container.\n\nPARKED, NOT DISCARDED  \u00b7  legal pad for v1.1 notes (already a WONT in PLAN.md); index card for a later use; torn slip stays with homework."
+    },
+    {
+      "id": "dose-note",
+      "x": 0,
+      "y": -300,
+      "w": 900,
+      "page": "page-2",
+      "text": "Superseded by page 1, kept for reference.\nA1 RESTRAINED \u00b7 colour fields + drop cap.\nA2 SPIRITED \u00b7 + repp stripe, varsity numeral, ribbon.\nA3 FULL \u00b7 + crest, margin note, stamped seal."
+    },
+    {
+      "id": "row-a",
+      "x": -420,
+      "y": 300,
+      "w": 360,
+      "page": "page-3",
+      "text": "A \u2014 CHALKBOARD\nGreen-dominant, chalk ground, brass for action."
+    },
+    {
+      "id": "row-b",
+      "x": -420,
+      "y": 1380,
+      "w": 360,
+      "page": "page-3",
+      "text": "B \u2014 FOOLSCAP\nWarm cream, oxblood, hunter green, tobacco."
+    },
+    {
+      "id": "row-d",
+      "x": -420,
+      "y": 2460,
+      "w": 360,
+      "page": "page-3",
+      "text": "D \u2014 ASSEMBLY HALL\nIvory, mahogany, brass, deep oxblood."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

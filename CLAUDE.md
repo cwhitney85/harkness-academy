@@ -19,6 +19,7 @@ LLM personal-tutor PWA. Laravel 13 + Inertia/React + Postgres. Anthropic-direct 
 - **Skill level (101/201/301) is pedagogy; plan is economics** — never couple them (spec 4.5.6).
 - Every AI call must log to `usage_events` (spec 2.2) and use a prompt key from the inventory (spec 2.3.2).
 - Anthropic-specific feature usage gets an entry in `docs/anthropic-specific.md` (spec 2.5).
+- **The design canvas is the design source of record** — [`docs/design/canvas/`](docs/design/canvas/) holds the source, the published canvas is where it is read. A change to the visual language changes that directory **and** `resources/css/app.css` in the same commit (spec 8.1.3).
 
 ## Git conventions
 

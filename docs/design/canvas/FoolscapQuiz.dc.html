@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Caslon+Display&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.960 0.014 82); --surface:oklch(0.985 0.008 82);
+      --ink:oklch(0.25 0.024 50); --muted:oklch(0.50 0.020 50);
+      --oxblood:oklch(0.38 0.100 28); --hunter:oklch(0.42 0.055 150);
+      --tobacco:oklch(0.60 0.090 62); --rule:oklch(0.86 0.014 78);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"EB Garamond",Georgia,serif;font-size:18px;line-height:1.66;
+      font-variant-numeric:oldstyle-nums;-webkit-font-smoothing:antialiased}
+    a{color:var(--oxblood)} a:hover{color:oklch(0.32 0.110 28)}
+    .caps{font-variant:small-caps;letter-spacing:.09em;font-size:13px;color:var(--muted)}
+    .disp{font-family:"Libre Caslon Display",Georgia,serif;letter-spacing:-0.012em}
+    .opt{display:flex;gap:12px;align-items:baseline;padding:7px 11px;cursor:pointer}
+    .dot{width:11px;height:11px;border:1px solid var(--muted);border-radius:50%;flex:0 0 11px}
+  </style>
+</helmet>
+
+<div style="width:1440px; height:900px; background:var(--ground); display:flex; flex-direction:column; overflow:hidden">
+
+  <div style="padding:26px 56px 16px; border-bottom:1px solid var(--rule); display:flex; align-items:baseline; gap:16px">
+    <div class="disp" style="font-size:21px">OpenTutor</div>
+    <div class="caps">Spanish · Conversational Basics</div>
+    <div style="flex-grow:1"></div>
+    <div class="caps">Homework · 2 of 4 answered</div>
+    <div style="display:flex; gap:4px; align-items:center">
+      <span style="width:26px;height:3px;background:var(--hunter)"></span>
+      <span style="width:26px;height:3px;background:var(--oxblood)"></span>
+      <span style="width:26px;height:3px;background:var(--rule)"></span>
+      <span style="width:26px;height:3px;background:var(--rule)"></span>
+    </div>
+  </div>
+
+  <div style="flex-grow:1; overflow:hidden; padding:30px 56px 0; display:flex; gap:52px">
+
+    <div style="flex-grow:1; max-width:700px">
+      <h1 class="disp" style="font-size:33px; line-height:1.2; margin:0 0 3px; font-weight:400">Homework</h1>
+      <div class="caps" style="margin-bottom:26px">Lesson 2 — Saying Where You Are and How You Are</div>
+
+      <!-- Q1 : answered, graded -->
+      <div style="border-bottom:1px solid var(--rule); padding-bottom:22px; margin-bottom:22px">
+        <div style="display:flex; gap:16px">
+          <div class="disp" style="font-size:22px; color:var(--tobacco); width:22px">1</div>
+          <div style="flex-grow:1">
+            <p style="margin:0 0 13px">«Mi hermana ___ médica.» Which fits?</p>
+            <div style="display:flex; flex-direction:column; gap:2px; margin-left:-11px">
+              <div class="opt" style="background:oklch(0.955 0.030 150); border-left:2px solid var(--hunter)">
+                <span class="dot" style="border-color:var(--hunter); background:var(--hunter)"></span>
+                <span style="flex-grow:1">es</span>
+                <span class="caps" style="color:var(--hunter)">your answer</span>
+              </div>
+              <div class="opt"><span class="dot"></span><span>está</span></div>
+              <div class="opt"><span class="dot"></span><span>son</span></div>
+              <div class="opt"><span class="dot"></span><span>están</span></div>
+            </div>
+            <div style="border-left:2px solid var(--hunter); padding-left:14px; margin-top:14px; color:var(--muted); font-size:17px; line-height:1.58">
+              Profession is identity, not condition — so <em>ser</em>. Even if she changes careers later, being a doctor is what she is, not how she is today.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q2 : in progress -->
+      <div style="border-bottom:1px solid var(--rule); padding-bottom:22px; margin-bottom:22px">
+        <div style="display:flex; gap:16px">
+          <div class="disp" style="font-size:22px; color:var(--tobacco); width:22px">2</div>
+          <div style="flex-grow:1">
+            <p style="margin:0 0 13px">You have been standing in the rain for ten minutes. «___ mojado.»</p>
+            <div style="display:flex; flex-direction:column; gap:2px; margin-left:-11px">
+              <div class="opt"><span class="dot"></span><span>Soy</span></div>
+              <div class="opt" style="background:var(--surface); border-left:2px solid var(--oxblood)">
+                <span class="dot" style="border-color:var(--oxblood); background:var(--oxblood)"></span><span>Estoy</span>
+              </div>
+              <div class="opt"><span class="dot"></span><span>Es</span></div>
+              <div class="opt"><span class="dot"></span><span>Está</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div style="border-bottom:1px solid var(--rule); padding-bottom:22px; margin-bottom:22px; opacity:.62">
+        <div style="display:flex; gap:16px">
+          <div class="disp" style="font-size:22px; color:var(--tobacco); width:22px">3</div>
+          <div style="flex-grow:1">
+            <p style="margin:0 0 13px">Which sentence means the film is boring as a film, rather than that it is boring you right now?</p>
+            <div style="display:flex; flex-direction:column; gap:2px; margin-left:-11px">
+              <div class="opt"><span class="dot"></span><span>«La película es aburrida.»</span></div>
+              <div class="opt"><span class="dot"></span><span>«La película está aburrida.»</span></div>
+              <div class="opt"><span class="dot"></span><span>«La película está aburriendo.»</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; opacity:.35">
+        <div class="disp" style="font-size:22px; color:var(--tobacco); width:22px">4</div>
+        <div style="flex-grow:1"><p style="margin:0">«El banco ___ al lado de la farmacia.»</p></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: reading + submit -->
+    <div style="width:330px; flex:0 0 330px; display:flex; flex-direction:column; gap:26px">
+      <div>
+        <div class="caps" style="border-bottom:1px solid var(--ink); padding-bottom:5px; margin-bottom:14px">Suggested reading</div>
+
+        <div style="margin-bottom:17px">
+          <div style="font-size:18px; line-height:1.35; margin-bottom:4px">SpanishDict — <em>Ser vs. Estar</em></div>
+          <div style="color:var(--muted); font-size:16px; line-height:1.5">You said you learn best from side-by-side examples; this page is built as one long comparison table.</div>
+        </div>
+
+        <div>
+          <div style="font-size:18px; line-height:1.35; margin-bottom:4px"><em>Practice Makes Perfect: Spanish Verb Tenses</em>, ch. 3</div>
+          <div style="color:var(--muted); font-size:16px; line-height:1.5">Drills rather than explanation — the part you said you skip and then regret.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; padding-bottom:34px; border-top:1px solid var(--rule); padding-top:20px">
+        <button style="font-family:inherit; font-size:18px; font-variant:small-caps; letter-spacing:.08em; background:var(--oxblood); color:oklch(0.97 0.010 82); border:none; padding:13px 0; cursor:pointer; width:100%">Submit homework</button>
+        <div class="caps" style="text-align:center; margin-top:10px; font-size:12px">Answers are kept as you go</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

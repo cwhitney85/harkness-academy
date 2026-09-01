@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Instrument+Serif&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82); --gold:oklch(0.83 0.090 88);
+      --rule:oklch(0.87 0.012 95);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:oklch(0.928 0.012 95);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .pen{font-family:"Caveat",cursive;color:var(--wine)}
+    .head{margin-bottom:12px;color:var(--wine);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+    .sub{color:var(--muted);font-size:14px;line-height:1.5;margin:6px 0 16px;max-width:390px}
+    .phone{width:390px;flex:0 0 390px;height:844px;background:var(--ground);overflow:hidden;
+      box-shadow:0 14px 34px oklch(0.45 0.020 120 / .22);display:flex;flex-direction:column;position:relative}
+  </style>
+</helmet>
+
+<div style="width:920px; padding:40px 36px 44px">
+  <div class="disp" style="font-size:32px; margin-bottom:4px">The lesson at 390px</div>
+  <p style="max-width:790px; color:var(--muted); font-size:16px; margin:0 0 30px">Both sidebars are colour fields on the desktop and neither has a side to sit on here. The rail collapses into a hunter bar; the explainer becomes a sheet over the prose. Every tap target is at least 44px.</p>
+
+  <div style="display:flex; gap:40px">
+
+    <!-- reading -->
+    <div>
+      <div class="head">Reading</div>
+      <div class="sub">Rail is a bar. Section progress sits in it, so the four-section rhythm survives the collapse.</div>
+      <div class="phone">
+        <div style="background:var(--railgreen); color:oklch(0.94 0.014 110); padding:14px 18px; display:flex; align-items:center; gap:13px; flex:0 0 auto">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="oklch(0.83 0.090 88)" stroke-width="1.9" style="flex:0 0 22px"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <div style="flex-grow:1; min-width:0">
+            <div style="font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Saying Where You Are…</div>
+            <div class="lab" style="color:var(--brass); margin-top:2px; font-size:10px">Lesson 2 · Section 2 of 4</div>
+          </div>
+          <div style="display:flex; gap:3px; flex:0 0 auto">
+            <span style="width:14px;height:3px;background:var(--gold)"></span>
+            <span style="width:14px;height:3px;background:oklch(0.60 0.070 60)"></span>
+            <span style="width:14px;height:3px;background:oklch(0.34 0.040 155)"></span>
+            <span style="width:14px;height:3px;background:oklch(0.34 0.040 155)"></span>
+          </div>
+        </div>
+
+        <div style="flex-grow:1; overflow:hidden; padding:20px">
+          <h1 class="disp" style="font-size:29px; line-height:1.12; margin:0 0 6px">Estar: how things are right now</h1>
+          <div class="lab" style="color:var(--wine); margin-bottom:18px">estar-for-state · ser-vs-estar</div>
+
+          <p style="margin:0 0 15px"><span class="disp" style="float:left; font-size:52px; line-height:.82; color:var(--wine); margin:4px 9px 0 0">Y</span>ou walk into a café in Salamanca at nine in the morning. The waiter looks up and says, «¿Cómo está?» — and then, an hour later, as you are leaving: «El café está frío.»</p>
+
+          <p style="margin:0 0 15px">Estar is the verb Spanish uses for conditions and locations — the things that could be otherwise. The coffee is cold now; it was hot twenty minutes ago.</p>
+
+          <p style="margin:0">The pairing that trips up almost every English speaker is <span style="background:oklch(0.91 0.070 95); box-shadow:0 1.5px 0 var(--brass)">estar bueno versus ser bueno</span>. «La sopa es buena» says the soup is a good soup.<span style="display:inline-block; width:7px; height:17px; background:var(--wine); margin-left:3px; vertical-align:-3px"></span></p>
+        </div>
+
+        <div style="border-top:1px solid var(--rule); background:var(--surface); padding:12px 20px; display:flex; align-items:center; gap:12px; min-height:64px">
+          <div style="flex-grow:1; color:var(--muted)">Ask about this section…</div>
+          <div class="lab" style="font-size:10px">0 / 4000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- explainer sheet -->
+    <div>
+      <div class="head">Explainer</div>
+      <div class="sub">The side tab has no side, so it rises as a sheet — same hunter field, same brass label, prose dimmed behind it.</div>
+      <div class="phone">
+        <div style="background:var(--railgreen); color:oklch(0.94 0.014 110); padding:14px 18px; display:flex; align-items:center; gap:13px; flex:0 0 auto; opacity:.5">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="oklch(0.83 0.090 88)" stroke-width="1.9" style="flex:0 0 22px"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <div style="flex-grow:1; min-width:0">
+            <div style="font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Saying Where You Are…</div>
+            <div class="lab" style="color:var(--brass); margin-top:2px; font-size:10px">Lesson 2 · Section 2 of 4</div>
+          </div>
+        </div>
+
+        <div style="flex-grow:1; overflow:hidden; padding:20px; opacity:.28">
+          <h1 class="disp" style="font-size:29px; line-height:1.12; margin:0 0 6px">Estar: how things are right now</h1>
+          <div class="lab" style="color:var(--wine); margin-bottom:18px">estar-for-state · ser-vs-estar</div>
+          <p style="margin:0 0 15px">You walk into a café in Salamanca at nine in the morning. The waiter looks up and says, «¿Cómo está?» — and then, an hour later, as you are leaving: «El café está frío.»</p>
+        </div>
+
+        <!-- sheet -->
+        <div style="position:absolute; left:0; right:0; bottom:0; background:var(--hunter); color:oklch(0.94 0.014 110);
+                    padding:12px 20px 24px; box-shadow:0 -18px 40px oklch(0.25 0.030 155 / .40); height:508px; display:flex; flex-direction:column; gap:14px">
+          <div style="width:44px; height:4px; border-radius:2px; background:oklch(0.56 0.055 155); margin:0 auto 4px"></div>
+          <div style="display:flex; align-items:baseline; gap:10px">
+            <div class="lab" style="color:var(--gold); flex-grow:1">Explain this</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.78 0.035 130)" stroke-width="2" style="flex:0 0 18px"><path d="M5 5l14 14M19 5L5 19"/></svg>
+          </div>
+          <div style="border-left:2px solid var(--brass); padding-left:13px; font-style:italic; color:oklch(0.88 0.030 120); font-size:16.5px">estar bueno versus ser bueno</div>
+          <div style="font-size:16px; line-height:1.62; overflow:hidden">
+            <p style="margin:0 0 13px">«Ser bueno» describes a quality the thing has in itself — a good film, a kind person, a well-made soup. «Estar bueno» describes how it strikes you at this moment.</p>
+            <p style="margin:0 0 13px">Concretely: a restaurant critic writing a review reaches for <em>es buena</em>. You, tasting the first spoonful at the table, reach for <em>está buena</em>.</p>
+            <p style="margin:0">One caution: in much of Spain, «estar bueno» said of a <em>person</em> is slang for attractive.</p>
+          </div>
+          <div class="lab" style="margin-top:auto; border-top:1px solid oklch(0.44 0.055 155); padding-top:11px; color:oklch(0.76 0.040 130); font-size:10px">Highlight up to 500 characters</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

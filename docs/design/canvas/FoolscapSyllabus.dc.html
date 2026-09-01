@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Caslon+Display&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.960 0.014 82); --surface:oklch(0.985 0.008 82);
+      --ink:oklch(0.25 0.024 50); --muted:oklch(0.50 0.020 50);
+      --oxblood:oklch(0.38 0.100 28); --hunter:oklch(0.42 0.055 150);
+      --tobacco:oklch(0.60 0.090 62); --rule:oklch(0.86 0.014 78);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"EB Garamond",Georgia,serif;font-size:18px;line-height:1.66;
+      font-variant-numeric:oldstyle-nums;-webkit-font-smoothing:antialiased}
+    a{color:var(--oxblood)} a:hover{color:oklch(0.32 0.110 28)}
+    .caps{font-variant:small-caps;letter-spacing:.09em;font-size:13px;color:var(--muted)}
+    .disp{font-family:"Libre Caslon Display",Georgia,serif;letter-spacing:-0.012em}
+    .chip{font-variant:small-caps;letter-spacing:.06em;font-size:12.5px;color:var(--muted);
+      border:1px solid var(--rule);padding:1px 8px;background:var(--surface)}
+  </style>
+</helmet>
+
+<div style="width:1440px; height:900px; background:var(--ground); display:flex; flex-direction:column; overflow:hidden">
+
+  <div style="padding:26px 56px 16px; border-bottom:1px solid var(--rule); display:flex; align-items:baseline; gap:16px">
+    <div class="disp" style="font-size:21px">OpenTutor</div>
+    <div class="caps">Spanish · Conversational Basics · Intro</div>
+    <div style="flex-grow:1"></div>
+    <div class="caps">Draft syllabus · awaiting your approval</div>
+  </div>
+
+  <div style="flex-grow:1; overflow:hidden; padding:30px 56px 0; display:flex; gap:52px">
+
+    <!-- LEFT: the document -->
+    <div style="flex-grow:1; max-width:760px">
+      <h1 class="disp" style="font-size:38px; line-height:1.16; margin:0 0 4px; font-weight:400">Conversational Basics: Getting By in Spanish</h1>
+      <div class="caps" style="margin-bottom:22px">Five lessons · about 3 hours · 101 level</div>
+
+      <!-- MISMATCH BANNER (4.5.7) -->
+      <div style="border:1px solid var(--tobacco); border-left-width:3px; background:oklch(0.975 0.020 82); padding:14px 18px; margin-bottom:24px; display:flex; gap:13px; align-items:flex-start">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="oklch(0.60 0.090 62)" stroke-width="2" style="margin-top:5px; flex:0 0 17px"><path d="M12 8v5M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <div style="font-size:17px; line-height:1.55">
+          Your goals mention reading Borges in the original. That sits outside Conversational Basics — it is closer to <em>Literary Reading</em>. This syllabus covers the conversational ground you asked for; the reading goal is not addressed here.
+        </div>
+      </div>
+
+      <p style="margin:0 0 16px">Five lessons that take you from a standing start to holding up your end of a short exchange — greeting someone, saying how and where you are, asking for what you need, handling numbers and prices, and getting directions when you are lost. Everything stays in the present tense; past and future are the next course's job.</p>
+      <p style="margin:0 0 30px">We will spend more time than usual on <em>ser</em> and <em>estar</em>, because you said in the interview that you have bounced off them twice before.</p>
+
+      <div class="caps" style="border-bottom:1px solid var(--ink); padding-bottom:5px; margin-bottom:4px">The lessons</div>
+
+      <div style="display:flex; flex-direction:column">
+        <div style="display:flex; gap:20px; padding:17px 0; border-bottom:1px solid var(--rule)">
+          <div class="disp" style="font-size:25px; width:34px; color:var(--tobacco)">I</div>
+          <div style="flex-grow:1">
+            <div style="font-size:20px; margin-bottom:2px">Greeting Someone You've Just Met</div>
+            <div style="color:var(--muted); font-size:17px; margin-bottom:9px">You can open and close a first conversation without stalling.</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="chip">formal-vs-informal-address</span><span class="chip">greeting-formulas</span><span class="chip">ser-for-identity</span></div>
+          </div>
+          <div class="caps" style="white-space:nowrap">32 min</div>
+        </div>
+
+        <div style="display:flex; gap:20px; padding:17px 0; border-bottom:1px solid var(--rule)">
+          <div class="disp" style="font-size:25px; width:34px; color:var(--tobacco)">II</div>
+          <div style="flex-grow:1">
+            <div style="font-size:20px; margin-bottom:2px">Saying Where You Are and How You Are</div>
+            <div style="color:var(--muted); font-size:17px; margin-bottom:9px">You can choose between ser and estar without stopping to think.</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="chip">estar-for-state</span><span class="chip">estar-for-location</span><span class="chip">ser-vs-estar</span></div>
+          </div>
+          <div class="caps" style="white-space:nowrap">45 min</div>
+        </div>
+
+        <div style="display:flex; gap:20px; padding:17px 0; border-bottom:1px solid var(--rule)">
+          <div class="disp" style="font-size:25px; width:34px; color:var(--tobacco)">III</div>
+          <div style="flex-grow:1">
+            <div style="font-size:20px; margin-bottom:2px">Asking for What You Need</div>
+            <div style="color:var(--muted); font-size:17px; margin-bottom:9px">You can make a request that lands as polite rather than blunt.</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="chip">querer-vs-necesitar</span><span class="chip">polite-requests</span><span class="chip">definite-articles</span></div>
+          </div>
+          <div class="caps" style="white-space:nowrap">38 min</div>
+        </div>
+
+        <div style="display:flex; gap:20px; padding:17px 0; border-bottom:1px solid var(--rule)">
+          <div class="disp" style="font-size:25px; width:34px; color:var(--tobacco)">IV</div>
+          <div style="flex-grow:1">
+            <div style="font-size:20px; margin-bottom:2px">Numbers, Prices and Time</div>
+            <div style="color:var(--muted); font-size:17px; margin-bottom:9px">You can hear a price said aloud and repeat it back correctly.</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="chip">cardinal-numbers</span><span class="chip">telling-time</span><span class="chip">currency-phrases</span></div>
+          </div>
+          <div class="caps" style="white-space:nowrap">36 min</div>
+        </div>
+
+        <div style="display:flex; gap:20px; padding:17px 0; border-bottom:1px solid var(--rule)">
+          <div class="disp" style="font-size:25px; width:34px; color:var(--tobacco)">V</div>
+          <div style="flex-grow:1">
+            <div style="font-size:20px; margin-bottom:2px">Getting Directions</div>
+            <div style="color:var(--muted); font-size:17px; margin-bottom:9px">You can ask the way, and follow the answer you get back.</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="chip">imperative-directions</span><span class="chip">prepositions-of-place</span><span class="chip">clarifying-questions</span></div>
+          </div>
+          <div class="caps" style="white-space:nowrap">41 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: exam + actions -->
+    <div style="width:330px; flex:0 0 330px; display:flex; flex-direction:column; gap:26px">
+      <div>
+        <div class="caps" style="border-bottom:1px solid var(--ink); padding-bottom:5px; margin-bottom:12px">The final exam draws on</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap">
+          <span class="chip">ser-vs-estar</span><span class="chip">formal-vs-informal-address</span><span class="chip">polite-requests</span><span class="chip">cardinal-numbers</span><span class="chip">prepositions-of-place</span>
+        </div>
+        <div style="color:var(--muted); font-size:16px; margin-top:11px; font-style:italic">Eight to twelve questions. Seventy per cent to pass.</div>
+      </div>
+
+      <div style="border-top:1px solid var(--rule); padding-top:22px; display:flex; flex-direction:column; gap:14px">
+        <button style="font-family:inherit; font-size:18px; font-variant:small-caps; letter-spacing:.08em; background:var(--oxblood); color:oklch(0.97 0.010 82); border:none; padding:13px 0; cursor:pointer; width:100%">Approve this syllabus</button>
+
+        <div class="caps" style="text-align:center">or ask for changes</div>
+
+        <div style="border:1px solid var(--rule); background:var(--surface); padding:12px 14px; min-height:104px; color:var(--muted); font-size:17px; line-height:1.55">
+          Fewer lessons, and more drilling on ser/estar — I don't need the directions one…
+        </div>
+
+        <button style="font-family:inherit; font-size:17px; font-variant:small-caps; letter-spacing:.07em; background:transparent; color:var(--ink); border:1px solid var(--ink); padding:10px 0; cursor:pointer; width:100%">Request revisions</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

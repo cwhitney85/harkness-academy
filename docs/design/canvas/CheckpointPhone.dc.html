@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Instrument+Serif&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
+      --rule:oklch(0.87 0.012 95);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:oklch(0.928 0.012 95);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .pen{font-family:"Caveat",cursive;color:var(--wine)}
+    .phone{width:390px;flex:0 0 390px;background:var(--ground);padding:22px 20px;
+      box-shadow:0 14px 34px oklch(0.45 0.020 120 / .22);height:768px;overflow:hidden}
+    .opt{display:flex;gap:11px;align-items:baseline;padding:9px 0;cursor:pointer;min-height:44px}
+    .bx{width:11px;height:11px;border:1px solid var(--muted);flex:0 0 11px;margin-top:7px}
+    .act{font-family:"Newsreader",Georgia,serif;font-size:14px;letter-spacing:.13em;text-transform:uppercase;
+      background:var(--wine);color:oklch(0.97 0.010 60);border:none;padding:13px 26px;cursor:pointer;min-height:44px}
+    .head{margin-bottom:14px;color:var(--wine);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+    .sub{color:var(--muted);font-size:14px;line-height:1.5;margin:6px 0 16px}
+  </style>
+</helmet>
+
+<div style="width:1350px; padding:40px 36px 44px">
+  <div class="disp" style="font-size:32px; margin-bottom:4px">The margin checkpoint at 390px</div>
+  <p style="max-width:760px; color:var(--muted); font-size:16px; margin:0 0 30px">There is no margin on a phone, so the note has to move into the column. Three ways to keep the voice without letting the question dissolve into body text. Prose sits at 17px in a 350px column — about 44 characters, the low end of the readable range.</p>
+
+  <div style="display:flex; gap:36px">
+
+    <!-- P1 -->
+    <div>
+      <div class="head">P1 · lead-in line</div>
+      <div class="sub" style="max-width:390px">The note becomes the question's first line, still in the hand. Brass rule runs beside the options only.</div>
+      <div class="phone">
+        <div class="lab" style="margin-bottom:14px">Section 2 of 4</div>
+        <p style="margin:0 0 16px; color:oklch(0.42 0.024 150)">…«La sopa es buena» says the soup is a good soup — well made, a good recipe. «La sopa está buena» says it tastes good right now, in this bowl.</p>
+        <div class="pen" style="font-size:23px; line-height:1.25; margin:0 0 8px; transform:rotate(-1.1deg)">quick — which one?</div>
+        <p style="margin:0 0 10px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+        <div style="border-left:2px solid var(--brass); padding-left:15px">
+          <label class="opt"><span class="bx"></span><span>«La sopa es buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa es bien.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está bien.»</span></label>
+        </div>
+        <button class="act" style="margin-top:16px; width:100%">Answer</button>
+      </div>
+    </div>
+
+    <!-- P2 -->
+    <div>
+      <div class="head">P2 · tinted band</div>
+      <div class="sub" style="max-width:390px">A container comes back — full-bleed tint, brass edge. Safest and least distinctive; closest to the paper card you called reliable.</div>
+      <div class="phone" style="padding-left:0; padding-right:0">
+        <div style="padding:0 20px">
+          <div class="lab" style="margin-bottom:14px">Section 2 of 4</div>
+          <p style="margin:0 0 18px; color:oklch(0.42 0.024 150)">…«La sopa es buena» says the soup is a good soup — well made, a good recipe. «La sopa está buena» says it tastes good right now, in this bowl.</p>
+        </div>
+        <div style="background:var(--surface); border-left:3px solid var(--brass); padding:16px 20px 20px">
+          <div class="pen" style="font-size:23px; line-height:1.25; margin:0 0 8px; transform:rotate(-1.1deg)">quick — which one?</div>
+          <p style="margin:0 0 8px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+          <label class="opt"><span class="bx"></span><span>«La sopa es buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa es bien.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está bien.»</span></label>
+          <button class="act" style="margin-top:14px; width:100%">Answer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- P3 -->
+    <div>
+      <div class="head">P3 · the rule is the container</div>
+      <div class="sub" style="max-width:390px">Brass rule runs the full height of note, question and options. The note hangs over it, still rotated. Most faithful to the desktop.</div>
+      <div class="phone">
+        <div class="lab" style="margin-bottom:14px">Section 2 of 4</div>
+        <p style="margin:0 0 20px; color:oklch(0.42 0.024 150)">…«La sopa es buena» says the soup is a good soup — well made, a good recipe. «La sopa está buena» says it tastes good right now, in this bowl.</p>
+        <div style="border-left:2px solid var(--brass); padding-left:17px; position:relative">
+          <div class="pen" style="font-size:23px; line-height:1.25; margin:0 0 9px; transform:rotate(-1.4deg); margin-left:-26px">quick — which one?</div>
+          <p style="margin:0 0 8px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+          <label class="opt"><span class="bx"></span><span>«La sopa es buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está buena.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa es bien.»</span></label>
+          <label class="opt"><span class="bx"></span><span>«La sopa está bien.»</span></label>
+          <button class="act" style="margin-top:14px; width:100%">Answer</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

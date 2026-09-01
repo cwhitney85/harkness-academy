@@ -409,3 +409,49 @@ Two riders:
 - **"Scoped by `final_exam_concepts`" is checked in code**, not hoped for in the prompt: every concept the syllabus declared for the exam has to be reachable through some question, or the exam is regenerated once and then refused. Refused means the course has not moved and nothing was written (D10.4) — the exam fails *closed*, unlike a checkpoint, because nothing the student did is lost and failing open would put the meaning of the gate itself in doubt. A refresher fails closed too, and even more cheaply: it gates nothing.
 - **A sitting is all-or-nothing.** Every answer is validated before any is written, so a malformed answer halfway down a submission cannot leave a half-recorded sitting that the student's real attempt then has to be numbered around.
 - **The exam has a bounded length, because the pass mark is a fraction** (added 2026-08-30, Colin). `json/quiz.v1` asked for at least one question and set no maximum, and the `exam.final` prompt named no number, so the model chose the exam's length freely — and with it what `pass_mark: 0.7` actually demanded: 7 of 10 (70%) at one length, 3 of 3 (100%) at another. `QuizLength` states the count per purpose (exam 8–12, homework 3–6, refresher 3–5), which narrows the exam's effective threshold to 70–78%; the residual spread is inherent to counting whole questions. The exam's length is re-checked in code as well as in the schema, because it is the one quiz whose length changes the meaning of a configured number — the two kinds that gate nothing are left to the schema alone, since failing a homework generation over a question count would park a completed lesson's pipeline for a cosmetic reason (5.4.5). The prompts state the same range as the schema, and `QuizLengthTest` holds the two texts together the way 5.3's `limits` block holds published and enforced limits together.
+
+## D21. The visual direction: New England prep school, light-first (resolved 2026-08-31, package 8 design session, Colin)
+
+The front end was untouched starter-kit boilerplate — `resources/css/app.css` shipped every colour at `oklch(… 0 0)`, chroma exactly zero, and only `pages/terms.tsx` had ever been authored. The brief was "sharp and intuitive, not a clunky afterthought", judged by reaction to candidates rather than by specification.
+
+**Canvas: https://claude.ai/code/artifact/5d5d7052-86b8-4230-8c2a-606cba1b6f46** — source in [`docs/design/canvas/`](design/canvas/).
+
+**Chosen: direction A, "Chalkboard", recast light-first, on a hunter green + burgundy + brass palette.** Anchor is the prep-school register of *Dead Poets Society*, *School Ties*, *The Holdovers* and *Scent of a Woman* — the last supplying a formality the other three lack. Anatomy is rail (rail green, chrome, recedes) / paper column / explainer (field green, content, comes forward), the two green fields separated by value so they read as roles rather than as a matched pair.
+
+Type is Newsreader at 17px/1.62 for body, Instrument Serif for display, Caveat for the tutor's hand. Measure caps at 72ch, which is where three independently-measured products converge — Claude.ai 75ch, iA 74ch, Tailwind Docs 76ch — and narrows to ~44ch at 390px with no font-size rule, which is Claude.ai's own strategy (`max-width` plus fixed padding) rather than iA's fluid `calc()`.
+
+Rejected: **B "Foolscap"** (EB Garamond on warm cream, the course as a printed object) and **D "Assembly Hall"** (Spectral and Cormorant on ivory, engraved formality) — both ranked below A, and both folded into it as the burgundy and brass. Rejected: **C "Field House"** (navy and crimson, cool and institutional) — it scored best on forms and worst on the anchor, and could not absorb the warmth the fourth film added without ceasing to be itself. Rejected: **dark-first**, which was A's original form; light-first is a standing constraint, and A's dark mode would reconstruct it anyway.
+
+Also rejected, after being drawn: the repp stripe (noisy), varsity numerals (did not read as varsity), a ribbon bookmark (noisy), and a stamped completion seal. Kept: colour fields, the drop cap, the crest, and a handwritten margin annotation in the tutor's voice.
+
+Rider: the annotation is the one place the tutor speaks *as a person* rather than as prose, and it is keyed to what the student said in their interview. It is the cheapest personality in the whole design and the closest to twee — watch it in the dogfood cycle.
+
+## D22. Material carries meaning; assessment is not more lesson (resolved 2026-08-31, package 8 design session, Colin)
+
+Every candidate direction was weakest on the same surface — the graded form. Five of the twelve screens are quizzes, none of the five reference products measured had one, and a quiz rendered on the reading ground reads as more lesson.
+
+**Three grounds, each bound to a purpose.** The paper column is reading. A photocopied 1990s classroom quiz sheet — Courier Prime, a name/date block, a `DIRECTIONS:` line, the sheet a third of a degree off square — is *all* practice: homework and all three refresher grains. A blue book is the final exam: cover, then stapled interior on a 30px rhythm with type sitting on the rules and a red vertical margin.
+
+The blue book states D20's rule as an object rather than as a warning dialog: the cover says the book is collected whole and marked once, nothing disclosed until it is handed in, and a re-sit is the same examination. The exam opens closed and is clicked open — the one deliberately animated moment in the app, on the highest-stakes screen.
+
+Rejected for practice: a **yellow legal pad**, which was the more charming of the two and lost on two counts — yellow sits near-opposite hunter green, and ruled lines fight option lists. It is not discarded: it is the material for the v1.1 notes feature, which PLAN.md already defers. Rejected: leaving quizzes on the paper card, which is what made them read as corporate training in the first place.
+
+## D23. The in-lesson checkpoint is a margin question (resolved 2026-08-31, package 8 design session, Colin)
+
+A checkpoint interrupts streamed prose mid-column, and the container that makes it unmissable is the same container that makes it feel like a form.
+
+**Chosen: the tutor interrupts from the margin** — the question posed in the hand, options inline under a brass rule, no card. It is the lightest interruption of the four drawn and it reuses D21's annotation rather than introducing a fifth object.
+
+**At ≤767px there is no margin, so the note moves into the column as the question's lead-in line**, still in the hand, still rotated, brass rule beside the options only. Rejected phone reductions: a tinted full-bleed band (safest, least distinctive — it reintroduces the card the desktop version removed) and running the brass rule the full height as the container (faithful, but the note stops reading as marginal once it is inside the rule).
+
+Rejected treatments: the **paper card** (reliable and boring — it was the fallback), a **torn slip** of the homework stock (consistent with D22, but a torn edge mid-prose is a bigger interruption than a checkpoint deserves; it stays with homework), and an **index card** (most charming, wears thin at four checkpoints a lesson; parked for a later use).
+
+## D24. Radix and the copied shadcn primitives stay (resolved 2026-08-31, package 8 design session, Colin)
+
+The question was fair: `components/ui/` and `app.css` are untouched Laravel starter-kit boilerplate — nothing in them was written for this project — so why keep them at all? The decision was deferred until a direction existed, against one test: does the direction mean **editing** the primitives or **fighting** them.
+
+**Editing.** Every one of the twenty artboards expressed itself as tokens, borders, type and colour fields — precisely the axes the copied files expose. The one element that looked like it might need different anatomy, the phone explainer sheet, is served by the existing `ui/sheet.tsx`, which wraps Radix Dialog and brings focus trapping and escape handling with it.
+
+Rejected: a clean-slate front end. It would delete no work of ours (only `pages/terms.tsx` was authored here), but it means rewriting accessible behaviour — focus trap, keyboard navigation, ARIA wiring — plus login, register, 2FA and passkey screens that already work, in the last package before the deadline, and none of that rebuild makes the product look better.
+
+Rider: shadcn is a generator, not a dependency. Those 25 files are ours to edit or delete file by file, so this decision commits us to Radix (14 packages) and to nothing else. Falsified if a settled screen ever needs a primitive's anatomy replaced rather than restyled.

@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Instrument+Serif&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82); --gold:oklch(0.83 0.090 88);
+      --sheet:oklch(0.955 0.003 100); --toner:oklch(0.30 0.006 260);
+      --pen:oklch(0.34 0.105 255);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .mono{font-family:"Courier Prime","Courier New",monospace;color:var(--toner)}
+    .pen{font-family:"Caveat",cursive;color:var(--pen)}
+    .blank{display:inline-block;border-bottom:1px solid var(--toner);min-width:150px}
+  </style>
+</helmet>
+
+<div style="display:flex; height:900px; width:1440px; background:var(--ground)">
+
+  <aside style="width:252px; flex:0 0 252px; background:var(--railgreen); color:oklch(0.90 0.014 110); padding:24px 22px; display:flex; flex-direction:column; gap:24px">
+    <div style="display:flex; gap:12px; align-items:center">
+      <svg width="34" height="40" viewBox="0 0 34 40" fill="none" style="flex:0 0 34px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">OT</text>
+      </svg>
+      <div>
+        <div class="disp" style="font-size:24px; line-height:1; color:oklch(0.95 0.012 100)">OpenTutor</div>
+        <div class="lab" style="margin-top:4px; color:var(--brass); font-size:10px">Conversational Basics</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      <div class="lab" style="color:var(--gold); border-bottom:1px solid oklch(0.32 0.045 155); padding-bottom:6px">Lesson 2</div>
+      <div style="display:flex; gap:9px; color:oklch(0.66 0.028 130); font-size:15px"><span style="color:var(--brass)">✓</span><span>Ser, briefly revisited</span></div>
+      <div style="display:flex; gap:9px; color:oklch(0.66 0.028 130); font-size:15px"><span style="color:var(--brass)">✓</span><span>Estar: how things are right now</span></div>
+      <div style="display:flex; gap:9px; color:oklch(0.66 0.028 130); font-size:15px"><span style="color:var(--brass)">✓</span><span>Location, and the exception</span></div>
+      <div style="display:flex; gap:9px; color:oklch(0.66 0.028 130); font-size:15px"><span style="color:var(--brass)">✓</span><span>Putting them side by side</span></div>
+      <div style="display:flex; gap:9px; font-size:15px; color:oklch(0.95 0.010 100); margin:0 -22px; padding:9px 22px; background:var(--wine)"><span style="color:var(--gold)">▸</span><span>Homework</span></div>
+    </div>
+    <div class="lab" style="margin-top:auto; color:oklch(0.62 0.030 130); line-height:1.5">Four questions.<br>Answers are kept as you go.</div>
+  </aside>
+
+  <main style="flex-grow:1; display:flex; flex-direction:column; overflow:hidden; padding:30px 56px 0; align-items:center">
+
+    <div style="width:790px; background:var(--sheet); transform:rotate(-0.35deg);
+                box-shadow:0 1px 0 oklch(0.86 0.004 100), 0 16px 38px oklch(0.45 0.010 260 / .22);
+                flex-grow:1; overflow:hidden; padding:38px 54px">
+
+      <!-- header block -->
+      <div class="mono" style="font-size:14px; line-height:1.75">
+        <div style="display:flex; align-items:baseline; gap:14px">
+          <div style="font-weight:700; letter-spacing:.06em; font-size:15px">SPANISH I — CONVERSATIONAL BASICS</div>
+          <div style="flex-grow:1"></div>
+          <div style="font-size:12.5px">LESSON 2 · HOMEWORK</div>
+        </div>
+        <div style="border-bottom:2px solid var(--toner); margin:9px 0 12px"></div>
+        <div style="display:flex; gap:34px">
+          <div>NAME <span class="blank" style="min-width:180px; position:relative"><span class="pen" style="position:absolute; left:8px; top:-19px; font-size:21px; transform:rotate(-1.5deg)">Colin W.</span></span></div>
+          <div>DATE <span class="blank" style="min-width:110px; position:relative"><span class="pen" style="position:absolute; left:8px; top:-19px; font-size:21px; transform:rotate(-1deg)">31 Aug</span></span></div>
+        </div>
+        <div style="margin-top:11px; font-size:13px">DIRECTIONS: Circle the letter of the best answer. Ser and estar only.</div>
+        <div style="border-bottom:1px solid var(--toner); margin:12px 0 0; opacity:.5"></div>
+      </div>
+
+      <!-- questions -->
+      <div class="mono" style="font-size:14.5px; line-height:1.95; margin-top:20px">
+
+        <div style="display:flex; gap:12px; margin-bottom:17px">
+          <div style="width:24px; flex:0 0 24px; font-weight:700">1.</div>
+          <div style="flex-grow:1">
+            <div>«Mi hermana ______ médica.»</div>
+            <div style="display:flex; gap:40px; margin-top:3px">
+              <span style="position:relative; padding:0 7px">a) es
+                <svg width="52" height="30" viewBox="0 0 52 30" style="position:absolute; left:-5px; top:-4px"><ellipse cx="26" cy="15" rx="23" ry="12" fill="none" stroke="oklch(0.34 0.105 255)" stroke-width="1.7" transform="rotate(-3 26 15)"/></svg>
+              </span>
+              <span>b) está</span><span>c) son</span><span>d) están</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-bottom:17px">
+          <div style="width:24px; flex:0 0 24px; font-weight:700">2.</div>
+          <div style="flex-grow:1">
+            <div>You have been standing in the rain ten minutes. «______ mojado.»</div>
+            <div style="display:flex; gap:40px; margin-top:3px">
+              <span>a) Soy</span>
+              <span style="position:relative; padding:0 7px">b) Estoy
+                <svg width="72" height="30" viewBox="0 0 72 30" style="position:absolute; left:-5px; top:-4px"><ellipse cx="36" cy="15" rx="33" ry="12" fill="none" stroke="oklch(0.34 0.105 255)" stroke-width="1.7" transform="rotate(1.5 36 15)"/></svg>
+              </span>
+              <span>c) Es</span><span>d) Está</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-bottom:17px">
+          <div style="width:24px; flex:0 0 24px; font-weight:700">3.</div>
+          <div style="flex-grow:1">
+            <div>Which sentence means the film is boring AS A FILM, rather than</div>
+            <div>that it is boring you right now?</div>
+            <div style="margin-top:3px; display:flex; flex-direction:column">
+              <span>a) «La película es aburrida.»</span>
+              <span>b) «La película está aburrida.»</span>
+              <span>c) «La película está aburriendo.»</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px">
+          <div style="width:24px; flex:0 0 24px; font-weight:700">4.</div>
+          <div style="flex-grow:1">
+            <div>«El banco ______ al lado de la farmacia.»</div>
+            <div style="display:flex; gap:40px; margin-top:3px"><span>a) es</span><span>b) está</span><span>c) son</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="width:790px; padding:16px 0 20px; display:flex; align-items:center; gap:18px">
+      <button style="font-family:'Newsreader',Georgia,serif; font-size:15px; letter-spacing:.13em; text-transform:uppercase; background:var(--wine); color:oklch(0.97 0.010 60); border:none; padding:12px 30px; cursor:pointer">Hand it in</button>
+      <span class="lab">Two of four answered</span>
+      <div style="flex-grow:1"></div>
+      <div class="lab" style="text-align:right; line-height:1.5">Suggested reading appears<br>once you hand it in</div>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

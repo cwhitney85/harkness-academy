@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Caslon+Display&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.960 0.014 82);
+      --surface:oklch(0.985 0.008 82);
+      --ink:oklch(0.25 0.024 50);
+      --muted:oklch(0.50 0.020 50);
+      --oxblood:oklch(0.38 0.100 28);
+      --hunter:oklch(0.42 0.055 150);
+      --tobacco:oklch(0.60 0.090 62);
+      --rule:oklch(0.86 0.014 78);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"EB Garamond",Georgia,serif;font-size:18px;line-height:1.66;
+      font-variant-numeric:oldstyle-nums;-webkit-font-smoothing:antialiased}
+    a{color:var(--oxblood)} a:hover{color:oklch(0.32 0.110 28)}
+    .caps{font-family:"EB Garamond",Georgia,serif;font-variant:small-caps;
+      letter-spacing:.09em;font-size:13px;color:var(--muted)}
+    .disp{font-family:"Libre Caslon Display",Georgia,serif;letter-spacing:-0.012em}
+  </style>
+</helmet>
+
+<div style="display:flex; height:900px; width:1440px; background:var(--ground)">
+
+  <!-- LEFT RAIL -->
+  <aside style="width:262px; flex:0 0 262px; border-right:1px solid var(--rule); padding:26px 22px; display:flex; flex-direction:column; gap:26px">
+    <div style="display:flex; flex-direction:column; gap:3px">
+      <div class="disp" style="font-size:21px">OpenTutor</div>
+      <div class="caps">Spanish · Conversational Basics</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:9px">
+      <div class="caps" style="border-bottom:1px solid var(--rule); padding-bottom:5px">Lessons</div>
+
+      <div style="display:flex; gap:9px; align-items:baseline; color:var(--muted)">
+        <span style="width:15px; text-align:right">1</span>
+        <span style="flex-grow:1">Greeting Someone You've Just Met</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.42 0.055 150)" stroke-width="2.4"><path d="M4 12.5l5.2 5.2L20 7"/></svg>
+      </div>
+
+      <div style="display:flex; gap:9px; align-items:baseline; background:var(--surface); margin:0 -9px; padding:7px 9px; border-left:2px solid var(--oxblood)">
+        <span style="width:15px; text-align:right; color:var(--oxblood)">2</span>
+        <span style="flex-grow:1; color:var(--ink)">Saying Where You Are and How You Are</span>
+      </div>
+
+      <div style="display:flex; gap:9px; align-items:baseline; color:var(--muted)">
+        <span style="width:15px; text-align:right">3</span><span style="flex-grow:1">Asking for What You Need</span>
+      </div>
+      <div style="display:flex; gap:9px; align-items:baseline; color:var(--muted)">
+        <span style="width:15px; text-align:right">4</span><span style="flex-grow:1">Numbers, Prices and Time</span>
+      </div>
+      <div style="display:flex; gap:9px; align-items:baseline; color:var(--muted)">
+        <span style="width:15px; text-align:right">5</span><span style="flex-grow:1">Getting Directions</span>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:auto">
+      <div class="caps" style="border-bottom:1px solid var(--rule); padding-bottom:5px">This lesson</div>
+      <div style="display:flex; gap:8px; align-items:baseline; color:var(--muted); font-size:16px">
+        <span style="color:var(--hunter)">·</span><span>Ser, briefly revisited</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:baseline; font-size:16px">
+        <span style="color:var(--oxblood)">·</span><span>Estar: how things are right now</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:baseline; color:var(--muted); font-size:16px; opacity:.55">
+        <span>·</span><span>Location, and the exception that isn't</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:baseline; color:var(--muted); font-size:16px; opacity:.55">
+        <span>·</span><span>Putting them side by side</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- READING COLUMN -->
+  <main style="flex-grow:1; display:flex; flex-direction:column; overflow:hidden">
+    <div style="padding:26px 40px 16px; border-bottom:1px solid var(--rule); display:flex; align-items:baseline; gap:16px">
+      <div class="caps">Lesson 2 of 5</div>
+      <div style="flex-grow:1"></div>
+      <div class="caps">Section 2 of 4</div>
+      <div style="display:flex; gap:4px; align-items:center">
+        <span style="width:22px;height:3px;background:var(--hunter)"></span>
+        <span style="width:22px;height:3px;background:var(--oxblood)"></span>
+        <span style="width:22px;height:3px;background:var(--rule)"></span>
+        <span style="width:22px;height:3px;background:var(--rule)"></span>
+      </div>
+    </div>
+
+    <div style="flex-grow:1; overflow:hidden; padding:34px 40px 0">
+      <div style="max-width:612px; margin:0 auto">
+        <h1 class="disp" style="font-size:33px; line-height:1.2; margin:0 0 6px; font-weight:400">Estar: how things are right now</h1>
+        <div class="caps" style="margin-bottom:26px">estar-for-state · estar-for-location · ser-vs-estar</div>
+
+        <p style="margin:0 0 18px">You walk into a café in Salamanca at nine in the morning. The waiter looks up and says, «¿Cómo está?» — and then, an hour later, as you are leaving: «El café está frío.» Same verb, twice, and neither time is he telling you what something <em>is</em>.</p>
+
+        <p style="margin:0 0 18px">Estar is the verb Spanish uses for conditions and locations — the things that could be otherwise. The coffee is cold now; it was hot twenty minutes ago. You are tired today; yesterday you were not. Ser, which you met in the last lesson, does the opposite work.</p>
+
+        <p style="margin:0 0 18px">The pairing that trips up almost every English speaker is <span style="background:oklch(0.88 0.075 82); box-shadow:0 1px 0 var(--tobacco)">estar bueno versus ser bueno</span>. «La sopa es buena» says the soup is a good soup — well made, a good recipe. «La sopa está buena» says the soup tastes good right now, in this bowl, in front of you.<span style="display:inline-block; width:9px; height:19px; background:var(--ink); margin-left:2px; vertical-align:-3px"></span></p>
+
+        <!-- CHECKPOINT -->
+        <div style="border:1px solid var(--rule); background:var(--surface); padding:22px 24px; margin:28px 0 0">
+          <div class="caps" style="color:var(--oxblood); margin-bottom:10px">Checkpoint</div>
+          <p style="margin:0 0 16px">A friend hands you a bowl of soup, you taste it, and it is delicious. Which do you say?</p>
+          <div style="display:flex; flex-direction:column; gap:9px">
+            <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer">
+              <span style="width:11px;height:11px;border:1px solid var(--muted);border-radius:50%;flex:0 0 11px"></span>
+              <span>«La sopa es buena.»</span>
+            </label>
+            <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer">
+              <span style="width:11px;height:11px;border:1px solid var(--muted);border-radius:50%;flex:0 0 11px"></span>
+              <span>«La sopa está buena.»</span>
+            </label>
+            <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer">
+              <span style="width:11px;height:11px;border:1px solid var(--muted);border-radius:50%;flex:0 0 11px"></span>
+              <span>«La sopa es bien.»</span>
+            </label>
+            <label style="display:flex; gap:11px; align-items:baseline; cursor:pointer">
+              <span style="width:11px;height:11px;border:1px solid var(--muted);border-radius:50%;flex:0 0 11px"></span>
+              <span>«La sopa está bien.»</span>
+            </label>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; margin-top:18px">
+            <button style="font-family:inherit; font-size:16px; font-variant:small-caps; letter-spacing:.07em; background:var(--oxblood); color:oklch(0.97 0.010 82); border:none; padding:9px 22px; cursor:pointer">Answer</button>
+            <span class="caps" style="font-size:12px">One question · answering continues the lesson</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPOSER -->
+    <div style="border-top:1px solid var(--rule); padding:16px 40px 20px">
+      <div style="max-width:612px; margin:0 auto; display:flex; gap:12px; align-items:flex-end">
+        <div style="flex-grow:1; border:1px solid var(--rule); background:var(--surface); padding:11px 14px">
+          <span style="color:var(--muted)">Ask about this section…</span>
+        </div>
+        <div class="caps" style="font-size:12px; padding-bottom:12px">0 / 4000</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SIDE-TAB EXPLAINER -->
+  <aside style="width:342px; flex:0 0 342px; border-left:1px solid var(--rule); background:var(--surface); padding:26px 24px; display:flex; flex-direction:column; gap:16px">
+    <div style="display:flex; align-items:baseline; gap:10px">
+      <div class="caps" style="color:var(--tobacco); flex-grow:1">Explain this</div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="oklch(0.50 0.020 50)" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </div>
+
+    <div style="border-left:2px solid var(--tobacco); padding-left:13px; font-style:italic; color:var(--muted); font-size:17px">estar bueno versus ser bueno</div>
+
+    <div style="font-size:17px; line-height:1.6">
+      <p style="margin:0 0 14px">«Ser bueno» describes a quality the thing has in itself — a good film, a kind person, a well-made soup. «Estar bueno» describes how it strikes you at this moment.</p>
+      <p style="margin:0 0 14px">Concretely: a restaurant critic writing a review reaches for <em>es buena</em>. You, tasting the first spoonful at the table, reach for <em>está buena</em>.</p>
+      <p style="margin:0">One caution worth carrying: in much of Spain, «estar bueno» said of a <em>person</em> is slang for attractive. Keep it to food and objects until you have a feel for the room.</p>
+    </div>
+
+    <div style="margin-top:auto; border-top:1px solid var(--rule); padding-top:12px" class="caps">
+      Highlight up to 500 characters
+    </div>
+  </aside>
+
+</div>
+</x-dc>
+</body>
+</html>
