@@ -4,6 +4,8 @@ description: Start a package-8 interface session scoped to one section (usage: /
 
 Build section $ARGUMENTS of `docs/specs/08-interface.md`. The design is settled — this session translates it, it does not redesign it.
 
+**Prerequisites: 8.1 and 8.2 must have landed.** 8.1 is the canvas and the ledger; 8.2 is the seeder that puts renderable rows in the database. 8.2 is built with `/package 8 items 8.2`, not with this command — it produces a seeder, not a screen.
+
 ## 1. Look before you read
 
 **Open the canvas and actually look at it before writing anything.** Use the Chrome browser tools on `https://claude.ai/code/artifact/5d5d7052-86b8-4230-8c2a-606cba1b6f46`, land on the page named **A · materials**, and view the artboards this section maps to (table below). Reading the `.dc.html` source tells you the values; only looking tells you the proportions, the weight of the colour fields, and how much air the layout carries.
@@ -21,7 +23,7 @@ If the browser tools are unavailable, say so and work from `docs/design/canvas/*
 
 | Section | Artboards on page "A · materials" |
 |---|---|
-| 8.2 Fixtures | none — content is lifted from `docs/design/canvas/`, which is real prose written to the schemas |
+| 8.2 Fixtures | **not an `/interface` session** — it builds a seeder, not a screen. Run `/package 8 items 8.2` first; every session below assumes its rows exist. |
 | 8.3 Design language | `ALesson` (the full token set in its `:root`) |
 | 8.4 Material system | `QuizPhotocopy`, `ExamClosed`, `ExamBlueBook` |
 | 8.5 Application shell | `ALesson`, `LessonPhone` |
@@ -47,7 +49,7 @@ The artboards are fixed-width mockups built to be looked at. They are not a comp
 
 ## 5. Verify against the done-conditions, not against the picture
 
-**Seed first.** 8.2's fixtures give you a fresh course, a lesson mid-flight, an unanswered checkpoint, ungraded homework, a course ready for its exam, and a completed subtopic and module. Every done-condition below assumes those rows exist.
+**Seed first.** Run 8.2's seeder — a fresh course, a lesson mid-flight, an unanswered checkpoint, ungraded homework, a course ready for its exam, and a completed subtopic and module. Every done-condition below assumes those rows exist. If the seeder does not exist yet, stop: it is `/package 8 items 8.2`, not this session's work.
 
 Each spec item states what demonstrates it is done. Those are the acceptance tests — several are mechanically checkable (`no oklch(… 0 0)` remains; the pre-answer DOM contains no `correct_option_id`; no horizontal scroll at 390px). Run them.
 

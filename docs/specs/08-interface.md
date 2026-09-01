@@ -14,7 +14,7 @@
 
 ## 8.2 Fixtures
 
-*Built immediately after 8.1 and before anything is styled: no course has ever been generated, so nothing in the database can render a screen. A seeder writes rows directly — no inference, deterministic, re-runnable every session.*
+*Built with `/package 8 items 8.2`, not `/interface` — this section produces a seeder, not a screen. Built immediately after 8.1 and before anything is styled: no course has ever been generated, so nothing in the database can render a screen. A seeder writes rows directly — no inference, deterministic, re-runnable every session.*
 
 *Content comes from the artboards in `docs/design/canvas/`, which is real Spanish teaching prose written to the schemas. Lorem ipsum is refused: uniform word lengths and no structure tell you nothing about whether a layout survives a long Spanish quotation at 44ch.*
 
