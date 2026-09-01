@@ -424,6 +424,8 @@ Rejected: **B "Foolscap"** (EB Garamond on warm cream, the course as a printed o
 
 Also rejected, after being drawn: the repp stripe (noisy), varsity numerals (did not read as varsity), a ribbon bookmark (noisy), and a stamped completion seal. Kept: colour fields, the drop cap, the crest, and a handwritten margin annotation in the tutor's voice.
 
+Rider (added 2026-08-31, Colin): **the measure is 72 *characters*, not 72 CSS `ch`.** The three products were measured in sans-serifs, where the digit `0` and the average character are close to the same width; Newsreader's digits are 0.566em against an average character of 0.407em, so taking `ch` literally would have set a 693px line of ~100 characters and made the phone number arithmetically unreachable (44 `ch` is 424px at 390px). The column is `--measure: 29.3em` plus a fixed 20px gutter — ~72 characters at 1440px, ~50 at 390px, one rule at both widths and no font-size rule. Spec 8.3.3 and 8.2.3 carry the amended numbers.
+
 Rider: the annotation is the one place the tutor speaks *as a person* rather than as prose, and it is keyed to what the student said in their interview. It is the cheapest personality in the whole design and the closest to twee — watch it in the dogfood cycle.
 
 ## D22. Material carries meaning; assessment is not more lesson (resolved 2026-08-31, package 8 design session, Colin)
