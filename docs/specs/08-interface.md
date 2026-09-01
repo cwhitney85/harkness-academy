@@ -61,6 +61,193 @@
 
 - **8.6.1 MUST** — One diagram in this spec showing every transition between the twelve screens, including resume and failure paths, and naming the URL of each. *Done: every route in `routes/` appears as at least one edge, and every screen 8.7 will build has a URL named here before its controller is written.*
 
+### The twelve screens
+
+| # | Screen | URL | Route name | Status |
+|---|---|---|---|---|
+| S1 | Dashboard | `GET /dashboard` | `dashboard` | exists (starter-kit placeholder; 8.10.1 replaces it) |
+| S2 | Course creation | `GET /courses/create` | `courses.create` | **8.7.1 builds** |
+| S3 | Knowledge interview | `GET /courses/{course}/knowledge-interview` | `courses.knowledge-interview.show` | **8.7.2 builds** |
+| S4 | Goals interview | `GET /courses/{course}/goals-interview` | `courses.goals-interview.show` | **8.7.3 builds** |
+| S5 | Syllabus approve/revise | `GET /courses/{course}/syllabus` | `courses.syllabus.show` | **8.7.4 builds** (8.7.5's banner is a region of it) |
+| S6 | Lesson | `GET /lessons/{lesson}` | `lessons.show` | exists |
+| S7 | Lesson completion | `GET /lessons/{lesson}` — a state of S6, not a URL | `lessons.show` | 8.8.6 builds the state |
+| S8 | Homework | `GET /lessons/{lesson}/homework` | `lessons.homework.show` | exists |
+| S9 | Final exam | `GET /courses/{course}/final-exam` | `courses.final-exam.show` | exists |
+| S10 | Exam result and gate | `GET /courses/{course}/final-exam` — a state of S9, after a sitting | `courses.final-exam.show` | 8.9.3 builds the state |
+| S11 | Refresher | `GET /refreshers/{refresher}` | `refreshers.show` | exists |
+| S12 | Module rollup | `GET /modules/{module}` | `modules.show` | **8.10.2 builds** |
+
+Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
+
+### The map
+
+```
+  GET /            ──► sign in ──►  S1
+  GET terms        ──  linked from the welcome page and registration
+
+  S1  DASHBOARD                                        GET /dashboard
+      ├─ "Start a course" ────────────────────────►    S2
+      ├─ "Continue" (per course; resume table below) ► S3 · S4 · S5 · S6 · S9
+      └─ a completed course's module ─────────────►    S12
+
+  S2  COURSE CREATION                                  GET /courses/create
+      ├─ POST /courses  (catalog pick or free text + level) ──► S3
+      └─ 422 subtopic already open ──► S2, offering the open course's resume URL
+
+  S3  KNOWLEDGE INTERVIEW                              GET /courses/{course}/knowledge-interview
+      │   opening question   GET  …/knowledge-interview/stream    (only when the restored transcript is empty)
+      │   each answer        POST …/knowledge-interview/answers   (streams the reply)
+      ├─ Done ──► POST …/knowledge-interview/complete  (writes WORKING_KNOWLEDGE) ──► S4
+      ├─ stream.error ──► S3, transcript intact, the answer re-sent
+      └─ 422 summary unusable ──► S3, still underway, Done pressable again
+
+  S4  GOALS INTERVIEW                                  GET /courses/{course}/goals-interview
+      │   same three endpoints under …/goals-interview; complete writes CRITERIA
+      ├─ Done ──► S5
+      └─ same two failure edges as S3
+
+  S5  SYLLABUS                                         GET /courses/{course}/syllabus
+      │   no draft yet ──► POST /courses/{course}/syllabus            (generates generation 1)
+      ├─ Approve ──► POST /courses/{course}/syllabus/approval ──►     S6 (lesson 1)
+      ├─ Revise  ──► POST /courses/{course}/syllabus/revisions ──►    S5 (a new draft; the course returns to syllabus_draft)
+      ├─ 503 syllabus unusable ──► S5 unchanged; asking again is the recovery
+      └─ 422 revisions used up ──► S5 with approve as the only move left
+
+  S6  LESSON                                           GET /lessons/{lesson}
+      │   section prose     GET  /lessons/{lesson}/sections/{index}/stream
+      │   question          POST /lessons/{lesson}/questions            (streams; joins the transcript)
+      │   highlight         POST /lessons/{lesson}/explanations         (streams; leaves the transcript alone)
+      │   checkpoint        POST /lessons/{lesson}/checkpoints/{checkpoint}/answers
+      ├─ reopen (5.3) ──► S6 at the stored section, transcript and checkpoints restored
+      ├─ stream.error ──► S6; the same section URL replays a finished turn and re-teaches an unfinished one
+      ├─ checkpoint grading fails open (5.2.1) ──► S6 continues; nothing is lost
+      └─ Finish ──► POST /lessons/{lesson}/complete ──► S7
+
+  S7  LESSON COMPLETE                                  (S6's URL, in its completed state)
+      ├─ homework ────────────────────────────────►    S8
+      ├─ next lesson (unlocked by the chain) ─────►    S6
+      ├─ practise this lesson ──► POST /lessons/{lesson}/refreshers ──► S11
+      └─ last lesson done ────────────────────────►    S9
+
+  S8  HOMEWORK                                         GET /lessons/{lesson}/homework
+      ├─ state: pending ──► S8 waits on the same URL; the chain is still running (5.4.5)
+      ├─ answer ──► POST /lessons/{lesson}/homework/answers ──► S8 with the explanation revealed (8.9.1)
+      └─ done ────────────────────────────────────►    S6 (next lesson) · S9 (if none remain)
+
+  S9  FINAL EXAM — closed book                         GET /courses/{course}/final-exam
+      ├─ not available yet ──► S6, naming the lessons still owed
+      ├─ Open the book ──► POST /courses/{course}/final-exam ──► S9 opened (course moves to final_exam)
+      ├─ 503 exam unusable ──► S9 still closed; nothing written, nothing moved (fails closed, 4.5.1)
+      ├─ re-sit ──► S9 opens straight to the leaf, same exam, no animation (8.4.4)
+      └─ Hand in ──► POST /courses/{course}/final-exam/sittings ──► S10
+
+  S10 EXAM RESULT AND GATE                             (S9's URL, after a sitting)
+      ├─ pass (≥70%) ──► S1, the course completed; ──► S12 for its module
+      ├─ fail ──► the gate holds; the course returns to active ──► S6 · S11 to study, then S9 to re-sit
+      └─ practise a subtopic ──► POST /courses/{course}/refreshers ──► S11
+
+  S11 REFRESHER                                        GET /refreshers/{refresher}
+      │   reached from three doors, one per grain:
+      │     POST /lessons/{lesson}/refreshers   (lesson)    from S7
+      │     POST /courses/{course}/refreshers   (subtopic)  from S10 and S12
+      │     POST /modules/{module}/refreshers   (module)    from S12
+      ├─ answer ──► POST /refreshers/{refresher}/answers ──► S11 marked
+      └─ back ────────────────────────────────────►    S1 · S12
+
+  S12 MODULE ROLLUP                                    GET /modules/{module}
+      ├─ a subtopic's course ─────────────────────►    S1's card for it
+      ├─ subtopic refresher ──► POST /courses/{course}/refreshers ──► S11
+      └─ module refresher ────► POST /modules/{module}/refreshers ──► S11
+
+  SETTINGS (outside the twelve; reached from the user menu, returns there)
+      GET settings ──► GET settings/profile ⇄ GET settings/security
+      GET settings/appearance is unreachable from the UI (8.5.6) and stays so until dark mode ships
+      GET .well-known/passkey-endpoints answers password managers, never a student
+```
+
+### Where a resume lands
+
+The dashboard's "next action" per course (8.10.1) is this table; nothing else may decide it.
+
+| `courses.status` | Resumes at |
+|---|---|
+| `created` | `GET /courses/{course}/knowledge-interview` |
+| `knowledge_interview` | `GET /courses/{course}/knowledge-interview` — the transcript is restored, the opening is not re-streamed |
+| `goals_interview` | `GET /courses/{course}/goals-interview` |
+| `syllabus_draft` | `GET /courses/{course}/syllabus` |
+| `syllabus_revision` | `GET /courses/{course}/syllabus` — the previous draft still stands and is still approvable |
+| `active` | `GET /lessons/{lesson}` for the lowest lesson not `completed`; if none remain, `GET /courses/{course}/final-exam` |
+| `final_exam` | `GET /courses/{course}/final-exam` — the same exam, opened to the leaf |
+| `completed` (derived) | `GET /modules/{module}` |
+| `withdrawn` (derived) | the dashboard only — v1 names no re-entry URL (see the gaps below) |
+
+### The new URLs, in full
+
+Fifteen routes, five of them screens. 8.7 and 8.10.2 write them; this section is where they were decided.
+
+| Method | URL | Name | Engine call |
+|---|---|---|---|
+| GET | `courses/create` | `courses.create` | catalog read |
+| POST | `courses` | `courses.store` | `CreateCourse::fromCatalog` / `::fromFreeText` |
+| GET | `courses/{course}/knowledge-interview` | `courses.knowledge-interview.show` | `Transcript` replay |
+| GET | `courses/{course}/knowledge-interview/stream` | `courses.knowledge-interview.stream` | `Interviews::knowledge()->open()` |
+| POST | `courses/{course}/knowledge-interview/answers` | `courses.knowledge-interview.answers.store` | `…->answer($text)` |
+| POST | `courses/{course}/knowledge-interview/complete` | `courses.knowledge-interview.complete` | `…->doneButton()` |
+| GET | `courses/{course}/goals-interview` | `courses.goals-interview.show` | `Transcript` replay |
+| GET | `courses/{course}/goals-interview/stream` | `courses.goals-interview.stream` | `Interviews::goals()->open()` |
+| POST | `courses/{course}/goals-interview/answers` | `courses.goals-interview.answers.store` | `…->answer($text)` |
+| POST | `courses/{course}/goals-interview/complete` | `courses.goals-interview.complete` | `…->doneButton()` |
+| GET | `courses/{course}/syllabus` | `courses.syllabus.show` | `Course::latestSyllabus()` |
+| POST | `courses/{course}/syllabus` | `courses.syllabus.store` | `SyllabusGenerator::first` |
+| POST | `courses/{course}/syllabus/revisions` | `courses.syllabus.revisions.store` | `SyllabusGenerator::revision` |
+| POST | `courses/{course}/syllabus/approval` | `courses.syllabus.approval.store` | `ApproveSyllabus` |
+| GET | `modules/{module}` | `modules.show` | `ModuleRollup::render` |
+
+Three shapes were settled here rather than left to a controller:
+
+- **`GET …/stream` opens an interview; `POST …/answers` continues it** — the same split as a lesson, where the tutor speaks first over GET and the student answers over POST. It carries one precondition, because `InterviewSession::open()` *discards* a half-finished transcript: **the stream URL may be requested only when the restored transcript is empty.** A reload paints from the screen payload and never re-opens. Getting this wrong loses a student's interview, which is the one thing 8.7.2's done-condition checks.
+- **Generating the first syllabus is its own POST**, not a side effect of the goals interview's Done. A `top`-tier generation on a redirect path has nowhere to report failure; on its own endpoint, a 503 leaves the student on S5 with a button (4.5.1, and the same reasoning as `courses.final-exam.store`). Both syllabus generators carry `throttle:6,1`, matching the exam.
+- **Approval is a POST to a noun** (`/syllabus/approval`), so approving and revising are two URLs rather than one endpoint switching on a field. `CourseStatus` already treats them as two successors of `syllabus_draft`.
+
+Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`, `{refresher}` bind by id, since no model overrides `getRouteKeyName`.
+
+### Every route in `routes/`, and the edge it is
+
+| Route | Edge |
+|---|---|
+| `home` | entry ──► S1 |
+| `terms` | linked from the welcome page and registration |
+| `dashboard` | **S1** |
+| `lessons.show` | **S6** / **S7** |
+| `lessons.sections.stream` | S6 paints a section; also S6's replay after `stream.error` |
+| `lessons.questions.store` | S6 Q&A turn (8.8.5) |
+| `lessons.explanations.store` | S6 selection explainer (8.8.4) |
+| `lessons.checkpoints.answers.store` | S6 checkpoint answer (8.8.3) |
+| `lessons.complete` | S6 ──► S7 |
+| `lessons.homework.show` | S7 ──► **S8** |
+| `lessons.homework.answers.store` | S8 ──► S8 with the explanation revealed |
+| `courses.final-exam.show` | S7/S8 ──► **S9**; and **S10** after a sitting |
+| `courses.final-exam.store` | S9 closed ──► S9 opened |
+| `courses.final-exam.sittings.store` | S9 ──► S10 |
+| `lessons.refreshers.store` | S7 ──► S11 (lesson grain) |
+| `courses.refreshers.store` | S10, S12 ──► S11 (subtopic grain) |
+| `modules.refreshers.store` | S12 ──► S11 (module grain) |
+| `refreshers.show` | **S11** |
+| `refreshers.answers.store` | S11 ──► S11 marked |
+| `profile.edit` · `profile.update` · `profile.destroy` | settings, outside the twelve |
+| `security.edit` · `user-password.update` | settings, outside the twelve |
+| `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
+| `well-known.passkeys` | machine endpoint; no student edge |
+
+Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
+
+### What this map deliberately does not name
+
+- **No withdraw or resume-a-withdrawn-course URL.** `CourseTransitions::withdraw`/`resume` exist and no spec item asks for a screen. Naming a URL here would invent one; a v1.1 item should add both to this map before either is built.
+- **No syllabus history URL.** Revisions are rows (4.5.4.1) and the screen shows the current draft; nothing in 8.7.4 asks a student to read generation 2 of 4.
+- **No per-question exam URL.** D20 forbids it: the exam is sat whole, which is why S9 has one URL and one hand-in.
+
 ## 8.7 Package 4's missing HTTP layer
 
 *Inherited, not new: package 4 shipped engine-only, so these routes have never existed. Package 4 owns them by subject and package 8 by schedule; recorded here so nothing falls between.*
