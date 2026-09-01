@@ -1,7 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import Crest from '@/components/crest';
+import { railControl as control, RailHead } from '@/components/rail';
 import {
     Sheet,
     SheetContent,
@@ -11,15 +11,6 @@ import {
 } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { StudyPosition } from '@/types';
-
-/**
- * A 44px hit box (8.5.4) and a focus ring in the palette. The browser's own
- * ring is white, which is not a colour this design has (8.3.1), and both of
- * the shell's controls sit on a green field where it would be the brightest
- * thing on the screen.
- */
-const control =
-    'flex size-11 flex-none items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass';
 
 /**
  * The frame every studying screen is set in — spec 8.5, direction D21.
@@ -103,7 +94,7 @@ export default function StudyShell({
         <div className="flex h-dvh w-full overflow-hidden bg-ground text-ink">
             {!phone && (
                 <aside className="flex w-[252px] flex-none flex-col gap-6 overflow-y-auto bg-rail-green px-[22px] py-6 text-ground/90">
-                    <RailHead course={course} />
+                    <RailHead subtitle={course} />
                     {rail}
                 </aside>
             )}
@@ -170,23 +161,6 @@ export default function StudyShell({
     );
 }
 
-/** The crest, the app's name, and the course under it in brass. */
-function RailHead({ course }: { course: string }) {
-    return (
-        <div className="flex flex-none items-center gap-3">
-            <Crest className="h-10 w-[34px] flex-none" />
-            <div className="min-w-0">
-                <div className="display text-2xl leading-none text-ground">
-                    OpenTutor
-                </div>
-                <div className="label mt-1 truncate text-[10px] text-brass">
-                    {course}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 /** Where the student is, at the head of the paper column. */
 function ColumnHeader({
     lesson,
@@ -245,7 +219,7 @@ function PhoneBar({
                         The course's lessons, and the sections of this one.
                     </SheetDescription>
                     <div className="flex h-full flex-col gap-6 overflow-y-auto px-[22px] py-6">
-                        <RailHead course={course} />
+                        <RailHead subtitle={course} />
                         {rail}
                     </div>
                 </SheetContent>

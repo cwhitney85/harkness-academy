@@ -84,7 +84,7 @@ export default function SyllabusScreen({
     const approve = useForm({});
     const revise = useForm({ feedback: '' });
 
-    const heading = `${course.title} · ${course.level}`;
+    const heading = course.title;
 
     if (!syllabus) {
         return (

@@ -33,7 +33,7 @@ import type { TurnEvent } from '@/types';
 type Turn = { id: number; speaker: 'student' | 'tutor'; content: string };
 
 type Interview = {
-    course: { id: number; title: string; level: string };
+    course: { id: number; title: string };
     kind: 'knowledge' | 'goals';
     turns: Turn[];
     may_open: boolean;
@@ -158,12 +158,10 @@ export default function InterviewScreen({
             });
     }
 
-    const remaining = limits.answer_characters - draft.length;
-
     return (
         <PipelineShell
             step={kind}
-            course={`${course.title} · ${course.level}`}
+            course={course.title}
             footer={
                 <div className="flex flex-col gap-2.5">
                     {failure && (
@@ -207,7 +205,9 @@ export default function InterviewScreen({
                             {copy.done}
                         </button>
                         <span className="grow" />
-                        <span className="label">{remaining} left</span>
+                        <span className="label">
+                            {draft.length} / {limits.answer_characters}
+                        </span>
                     </div>
                 </div>
             }

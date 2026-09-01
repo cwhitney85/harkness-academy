@@ -12,30 +12,25 @@
 
 export type TurnKind = 'section' | 'qa' | 'interview' | 'explainer';
 
-/**
- * The section fields travel together or not at all: a `qa`, `explainer` or
- * `interview` turn has no section to name, and the server omits them rather
- * than sending nulls for every client to check.
- */
-export type TurnStart = {
-    turn_id: string;
-    kind: TurnKind;
-    section_index?: number;
-    section_title?: string;
-    sections_total?: number;
-};
-
-export type TurnDelta = { turn_id: string; text: string };
-
-/** The promise that the turn survived: the row existed before this was sent. */
-export type TurnEnd = { turn_id: string; message_id: number };
-
-/** `retryable` is the whole value: whether reopening is worth doing. */
-export type StreamFailure = { code: string; retryable: boolean };
-
 export type TurnEvent =
-    | { name: 'turn.start'; data: TurnStart }
-    | { name: 'turn.delta'; data: TurnDelta }
-    | { name: 'turn.end'; data: TurnEnd }
+    /**
+     * The section fields travel together or not at all: a `qa`, `explainer` or
+     * `interview` turn has no section to name, and the server omits them
+     * rather than sending nulls for every client to check.
+     */
+    | {
+          name: 'turn.start';
+          data: {
+              turn_id: string;
+              kind: TurnKind;
+              section_index?: number;
+              section_title?: string;
+              sections_total?: number;
+          };
+      }
+    | { name: 'turn.delta'; data: { turn_id: string; text: string } }
+    /** The promise that the turn survived: the row existed before this was sent. */
+    | { name: 'turn.end'; data: { turn_id: string; message_id: number } }
     | { name: 'checkpoint.ready'; data: Record<string, unknown> }
-    | { name: 'stream.error'; data: StreamFailure };
+    /** `retryable` is the whole value: whether reopening is worth doing. */
+    | { name: 'stream.error'; data: { code: string; retryable: boolean } };

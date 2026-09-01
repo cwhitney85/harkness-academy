@@ -53,7 +53,6 @@ class InterviewController extends Controller
             'course' => [
                 'id' => $course->id,
                 'title' => $course->subtopic_title,
-                'level' => $course->skill_level->title(),
             ],
             'kind' => $kind->value,
             'turns' => array_map(
