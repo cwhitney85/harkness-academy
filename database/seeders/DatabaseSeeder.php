@@ -19,9 +19,16 @@ class DatabaseSeeder extends Seeder
         // picker has nothing to offer (spec 4.1).
         $this->call(CourseCatalogSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        if (! User::query()->where('email', 'test@example.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
+
+        // The six states package 8 designs against (spec 8.2). Not sample data
+        // either: until the engines have been run for real there is nothing in
+        // the database for a screen to render.
+        $this->call(InterfaceFixtureSeeder::class);
     }
 }
