@@ -20,6 +20,18 @@ LLM personal-tutor PWA. Laravel 13 + Inertia/React + Postgres. Anthropic-direct 
 - Every AI call must log to `usage_events` (spec 2.2) and use a prompt key from the inventory (spec 2.3.2).
 - Anthropic-specific feature usage gets an entry in `docs/anthropic-specific.md` (spec 2.5).
 - **The design canvas is the design source of record** — [`docs/design/canvas/`](docs/design/canvas/) holds the source, the published canvas is where it is read. A change to the visual language changes that directory **and** `resources/css/app.css` in the same commit (spec 8.1.3).
+- **Clean up the slop** - before committing, review the diff as if your job is to delete as much of it as possible without violating the requested behavior. Flag:
+
+* abstractions with only one real use
+* duplicated existing capability
+* speculative extensibility
+* unnecessary dependencies
+* files changed outside the causal path of the request
+* comments/types/wrappers that explain complexity the change itself introduced
+
+For every finding, propose the smaller implementation and prove the same acceptance conditions still pass.
+
+Don’t optimize for fewer lines. Optimize for the least new structure required to make the requested behavior true.
 
 ## Git conventions
 
