@@ -13,6 +13,29 @@ use Laravel\Fortify\Features;
 abstract class TestCase extends BaseTestCase
 {
     /**
+     * No test in this suite renders a built asset, so none of them waits on
+     * one (spec 1.4).
+     *
+     * Without this, every Inertia screen test resolves `@vite` against
+     * `public/build/manifest.json` and dies with a 500 the moment that
+     * manifest is older than the page under test -- which it is for the whole
+     * of any session that adds a screen. The failure names a Vite manifest and
+     * looks nothing like the stale build it is, and `composer test` gives no
+     * hint that `npm run build` is the fix.
+     *
+     * Pre:  a test asserts status codes, props or rendered text.
+     * Post: the asset tags are empty strings and nothing reads the build
+     *       directory. A test that ever needs the real thing calls
+     *       `$this->withVite()` and says why.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
+    /**
      * The props of an Inertia page, as data.
      *
      * `assertInertia` is the right tool for asserting the shape of a screen;
