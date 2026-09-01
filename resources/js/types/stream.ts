@@ -10,6 +10,8 @@
  * change (5.2.5) before it is a type change.
  */
 
+import type { QuizQuestion } from '@/types/assessment';
+
 export type TurnKind = 'section' | 'qa' | 'interview' | 'explainer';
 
 export type TurnEvent =
@@ -31,6 +33,17 @@ export type TurnEvent =
     | { name: 'turn.delta'; data: { turn_id: string; text: string } }
     /** The promise that the turn survived: the row existed before this was sent. */
     | { name: 'turn.end'; data: { turn_id: string; message_id: number } }
-    | { name: 'checkpoint.ready'; data: Record<string, unknown> }
+    /**
+     * The section's checkpoint, stripped of its answer key (5.2.3), and the id
+     * that addresses `POST …/checkpoints/{checkpoint}/answers`. Without the id
+     * a checkpoint learned from the stream could be shown and not answered.
+     */
+    | {
+          name: 'checkpoint.ready';
+          data: {
+              checkpoint_id: number;
+              checkpoint: { section_index: number; questions: QuizQuestion[] };
+          };
+      }
     /** `retryable` is the whole value: whether reopening is worth doing. */
     | { name: 'stream.error'; data: { code: string; retryable: boolean } };

@@ -91,10 +91,6 @@ class LessonScreenTest extends TestCase
             ->firstWhere('section_index', 2);
 
         $this->assertNotNull($checkpoint);
-        $this->assertSame(
-            route('lessons.checkpoints.answers.store', [$lesson, $checkpoint['checkpoint_id']]),
-            $checkpoint['answer'],
-        );
         $this->assertArrayNotHasKey(
             'correct_option_id',
             $checkpoint['payload']['checkpoint']['questions'][0],

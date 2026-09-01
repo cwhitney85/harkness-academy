@@ -279,7 +279,7 @@ final class LessonSession
         $quiz = $this->checkpoints->forSection($this->lesson, $index);
 
         if ($quiz instanceof Quiz) {
-            $out->send(new CheckpointReady(Checkpoint::of($quiz)->clientPayload()));
+            $out->send(new CheckpointReady($quiz->id, Checkpoint::of($quiz)->clientPayload()));
         }
     }
 

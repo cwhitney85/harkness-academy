@@ -7,8 +7,10 @@ import StudyShell from '@/components/study-shell';
 import { Button } from '@/components/ui/button';
 import { postJson } from '@/lib/api';
 import { readTurnStream } from '@/lib/turn-stream';
+import { store as checkpointAnswers } from '@/routes/lessons/checkpoints/answers';
 import type {
     GradedAnswer,
+    LessonCheckpointRow,
     LessonScreen,
     LessonTurn,
     RailLesson,
@@ -26,9 +28,10 @@ import type {
  *
  * **What is painted comes from three places, and they do not overlap.** The
  * props restore the lesson (5.3): what has been taught, what was asked, which
- * checkpoints exist. The five events paint what is arriving right now (5.2.5).
- * The two JSON endpoints answer a checkpoint and explain a highlight, and
- * their replies stay on the screen rather than becoming props.
+ * checkpoints already exist. The five events paint what is arriving right now
+ * (5.2.5), including the checkpoint that closes a section the student has just
+ * been taught. The two JSON endpoints answer a checkpoint and explain a
+ * highlight, and their replies stay on the screen rather than becoming props.
  *
  * The transcript is the merge of the two: rows the server restored, plus turns
  * that finished while the student sat here. Merging by `message_id` rather
@@ -47,6 +50,8 @@ export default function LessonScreenPage({
 }: LessonScreen) {
     /** Turns that finished while the student was on this screen. */
     const [added, setAdded] = useState<LessonTurn[]>([]);
+    /** Checkpoints that arrived on the stream rather than with the props. */
+    const [arrived, setArrived] = useState<LessonCheckpointRow[]>([]);
     /** The turn arriving now, and the section head painted before it (8.8.2). */
     const [live, setLive] = useState<string | null>(null);
     /**
@@ -124,10 +129,14 @@ export default function LessonScreenPage({
                 setLive(null);
                 break;
             case 'checkpoint.ready':
-                // The event says a checkpoint now exists; the row that carries
-                // its id and its answer URL comes from the server, so nothing
-                // here has to assemble a URL out of an id.
-                router.reload({ only: ['checkpoints'] });
+                setArrived((rows) => [
+                    ...rows,
+                    {
+                        checkpoint_id: event.data.checkpoint_id,
+                        section_index: event.data.checkpoint.section_index,
+                        payload: { checkpoint: event.data.checkpoint },
+                    },
+                ]);
                 break;
             case 'stream.error':
                 setFailure(
@@ -181,10 +190,15 @@ export default function LessonScreenPage({
 
     /** Answer a checkpoint (5.2.4) — the one moment the key is disclosed. */
     async function answer(
-        url: string,
+        checkpointId: number,
         questionId: string,
         optionId: string,
     ): Promise<void> {
+        const url = checkpointAnswers.url({
+            lesson: lesson.id,
+            checkpoint: checkpointId,
+        });
+
         try {
             const result = await postJson<GradedAnswer>(url, {
                 question_id: questionId,
@@ -260,7 +274,9 @@ export default function LessonScreenPage({
 
     const checkpoint =
         live === null
-            ? checkpoints.find((row) => row.section_index === viewing)
+            ? [...checkpoints, ...arrived].find(
+                  (row) => row.section_index === viewing,
+              )
             : undefined;
     const next = viewing + 1;
 
@@ -335,7 +351,11 @@ export default function LessonScreenPage({
                             questions={checkpoint.payload.checkpoint.questions}
                             graded={graded}
                             onAnswer={(questionId, optionId) =>
-                                answer(checkpoint.answer, questionId, optionId)
+                                answer(
+                                    checkpoint.checkpoint_id,
+                                    questionId,
+                                    optionId,
+                                )
                             }
                         />
                     )}

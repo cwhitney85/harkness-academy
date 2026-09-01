@@ -40,7 +40,7 @@
 
 ## 8.4 Material system
 
-- **8.4.1 MUST** — Three grounds bound to purpose: paper column = reading; photocopy sheet = all practice; blue book = the final exam (D22). *Done: no practice surface renders on the paper ground, and no reading surface on the photocopy ground.*
+- **8.4.1 MUST** — Three grounds bound to purpose: paper column = reading; photocopy sheet = all practice; blue book = the final exam (D22). *Done: no practice surface renders on the paper ground, and no reading surface on the photocopy ground.* *Clarified 2026-09-01 (Colin): "practice" here means the worksheet quizzes D22 enumerates — homework and the three refresher grains. The in-lesson checkpoint is practice too, but it is part of the lesson, and D23 puts it on the paper column with no container on purpose (the photocopy treatment was drawn and rejected). It is not a counter-example to this rule.*
 - **8.4.2 MUST** — Photocopy stock (`oklch(0.955 0.003 100)`, Courier Prime, name/date block, directions line, off-square rotation) serves homework and all three refresher grains. *Done: one component renders all four, differing only in its scope label.*
 - **8.4.3 MUST** — Blue book: closed state, then opened cover-and-leaf; interior on a 30px rhythm with type on the rules and a red vertical margin. *Done: every line of interior body type sits within 2px of a rule at 1440px.*
 - **8.4.4 SHOULD** — The closed→open transition is animated, once per sitting, skipped on a re-sit. *Done: a re-sit opens directly to the leaf.*

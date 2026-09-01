@@ -33,8 +33,9 @@ export type LessonSectionRow = {
 export type LessonCheckpointRow = {
     checkpoint_id: number;
     section_index: number;
-    payload: { checkpoint: { questions: QuizQuestion[] } };
-    answer: string;
+    payload: {
+        checkpoint: { section_index: number; questions: QuizQuestion[] };
+    };
 };
 
 /** What answering discloses, and only then (spec 5.2.4). */
