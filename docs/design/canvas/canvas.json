@@ -21,7 +21,7 @@
       "y": 0,
       "w": 1440,
       "h": 900,
-      "title": "Lesson \u2014 settled"
+      "title": "Lesson \u2014 CHOSEN"
     },
     {
       "file": "QuizPhotocopy.dc.html",
@@ -30,7 +30,7 @@
       "y": 0,
       "w": 1440,
       "h": 900,
-      "title": "Quizzes \u2014 photocopy (chosen)"
+      "title": "Quizzes \u2014 CHOSEN (photocopy)"
     },
     {
       "file": "ExamClosed.dc.html",
@@ -39,7 +39,7 @@
       "y": 0,
       "w": 1440,
       "h": 900,
-      "title": "Exam \u2014 closed book"
+      "title": "Exam, closed book \u2014 CHOSEN"
     },
     {
       "file": "ExamBlueBook.dc.html",
@@ -48,7 +48,7 @@
       "y": 0,
       "w": 1440,
       "h": 900,
-      "title": "Exam \u2014 opened"
+      "title": "Exam, opened \u2014 CHOSEN"
     },
     {
       "file": "CheckpointOptions.dc.html",
@@ -57,7 +57,7 @@
       "y": 1120,
       "w": 1000,
       "h": 1780,
-      "title": "Checkpoint \u2014 four treatments"
+      "title": "Checkpoint \u2014 C chosen (A, B, D rejected)"
     },
     {
       "file": "QuizLegalPad.dc.html",
@@ -66,7 +66,7 @@
       "y": 1120,
       "w": 1440,
       "h": 900,
-      "title": "Legal pad \u2014 parked for notes (v1.1)"
+      "title": "Legal pad \u2014 NOT SHIPPED (parked for v1.1 notes)"
     },
     {
       "file": "CheckpointPhone.dc.html",
@@ -75,7 +75,7 @@
       "y": 1120,
       "w": 1350,
       "h": 1060,
-      "title": "Checkpoint C \u2014 at 390px"
+      "title": "Checkpoint at 390px \u2014 P1 chosen (P2, P3 rejected)"
     },
     {
       "file": "LessonPhone.dc.html",
@@ -84,7 +84,7 @@
       "y": 1120,
       "w": 920,
       "h": 1060,
-      "title": "Lesson \u2014 at 390px"
+      "title": "Lesson at 390px \u2014 CHOSEN"
     },
     {
       "file": "ARestrained.dc.html",
@@ -202,7 +202,7 @@
       "y": -340,
       "w": 1060,
       "page": "page-1",
-      "text": "SETTLED  \u00b7  lesson as it stands; photocopy for practice; blue book for the exam; margin question (C) for the in-lesson checkpoint.\n\nBLUE BOOK  \u00b7  interior on a strict 30px rhythm so type sits on the rules, red vertical margin, spine shadow on both leaves. Closed book, then opened; the page turn between them is motion, not layout.\n\nCHECKPOINT C AT 390px  \u00b7  three reductions, since the margin does not exist on a phone. P1 lead-in line, P2 tinted band, P3 the brass rule becomes the container.\n\nPARKED, NOT DISCARDED  \u00b7  legal pad for v1.1 notes (already a WONT in PLAN.md); index card for a later use; torn slip stays with homework."
+      "text": "WHAT SHIPS  \u00b7  every artboard on this page titled CHOSEN. The two comparison sheets show rejected options beside the chosen one -- read their titles.\n\nLESSON  \u00b7  rail (rail green) / paper column / explainer (field green). Kept: colour fields, drop cap, crest, margin annotation. Cut: repp stripe, varsity numerals, ribbon, stamped seal.\n\nCHECKPOINT  \u00b7  C, the margin question, is CHOSEN. A paper card, B torn slip, D index card are rejected -- B stays with homework, D is parked.\n\nCHECKPOINT AT 390px  \u00b7  P1, the lead-in line, is CHOSEN. P2 tinted band and P3 rule-as-container are rejected.\n\nMATERIALS  \u00b7  paper column reads, photocopy sheet practises (homework + all three refresher grains), blue book examines. Blue book interior is on a 30px rhythm with type on the rules.\n\nPARKED, NOT DISCARDED  \u00b7  legal pad for v1.1 notes; index card unassigned; torn slip stays with homework.\n\nThese artboards are FIXED-WIDTH MOCKUPS. Take colours, faces, ratios and rhythm literally; take pixel widths and absolute positions as illustration -- spec 8.2.3 and 8.4.2 govern behaviour. See docs/design/canvas/README.md."
     },
     {
       "id": "dose-note",
