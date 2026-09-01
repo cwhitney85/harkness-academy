@@ -89,11 +89,19 @@ Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of
   S1  DASHBOARD                                        GET /dashboard
       ├─ "Start a course" ────────────────────────►    S2
       ├─ "Continue" (per course; resume table below) ► S3 · S4 · S5 · S6 · S9
+      ├─ "Set aside" ──► POST /courses/{course}/withdraw ──► S1, the card moved to the set-aside list
+      ├─ "Pick back up" ──► POST /courses/{course}/resume ──► the resume table's URL for its status
+      │     └─ 422 not resumable ──► S1, naming which: a later attempt replaced it, or its subtopic is occupied
       └─ a completed course's module ─────────────►    S12
 
   S2  COURSE CREATION                                  GET /courses/create
       ├─ POST /courses  (catalog pick or free text + level) ──► S3
-      └─ 422 subtopic already open ──► S2, offering the open course's resume URL
+      ├─ a withdrawn attempt at this subtopic and level (CourseTransitions::resumable) ──► S2 asks D7b's
+      │     question — "pick up where you left off, or start from scratch?"
+      │       ├─ pick up ───► POST /courses/{course}/resume ──► the resume table's URL for its status
+      │       └─ start over ► POST /courses ──► S3, at attempt + 1
+      └─ 422 subtopic already open ──► S2, offering that course's resume URL. The question above should have
+            caught it; what reaches this edge is the double tap and the second tab
 
   S3  KNOWLEDGE INTERVIEW                              GET /courses/{course}/knowledge-interview
       │   opening question   GET  …/knowledge-interview/stream    (only when the restored transcript is empty)
@@ -180,11 +188,11 @@ The dashboard's "next action" per course (8.10.1) is this table; nothing else ma
 | `active` | `GET /lessons/{lesson}` for the lowest lesson not `completed`; if none remain, `GET /courses/{course}/final-exam` |
 | `final_exam` | `GET /courses/{course}/final-exam` — the same exam, opened to the leaf |
 | `completed` (derived) | `GET /modules/{module}` |
-| `withdrawn` (derived) | the dashboard only — v1 names no re-entry URL (see the gaps below) |
+| `withdrawn` (derived) | the dashboard's set-aside list. `POST /courses/{course}/resume` clears the date and leaves `status` alone, so where the student lands is this same table, read a second time |
 
 ### The new URLs, in full
 
-Fifteen routes, five of them screens. 8.7 and 8.10.2 write them; this section is where they were decided.
+Seventeen routes, five of them screens. 8.7, 8.10.2 and 8.10.3 write them; this section is where they were decided.
 
 | Method | URL | Name | Engine call |
 |---|---|---|---|
@@ -203,11 +211,14 @@ Fifteen routes, five of them screens. 8.7 and 8.10.2 write them; this section is
 | POST | `courses/{course}/syllabus/revisions` | `courses.syllabus.revisions.store` | `SyllabusGenerator::revision` |
 | POST | `courses/{course}/syllabus/approval` | `courses.syllabus.approval.store` | `ApproveSyllabus` |
 | GET | `modules/{module}` | `modules.show` | `ModuleRollup::render` |
+| POST | `courses/{course}/withdraw` | `courses.withdraw` | `CourseTransitions::withdraw` |
+| POST | `courses/{course}/resume` | `courses.resume` | `CourseTransitions::resume` |
 
 Three shapes were settled here rather than left to a controller:
 
 - **`GET …/stream` opens an interview; `POST …/answers` continues it** — the same split as a lesson, where the tutor speaks first over GET and the student answers over POST. It carries one precondition, because `InterviewSession::open()` *discards* a half-finished transcript: **the stream URL may be requested only when the restored transcript is empty.** A reload paints from the screen payload and never re-opens. Getting this wrong loses a student's interview, which is the one thing 8.7.2's done-condition checks.
 - **Generating the first syllabus is its own POST**, not a side effect of the goals interview's Done. A `top`-tier generation on a redirect path has nowhere to report failure; on its own endpoint, a 503 leaves the student on S5 with a button (4.5.1, and the same reasoning as `courses.final-exam.store`). Both syllabus generators carry `throttle:6,1`, matching the exam.
+- **Withdrawal and resumption are POSTs from screens that already exist**, not screens of their own. Both are verbs on a course the student is already looking at, so they read the `lessons.complete` precedent rather than inventing a noun. `withdraw` needs the course open and leaves `status` untouched — that untouched value is what makes `resume` land somewhere; `resume` needs the course withdrawn, the highest attempt at its level, and nothing else open in its subtopic, and its 422 must say *which* of the three failed, because "a later attempt replaced it" and "your other course is open" ask the student for different things (D7b). Two doors reach `resume`: the set-aside list on S1, and S2's question when a student starts the same subtopic again.
 - **Approval is a POST to a noun** (`/syllabus/approval`), so approving and revising are two URLs rather than one endpoint switching on a field. `CourseStatus` already treats them as two successors of `syllabus_draft`.
 
 Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`, `{refresher}` bind by id, since no model overrides `getRouteKeyName`.
@@ -244,7 +255,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 
 ### What this map deliberately does not name
 
-- **No withdraw or resume-a-withdrawn-course URL.** `CourseTransitions::withdraw`/`resume` exist and no spec item asks for a screen. Naming a URL here would invent one; a v1.1 item should add both to this map before either is built.
+- **No withdrawal screen.** Setting a course aside and picking it back up are two POSTs and two regions of screens that already exist (8.7.6, 8.10.3) — the twelve stay twelve.
 - **No syllabus history URL.** Revisions are rows (4.5.4.1) and the screen shows the current draft; nothing in 8.7.4 asks a student to read generation 2 of 4.
 - **No per-question exam URL.** D20 forbids it: the exam is sat whole, which is why S9 has one URL and one hand-in.
 
@@ -257,6 +268,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 - **8.7.3 MUST** — Goals interview, same shape, over `Interviews::goals`. *Done: as 8.7.2, writing CRITERIA.*
 - **8.7.4 MUST** — Syllabus approve/revise (4.5.4) including the revision request field. *Done: approve advances the course; revise regenerates against the typed request.*
 - **8.7.5 MUST** — Level-mismatch banner (4.5.7) when `subtopic_mismatch` is non-null, non-blocking. *Done: a mismatched course still approves.*
+- **8.7.6 SHOULD** — "Carry on, or start over?" — when `CourseTransitions::resumable` returns a withdrawn attempt at the chosen subtopic and level, creation asks D7b's question in D7b's words instead of creating a second course. *Done: picking up sends `POST /courses/{course}/resume` and lands on the resume table's URL for that course's status; starting over creates attempt + 1.* Pairs with 8.10.3 — see the note there.
 
 ## 8.8 Lesson screens
 
@@ -278,6 +290,9 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 
 - **8.10.1 MUST** — Dashboard replacing the starter-kit placeholder: courses in progress, next action per course. *Done: `placeholder-pattern.tsx` has no remaining import.*
 - **8.10.2 SHOULD** — Module rollup view over `ModuleRollup`. *Done: a completed course's knowledge appears under its module.*
+- **8.10.3 SHOULD** — Setting a course aside and taking it back up, over `CourseTransitions::withdraw`/`resume`: a course card carries "Set aside" behind a confirmation, and set-aside courses are listed apart from the ones in progress. *Done: a set-aside course leaves the in-progress list and returns to it at the status it left; a course a later attempt has replaced says so rather than offering a button that 422s.*
+
+*8.7.6 and 8.10.3 ship together or not at all. With no way to set a course aside, no course is ever withdrawn, so 8.7.6's question never fires and `CourseTransitions::withdraw`/`resume` stay engine code no student can reach. Ejecting one ejects both.*
 
 ## 8.11 Amendments to existing plan documents
 
