@@ -5,11 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
+/**
+ * Spec 8.5.6. Appearance is absent, not disabled: dark mode is WONT for v1
+ * (8.5.5), so there is nothing on that screen to switch between. The page and
+ * `appearance-tabs` stay in the tree for v1.1 — this list is the only thing
+ * that ever linked to them, so dropping the row is what makes
+ * `settings/appearance` unreachable from the UI.
+ */
 const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
@@ -19,11 +25,6 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Security',
         href: editSecurity(),
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
         icon: null,
     },
 ];
