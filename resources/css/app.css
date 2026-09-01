@@ -44,6 +44,56 @@
     --measure: 29.3em;
     --measure-gutter: 20px;
 
+    /* -----------------------------------------------------------------------
+       Material tokens — spec 8.4, direction D22.
+
+       Three grounds bound to purpose: the paper column above is reading, the
+       photocopy sheet is all practice, the blue book is the final exam. These
+       values are the `:root` of QuizPhotocopy, ExamClosed and ExamBlueBook in
+       docs/design/canvas/, which a change here changes too (spec 8.1.3).
+
+       They live at the top of the file with the ten, but they are not part of
+       the palette D21 settled: each one is a property of one material, and
+       only that material's component may name it (spec 8.4.1).
+       ----------------------------------------------------------------------- */
+
+    /* Photocopy stock (8.4.2) — homework and all three refresher grains. */
+    --sheet: oklch(0.955 0.003 100);
+    --toner: oklch(0.3 0.006 260);
+
+    /* Blue book (8.4.3) — the final exam, and nothing else. */
+    --book-cover: oklch(0.7 0.075 245);
+    --book-ink: oklch(0.22 0.045 250);
+    --leaf: oklch(0.978 0.005 240);
+    --leaf-rule: oklch(0.878 0.03 245);
+    --leaf-margin: oklch(0.62 0.155 25);
+
+    /* The rhythm the interior is both ruled and set on. One number, so type
+       cannot drift off the rules by being set from a second one (8.4.3). */
+    --leaf-rhythm: 30px;
+
+    /* The desk the exam lies on: a shade under --ground, so the book reads as
+       an object put down on the page rather than as the page. Nothing is ever
+       set on it, which is why it is not a fourth ground. */
+    --desk: oklch(0.938 0.014 95);
+
+    /* Both materials are objects photographed on the page rather than panels
+       drawn on it, and the shadow is what says so (8.4.2, 8.4.3). */
+    --shadow-sheet:
+        0 1px 0 oklch(0.86 0.004 100), 0 16px 38px oklch(0.45 0.01 260 / 0.22);
+    --shadow-book: 0 26px 54px oklch(0.4 0.03 250 / 0.34);
+    --shadow-spread: 0 22px 48px oklch(0.4 0.03 250 / 0.3);
+
+    /* The closed book's spine, and the fold either side of an open one. */
+    --shadow-spine: inset 3px 0 0 oklch(0.62 0.075 245);
+    --shadow-cover-gutter: inset -14px 0 22px -14px oklch(0.3 0.05 250 / 0.55);
+    --shadow-leaf-gutter: inset 16px 0 24px -16px oklch(0.3 0.05 250 / 0.5);
+
+    /* The student's own blue pen — the one ink neither material is printed
+       in, so every mark it makes is a mark the student made: a circled
+       letter, a name, a date, a ticked box. */
+    --pen: oklch(0.34 0.105 255);
+
     /* shadcn's variables, each resolved to a token above. */
     --background: var(--ground);
     --foreground: var(--ink);
@@ -86,6 +136,11 @@
     --font-body: 'Newsreader', Georgia, 'Times New Roman', serif;
     --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
     --font-hand: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+
+    /* Spec 8.4.2. The typewriter face the photocopied sheet is printed in.
+       It is a material, not a fourth type role: nothing outside the sheet is
+       set in it. */
+    --font-sheet: 'Courier Prime', 'Courier New', 'Courier', monospace;
 
     --radius-lg: var(--radius);
     --radius-md: var(--radius);
@@ -134,6 +189,17 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
+    /* The material tokens, likewise: bg-sheet, text-toner, bg-leaf (spec 8.4). */
+    --color-sheet: var(--sheet);
+    --color-toner: var(--toner);
+    --color-book-cover: var(--book-cover);
+    --color-book-ink: var(--book-ink);
+    --color-leaf: var(--leaf);
+    --color-leaf-rule: var(--leaf-rule);
+    --color-leaf-margin: var(--leaf-margin);
+    --color-desk: var(--desk);
+    --color-pen: var(--pen);
+
     /* The tokens, reachable as utilities: bg-ground, text-ink, border-hairline. */
     --color-ground: var(--ground);
     --color-surface: var(--surface);
@@ -166,6 +232,33 @@
     }
 }
 
+/* Spec 8.4.4 — the exam is handed over shut and clicked open, which is the
+   one deliberately animated moment in the app. Both panels *rest* open: a
+   frame the browser never gets round to painting (a backgrounded tab, an
+   interrupted animation) leaves the book open rather than shut on a student
+   who is mid-exam. */
+@keyframes book-leaf-open {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
+
+    to {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+@keyframes book-cover-settle {
+    from {
+        opacity: 0;
+        transform: perspective(1400px) rotateY(-24deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
 @layer components {
     /* The three type roles of spec 8.3.2, named as the artboards name them
        (.disp / .lab / .hand in docs/design/canvas/). */
@@ -187,6 +280,49 @@
         font-size: 21px;
         line-height: 1.3;
         color: var(--wine);
+    }
+
+    /* The blue book's ruled interior (spec 8.4.3). One rule every
+       `--leaf-rhythm`, and `.leaf-line` sets type on the same number, so
+       every line of body type lands on a rule instead of near one. Anything
+       inside the leaf that is not a line of type is a whole multiple of the
+       rhythm; that is the only way the two stay in step. */
+    .leaf {
+        background-color: var(--leaf);
+        background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0 calc(var(--leaf-rhythm) - 1px),
+            var(--leaf-rule) calc(var(--leaf-rhythm) - 1px) var(--leaf-rhythm)
+        );
+    }
+
+    .leaf-line {
+        line-height: var(--leaf-rhythm);
+        margin: 0;
+    }
+
+    .book-leaf-open {
+        animation: book-leaf-open 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    .book-cover-settle {
+        animation: book-cover-settle 420ms ease-out;
+        transform-origin: left center;
+    }
+
+    /* An option in the blue book is a line of type on a rule and also
+       something a finger has to hit. Under a touch pointer it takes two rules
+       instead of one, so the target clears 44px (spec 8.5.4) without the type
+       leaving the 30px rhythm (8.4.3); under a mouse it keeps the artboards'
+       single rule. */
+    .leaf-option {
+        line-height: var(--leaf-rhythm);
+    }
+
+    @media (pointer: coarse) {
+        .leaf-option {
+            min-height: calc(2 * var(--leaf-rhythm));
+        }
     }
 
     /* Every column of prose the student reads. ~72 characters at 1440px,

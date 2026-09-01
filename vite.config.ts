@@ -24,6 +24,14 @@ export default defineConfig({
                     styles: ['normal', 'italic'],
                     fallbacks: ['Georgia', 'Times New Roman', 'serif'],
                 }),
+                // Spec 8.4.2: the face the photocopied practice sheet is
+                // printed in. Bold for the sheet's head, italic for its
+                // directions line.
+                bunny('Courier Prime', {
+                    weights: [400, 700],
+                    styles: ['normal', 'italic'],
+                    fallbacks: ['Courier New', 'Courier', 'monospace'],
+                }),
                 bunny('Caveat', {
                     weights: [500, 600],
                     fallbacks: ['Segoe Script', 'Bradley Hand', 'cursive'],
