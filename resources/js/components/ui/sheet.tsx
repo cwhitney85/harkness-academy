@@ -34,7 +34,10 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+        // The dim behind a sheet is ink, not black: spec 8.3.1 leaves no colour
+        // outside the ten tokens, and the prose is meant to stay legible under
+        // it rather than go out (D21, 8.5.3).
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-ink/45 fixed inset-0 z-50",
         className
       )}
       {...props}
@@ -46,9 +49,15 @@ function SheetContent({
   className,
   children,
   side = "right",
+  showClose = true,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  /**
+   * Spec 8.5.3. A sheet whose own header already carries a close control sets
+   * this false rather than drawing a second one on top of it.
+   */
+  showClose?: boolean
 }) {
   return (
     <SheetPortal>
@@ -70,10 +79,14 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-          <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {showClose && (
+          // A sheet is the phone's only way back, so its close is sized for a
+          // finger: 44px of target around a 16px glyph (spec 8.5.4).
+          <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-2.5 right-2.5 flex size-11 items-center justify-center rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+            <XIcon className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPortal>
   )
