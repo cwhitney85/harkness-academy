@@ -105,7 +105,7 @@ class DesignFixtureTest extends TestCase
     #[Test]
     public function a_lesson_is_mid_flight_and_reopens_where_it_stopped(): void
     {
-        $lesson = $this->lesson('conversational-basics', 2);
+        $lesson = $this->lesson('conversational-spanish', 2);
 
         $this->assertGreaterThan(1, $lesson->section_index);
         $this->assertNull($lesson->completed_at);
@@ -136,7 +136,7 @@ class DesignFixtureTest extends TestCase
     #[Test]
     public function the_mid_flight_checkpoint_is_unanswered_and_withholds_its_key(): void
     {
-        $lesson = $this->lesson('conversational-basics', 2);
+        $lesson = $this->lesson('conversational-spanish', 2);
 
         $checkpoint = $lesson->quizzes()
             ->ofKind(QuizKind::Checkpoint)
@@ -166,7 +166,7 @@ class DesignFixtureTest extends TestCase
     #[Test]
     public function a_completed_lesson_has_homework_nobody_has_answered(): void
     {
-        $lesson = $this->lesson('conversational-basics', 1);
+        $lesson = $this->lesson('conversational-spanish', 1);
 
         $this->assertNotNull($lesson->completed_at);
 
@@ -191,7 +191,7 @@ class DesignFixtureTest extends TestCase
     #[Test]
     public function a_finished_course_stands_in_front_of_an_unsat_exam(): void
     {
-        $course = $this->course('ordering-and-eating-out');
+        $course = $this->course('ordering-food-in-spanish');
 
         $this->assertSame(CourseStatus::FinalExam, $course->standing());
         $this->assertCount(5, $course->lessons);
@@ -299,8 +299,8 @@ class DesignFixtureTest extends TestCase
         // the wrong reason.
         $paths = app(MemoryTree::class)->list($this->student());
 
-        $this->assertContains('language/conversational-basics/WORKING_KNOWLEDGE.md', $paths);
-        $this->assertContains('language/conversational-basics/101/COURSE_CRITERIA.md', $paths);
+        $this->assertContains('language/conversational-spanish/WORKING_KNOWLEDGE.md', $paths);
+        $this->assertContains('language/conversational-spanish/101/COURSE_CRITERIA.md', $paths);
     }
 
     private function student(): User

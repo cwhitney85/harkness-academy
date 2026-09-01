@@ -17,14 +17,14 @@ use App\Courses\SkillLevel;
  * exists to prove is that a course can be *finished*, and a third section per
  * lesson would add pages of prose that no screen in package 8 renders.
  */
-final class OrderingAndEatingOut
+final class OrderingFoodInSpanish
 {
     public static function fixture(): CourseFixture
     {
         return new CourseFixture(
             moduleSlug: 'language',
-            slug: 'ordering-and-eating-out',
-            title: 'Ordering and Eating Out',
+            slug: 'ordering-food-in-spanish',
+            title: 'Ordering Food in Spanish',
             level: SkillLevel::Introductory,
             workingKnowledge: self::WORKING_KNOWLEDGE,
             criteria: self::CRITERIA,
@@ -35,7 +35,7 @@ final class OrderingAndEatingOut
     }
 
     private const WORKING_KNOWLEDGE = <<<'MD'
-        # Spanish — Ordering and Eating Out
+        # Ordering Food in Spanish
 
         ## Solid
 
@@ -55,7 +55,7 @@ final class OrderingAndEatingOut
         MD;
 
     private const CRITERIA = <<<'MD'
-        # Course criteria — Ordering and Eating Out
+        # Course criteria — Ordering Food in Spanish
 
         ## Goals
 
@@ -84,7 +84,7 @@ final class OrderingAndEatingOut
     private static function syllabus(): array
     {
         return [
-            'course_title' => 'Ordering and Eating Out: A Whole Meal in Spanish',
+            'course_title' => 'Ordering Food in Spanish: A Whole Meal, Start to Finish',
             'overview' => "Five lessons in the order a meal actually happens: reading the menu, ordering from it, answering what the waiter asks back, saying what you cannot eat, and paying. Nothing here is vocabulary for its own sake — every list is one you will need within about ten minutes of sitting down.\n\nWe stay with what a small Castilian restaurant would put in front of you, because that is the trip you have booked.",
             'lessons' => [
                 [
@@ -290,7 +290,7 @@ final class OrderingAndEatingOut
     {
         return [
             'quiz' => [
-                'scope' => 'Everything from Ordering and Eating Out — the menu, the order, the questions back, what you cannot eat, and the bill',
+                'scope' => 'Everything from Ordering Food in Spanish — the menu, the order, the questions back, what you cannot eat, and the bill',
                 'questions' => [
                     ['id' => 'oe-x1', 'prompt' => 'Under which heading would you look for a plate of lentils?', 'options' => [['id' => 'a', 'text' => 'Primeros'], ['id' => 'b', 'text' => 'Segundos'], ['id' => 'c', 'text' => 'Postres'], ['id' => 'd', 'text' => 'Para picar']], 'correct_option_id' => 'a', 'explanation' => 'Pulses, rice, vegetables and soups sit under primeros, which is a full course rather than a starter.', 'concept_tag' => 'menu-structure'],
                     ['id' => 'oe-x2', 'prompt' => 'A weekday «menú del día» normally buys you…', 'options' => [['id' => 'a', 'text' => 'one plate and a coffee'], ['id' => 'b', 'text' => 'a primero, a segundo, bread, a drink, and a dessert or coffee'], ['id' => 'c', 'text' => 'whatever is left at the end of service']], 'correct_option_id' => 'b', 'explanation' => 'It is a full lunch at a fixed price, and usually the best food in the building.', 'concept_tag' => 'menu-structure'],

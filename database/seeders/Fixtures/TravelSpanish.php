@@ -33,12 +33,12 @@ final class TravelSpanish
     }
 
     private const WORKING_KNOWLEDGE = <<<'MD'
-        # Spanish — Travel Spanish
+        # Travel Spanish
 
         ## Solid
 
         - Airport and station signage. Years of holidays have made *salidas*, *llegadas*, *andén* and *facturación* automatic.
-        - Present-tense *ser* and *estar* in writing, carried over from Conversational Basics and visible in the interview.
+        - Present-tense *ser* and *estar* in writing, carried over from Conversational Spanish and visible in the interview.
 
         ## Shaky
 

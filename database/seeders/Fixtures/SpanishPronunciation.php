@@ -37,7 +37,7 @@ final class SpanishPronunciation
     }
 
     private const WORKING_KNOWLEDGE = <<<'MD'
-        # Spanish — Pronunciation
+        # Spanish Pronunciation
 
         ## Solid
 

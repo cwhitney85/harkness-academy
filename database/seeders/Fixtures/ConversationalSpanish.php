@@ -21,15 +21,22 @@ use App\Lessons\Speaker;
  *
  * `subtopic_mismatch` is set for the same reason -- the syllabus artboard
  * carries the note, so 4.5.7's banner has something to render (8.7.5).
+ *
+ * **The subtopic is named for its language, and the artboards are not.** They
+ * read "Spanish / Conversational Basics / Intro", which no course can be: the
+ * module is a catalog row and Spanish is a *subtopic* of Language (spec 4.1).
+ * PLAN.md's acceptance test was corrected to "Language / Conversational
+ * Spanish / Intro" (Colin, 2026-08-31) and the fixture follows it. The canvas
+ * copy still says the old thing and wants correcting at its next re-seed.
  */
-final class ConversationalBasics
+final class ConversationalSpanish
 {
     public static function fixture(): CourseFixture
     {
         return new CourseFixture(
             moduleSlug: 'language',
-            slug: 'conversational-basics',
-            title: 'Conversational Basics',
+            slug: 'conversational-spanish',
+            title: 'Conversational Spanish',
             level: SkillLevel::Introductory,
             workingKnowledge: self::WORKING_KNOWLEDGE,
             criteria: self::CRITERIA,
@@ -39,7 +46,7 @@ final class ConversationalBasics
     }
 
     private const WORKING_KNOWLEDGE = <<<'MD'
-        # Spanish — Conversational Basics
+        # Conversational Spanish
 
         ## Solid
 
@@ -61,7 +68,7 @@ final class ConversationalBasics
         MD;
 
     private const CRITERIA = <<<'MD'
-        # Course criteria — Conversational Basics
+        # Course criteria — Conversational Spanish
 
         ## Goals
 
@@ -95,7 +102,7 @@ final class ConversationalBasics
     private static function syllabus(): array
     {
         return [
-            'course_title' => 'Conversational Basics: Getting By in Spanish',
+            'course_title' => 'Conversational Spanish: Getting By in a Fortnight',
             'overview' => "Five lessons that take you from a standing start to holding up your end of a short exchange — greeting someone, saying how and where you are, asking for what you need, handling numbers and prices, and getting directions when you are lost. Everything stays in the present tense; past and future are the next course's job.\n\nWe will spend more time than usual on ser and estar, because you said in the interview that you have bounced off them twice before.",
             'lessons' => [
                 [
@@ -165,7 +172,7 @@ final class ConversationalBasics
                 'cardinal-numbers',
                 'prepositions-of-place',
             ],
-            'subtopic_mismatch' => 'Your goals mention reading Borges in the original. That sits outside Conversational Basics — it is closer to Literary Reading. This syllabus covers the conversational ground you asked for; the reading goal is not addressed here.',
+            'subtopic_mismatch' => 'Your goals mention reading Borges in the original. That sits outside Conversational Spanish — it is closer to Literary Reading. This syllabus covers the conversational ground you asked for; the reading goal is not addressed here.',
         ];
     }
 

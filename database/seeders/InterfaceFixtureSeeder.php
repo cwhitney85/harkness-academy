@@ -23,10 +23,10 @@ use App\Models\CourseSyllabus;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\User;
-use Database\Seeders\Fixtures\ConversationalBasics;
+use Database\Seeders\Fixtures\ConversationalSpanish;
 use Database\Seeders\Fixtures\CourseFixture;
 use Database\Seeders\Fixtures\LessonFixture;
-use Database\Seeders\Fixtures\OrderingAndEatingOut;
+use Database\Seeders\Fixtures\OrderingFoodInSpanish;
 use Database\Seeders\Fixtures\SpanishPronunciation;
 use Database\Seeders\Fixtures\TravelSpanish;
 use Illuminate\Database\Seeder;
@@ -60,10 +60,10 @@ use LogicException;
  * | State | Course |
  * |---|---|
  * | 8.2.2 fresh course | Travel Spanish |
- * | 8.2.3 lesson mid-flight | Conversational Basics, lesson 2 |
- * | 8.2.4 unanswered checkpoint | Conversational Basics, lesson 2 section 2 |
- * | 8.2.5 ungraded homework | Conversational Basics, lesson 1 |
- * | 8.2.6 course complete, exam unsat | Ordering and Eating Out |
+ * | 8.2.3 lesson mid-flight | Conversational Spanish, lesson 2 |
+ * | 8.2.4 unanswered checkpoint | Conversational Spanish, lesson 2 section 2 |
+ * | 8.2.5 ungraded homework | Conversational Spanish, lesson 1 |
+ * | 8.2.6 course complete, exam unsat | Ordering Food in Spanish |
  * | 8.2.7 completed subtopic and module | Spanish Pronunciation |
  */
 class InterfaceFixtureSeeder extends Seeder
@@ -114,9 +114,9 @@ class InterfaceFixtureSeeder extends Seeder
     private function fixtures(): array
     {
         return [
-            ConversationalBasics::fixture(),
+            ConversationalSpanish::fixture(),
             TravelSpanish::fixture(),
-            OrderingAndEatingOut::fixture(),
+            OrderingFoodInSpanish::fixture(),
             SpanishPronunciation::fixture(),
         ];
     }
