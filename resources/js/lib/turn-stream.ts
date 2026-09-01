@@ -1,3 +1,4 @@
+import { csrfHeader } from '@/lib/api';
 import type { TurnEvent } from '@/types';
 
 /**
@@ -101,24 +102,4 @@ function parseFrame(frame: string): TurnEvent | null {
     } catch {
         return null;
     }
-}
-
-/**
- * The token Laravel's session guard wants on a POST.
- *
- * Inertia's own requests go through axios, which reads this cookie for us;
- * a raw `fetch` has to do it itself or every streamed answer is a 419.
- */
-function csrfHeader(): Record<string, string> {
-    const cookie = document.cookie
-        .split('; ')
-        .find((entry) => entry.startsWith('XSRF-TOKEN='));
-
-    return cookie
-        ? {
-              'X-XSRF-TOKEN': decodeURIComponent(
-                  cookie.slice('XSRF-TOKEN='.length),
-              ),
-          }
-        : {};
 }

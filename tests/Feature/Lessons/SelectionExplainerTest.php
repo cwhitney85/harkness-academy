@@ -246,9 +246,10 @@ class SelectionExplainerTest extends SectionStreamTestCase
     {
         $this->taughtSection();
 
-        $cap = $this->actingAs($this->lesson->course->student)
-            ->getJson("/lessons/{$this->lesson->id}")
-            ->json('limits.highlight_characters');
+        $cap = $this->inertiaProps(
+            $this->actingAs($this->lesson->course->student)
+                ->get("/lessons/{$this->lesson->id}")
+        )['limits']['highlight_characters'];
 
         $this->assertIsInt($cap);
 

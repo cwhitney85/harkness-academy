@@ -19,6 +19,10 @@ createInertiaApp({
             // starter kit's sidebar beside the shell's own header.
             case name.startsWith('courses/'):
                 return null;
+            // The lesson is set in StudyShell, which is likewise the whole
+            // viewport (spec 8.8).
+            case name.startsWith('lessons/'):
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

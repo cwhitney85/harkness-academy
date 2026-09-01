@@ -6,10 +6,30 @@ use App\Ai\GatewayAgent;
 use App\Ai\StructuredGatewayAgent;
 use Closure;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Fortify\Features;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * The props of an Inertia page, as data.
+     *
+     * `assertInertia` is the right tool for asserting the shape of a screen;
+     * this is for the tests that assert the shape of the *state* a screen is
+     * handed -- package 5's resume contract, which was written against a JSON
+     * route before 8.8 turned that URL into a page.
+     *
+     * @return array<string, mixed>
+     */
+    protected function inertiaProps(TestResponse $response): array
+    {
+        /** @var array<string, mixed> $props */
+        $props = AssertableInertia::fromTestResponse($response)->toArray()['props'];
+
+        return $props;
+    }
+
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void
     {
         if (! Features::enabled($feature)) {

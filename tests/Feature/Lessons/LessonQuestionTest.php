@@ -180,9 +180,10 @@ class LessonQuestionTest extends SectionStreamTestCase
         $frames = [];
         $this->teach(1, $frames);
 
-        $cap = $this->actingAs($this->lesson->course->student)
-            ->getJson("/lessons/{$this->lesson->id}")
-            ->json('limits.question_characters');
+        $cap = $this->inertiaProps(
+            $this->actingAs($this->lesson->course->student)
+                ->get("/lessons/{$this->lesson->id}")
+        )['limits']['question_characters'];
 
         $this->assertIsInt($cap);
 

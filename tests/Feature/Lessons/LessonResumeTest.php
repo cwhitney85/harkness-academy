@@ -30,10 +30,11 @@ class LessonResumeTest extends SectionStreamTestCase
         $frames = [];
         $this->teach(1, $frames);
 
-        $state = $this->actingAs($this->lesson->course->student)
-            ->getJson("/lessons/{$this->lesson->id}")
-            ->assertOk()
-            ->json();
+        $state = $this->inertiaProps(
+            $this->actingAs($this->lesson->course->student)
+                ->get("/lessons/{$this->lesson->id}")
+                ->assertOk()
+        );
 
         $this->assertSame(1, $state['resume_at']);
         $this->assertSame(1, $state['lesson']['section_index']);
@@ -58,14 +59,14 @@ class LessonResumeTest extends SectionStreamTestCase
         $this->teach(1, $frames);
 
         $response = $this->actingAs($this->lesson->course->student)
-            ->getJson("/lessons/{$this->lesson->id}")
+            ->get("/lessons/{$this->lesson->id}")
             ->assertOk();
 
         // Resume must not be the back door around 5.2.3.
-        $response->assertDontSee('correct_option_id');
-        $response->assertDontSee('A letter stands in for a quantity');
+        $response->assertDontSee('correct_option_id', escape: false);
+        $response->assertDontSee('A letter stands in for a quantity', escape: false);
 
-        $checkpoint = $response->json('checkpoints.0');
+        $checkpoint = $this->inertiaProps($response)['checkpoints'][0];
 
         $this->assertSame(1, $checkpoint['section_index']);
         $this->assertArrayNotHasKey('correct_option_id', $checkpoint['payload']['checkpoint']['questions'][0]);
@@ -74,10 +75,11 @@ class LessonResumeTest extends SectionStreamTestCase
     #[Test]
     public function a_lesson_never_opened_resumes_at_its_first_section(): void
     {
-        $state = $this->actingAs($this->lesson->course->student)
-            ->getJson("/lessons/{$this->lesson->id}")
-            ->assertOk()
-            ->json();
+        $state = $this->inertiaProps(
+            $this->actingAs($this->lesson->course->student)
+                ->get("/lessons/{$this->lesson->id}")
+                ->assertOk()
+        );
 
         $this->assertSame(1, $state['resume_at']);
         $this->assertNull($state['lesson']['section_index']);
@@ -164,7 +166,7 @@ class LessonResumeTest extends SectionStreamTestCase
     {
         $intruder = User::factory()->create();
 
-        $this->actingAs($intruder)->getJson("/lessons/{$this->lesson->id}")->assertForbidden();
+        $this->actingAs($intruder)->get("/lessons/{$this->lesson->id}")->assertForbidden();
         $this->actingAs($intruder)->get("/lessons/{$this->lesson->id}/sections/1/stream")->assertForbidden();
     }
 
