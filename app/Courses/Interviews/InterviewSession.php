@@ -7,9 +7,11 @@ use App\Ai\Interviews\CompletionListener;
 use App\Ai\Interviews\CompletionSignal;
 use App\Ai\Interviews\DoneButton;
 use App\Ai\Tools\SignalComplete;
+use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
 use App\Courses\Exceptions\CourseNotOpen;
 use App\Courses\Exceptions\IllegalTransition;
+use App\Courses\Exceptions\InterviewAlreadyUnderway;
 use App\Courses\Exceptions\InterviewNotUnderway;
 use App\Courses\Exceptions\InterviewSummaryUnusable;
 use App\Memory\MemoryTree;
@@ -55,6 +57,15 @@ final class InterviewSession implements CompletionListener
      */
     public const OPENING_TURN = 'I am ready to start.';
 
+    /**
+     * The longest single answer a student may send (spec 8.7.2).
+     *
+     * Read by the screen out of the interview payload rather than duplicated
+     * there, which is the same rule 8.8.5 states for the lesson composer: one
+     * number, owned by the class that enforces it.
+     */
+    public const MAX_ANSWER = 4000;
+
     private readonly Transcript $transcript;
 
     /**
@@ -81,15 +92,27 @@ final class InterviewSession implements CompletionListener
      * the transition service refuses the move from anywhere illegal, so a
      * course cannot be interviewed out of order.
      *
-     * Starting over discards a half-finished transcript. Nothing the student
-     * keeps is in it -- what they keep is the document it produces.
+     * Opening discards whatever the transcript holds, which is safe in exactly
+     * one case: nothing but the opening turn is in it. That is the case this
+     * refuses to leave -- the tutor having spoken once is enough to make a
+     * re-open destroy a student's interview, and the flow map's client-side
+     * precondition is not somewhere a bug can be caught (spec 8.7.2).
      *
-     * @throws CourseNotOpen|IllegalTransition
+     * Re-opening a transcript that holds only `OPENING_TURN` *is* allowed, and
+     * is the recovery for a connection dropped during the tutor's very first
+     * question: nothing the student typed is discarded, because they have not
+     * typed anything (Colin, 2026-09-01, narrowing 8.6's wording).
+     *
+     * @throws CourseNotOpen|IllegalTransition|InterviewAlreadyUnderway
      */
     public function open(): StreamableAgentResponse
     {
         if (! $this->course->isOpen()) {
             throw CourseNotOpen::for($this->course);
+        }
+
+        if ($this->transcript->hasTutorTurn()) {
+            throw InterviewAlreadyUnderway::for($this->course, $this->interview->kind()->value);
         }
 
         if ($this->course->status !== $this->interview->status()) {
@@ -143,6 +166,18 @@ final class InterviewSession implements CompletionListener
         if (! $this->streaming) {
             $this->summarize();
         }
+    }
+
+    /**
+     * Where the course stands while this interview is running.
+     *
+     * Handed out so a screen can ask "is this interview still the course's
+     * business?" without a second copy of the kind-to-status mapping that
+     * KnowledgeInterview and GoalsInterview already own (spec 8.7.2).
+     */
+    public function status(): CourseStatus
+    {
+        return $this->interview->status();
     }
 
     /**
@@ -242,7 +277,13 @@ final class InterviewSession implements CompletionListener
             throw CourseNotOpen::for($this->course);
         }
 
-        if ($this->course->status !== $this->interview->status() || $this->transcript->isEmpty()) {
+        // `hasTutorTurn`, not `isEmpty`: a transcript holding only the
+        // opening turn is a conversation nobody has had, and both answering
+        // it and summarizing it are meaningless. Done in particular must
+        // refuse it -- summarizing it would write a WORKING_KNOWLEDGE
+        // document made of one line the student never typed, over whatever
+        // earlier courses in the subtopic recorded (ledger D7a).
+        if ($this->course->status !== $this->interview->status() || ! $this->transcript->hasTutorTurn()) {
             throw InterviewNotUnderway::for($this->course, $this->interview->kind()->value);
         }
     }

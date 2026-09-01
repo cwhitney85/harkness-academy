@@ -15,6 +15,21 @@ enum SkillLevel: int
     case Advanced = 301;
 
     /**
+     * What the level is called where a student picks one (spec 8.7.1).
+     *
+     * Here rather than on the screen so the picker, a course card and a
+     * rollup cannot each invent their own word for 201.
+     */
+    public function title(): string
+    {
+        return match ($this) {
+            self::Introductory => 'Introductory',
+            self::Intermediate => 'Intermediate',
+            self::Advanced => 'Advanced',
+        };
+    }
+
+    /**
      * The `{level}` segment of a memory path (spec 4.5.3).
      */
     public function pathSegment(): string

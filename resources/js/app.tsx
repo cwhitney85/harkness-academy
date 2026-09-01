@@ -14,6 +14,11 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            // The pipeline screens are set in PipelineShell, which is the whole
+            // viewport (spec 8.7). Nesting them in AppLayout would put the
+            // starter kit's sidebar beside the shell's own header.
+            case name.startsWith('courses/'):
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

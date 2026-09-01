@@ -25,6 +25,13 @@ const buttonVariants = cva(
         sm: "h-8 rounded-md px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
+        /**
+         * The app's own action, as the artboards draw it (spec 8.3.2, D21):
+         * a label-cased line of type on a wine field. 44px tall, which is the
+         * 8.5.4 floor rather than a coincidence.
+         */
+        action:
+          "h-11 px-7 text-[15px] font-normal tracking-[0.13em] uppercase",
       },
     },
     defaultVariants: {

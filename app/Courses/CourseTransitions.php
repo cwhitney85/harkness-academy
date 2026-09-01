@@ -173,7 +173,7 @@ final class CourseTransitions
     private function assertResumable(Course $course): void
     {
         if (! $course->isWithdrawn()) {
-            throw CourseNotResumable::because($course, 'it was not withdrawn.');
+            throw CourseNotResumable::because($course, ResumeRefusal::NotWithdrawn);
         }
 
         // Lesson guidance paths carry no attempt number (spec 4.5.3), so a
@@ -186,7 +186,7 @@ final class CourseTransitions
             ->exists();
 
         if ($superseded) {
-            throw CourseNotResumable::because($course, 'a later attempt at this level has replaced it.');
+            throw CourseNotResumable::because($course, ResumeRefusal::Superseded);
         }
 
         // Backstopped by courses_one_open_per_subtopic -- checked here only to
@@ -198,7 +198,7 @@ final class CourseTransitions
             ->exists();
 
         if ($occupied) {
-            throw CourseNotResumable::because($course, 'another course in this subtopic is already open.');
+            throw CourseNotResumable::because($course, ResumeRefusal::SubtopicOccupied);
         }
     }
 
