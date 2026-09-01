@@ -11,9 +11,22 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
+            // Spec 8.3.2. Body, display and the tutor's hand; the fallback
+            // stacks that stand in for them live in resources/css/app.css.
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Newsreader', {
+                    weights: [300, 400, 500],
+                    styles: ['normal', 'italic'],
+                    fallbacks: ['Georgia', 'Times New Roman', 'serif'],
+                }),
+                bunny('Instrument Serif', {
+                    weights: [400],
+                    styles: ['normal', 'italic'],
+                    fallbacks: ['Georgia', 'Times New Roman', 'serif'],
+                }),
+                bunny('Caveat', {
+                    weights: [500, 600],
+                    fallbacks: ['Segoe Script', 'Bradley Hand', 'cursive'],
                 }),
             ],
         }),

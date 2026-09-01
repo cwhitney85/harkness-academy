@@ -5,17 +5,82 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
+/* Light-first is a standing constraint (D21); dark mode is v1.1 (spec 8.5.5).
+   The variant is kept so the starter kit's `dark:` utilities compile to a
+   selector nothing sets, rather than falling back to Tailwind's
+   prefers-color-scheme default and half-applying an undefined palette. */
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   Design tokens — spec 8.3.1, direction D21.
+   These are the :root of the artboards in docs/design/canvas/, which is the
+   design source of record: a change to any value here changes that directory
+   in the same commit (spec 8.1.3).
+
+   The canvas names muted ink `--muted`; it is `--muted-ink` here because
+   shadcn already owns `--muted` as a background role.
+   --------------------------------------------------------------------------- */
+:root {
+    --ground: oklch(0.962 0.01 95);
+    --surface: oklch(0.988 0.006 95);
+    --ink: oklch(0.24 0.028 155);
+    --muted-ink: oklch(0.5 0.02 145);
+    --rail-green: oklch(0.205 0.042 155);
+    --field-green: oklch(0.34 0.075 155);
+    --wine: oklch(0.36 0.115 22);
+    --brass: oklch(0.7 0.11 82);
+    --gold: oklch(0.83 0.09 88);
+    --hairline: oklch(0.87 0.012 95);
+
+    /* The register is square: no settled artboard uses a corner radius. */
+    --radius: 0px;
+
+    /* shadcn's variables, each resolved to a token above. */
+    --background: var(--ground);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary: var(--wine);
+    --primary-foreground: var(--surface);
+    --secondary: var(--surface);
+    --secondary-foreground: var(--ink);
+    --muted: var(--hairline);
+    --muted-foreground: var(--muted-ink);
+    --accent: var(--surface);
+    --accent-foreground: var(--ink);
+    --destructive: var(--wine);
+    --destructive-foreground: var(--surface);
+    --border: var(--hairline);
+    --input: var(--hairline);
+    --ring: var(--brass);
+    --chart-1: var(--wine);
+    --chart-2: var(--field-green);
+    --chart-3: var(--brass);
+    --chart-4: var(--gold);
+    --chart-5: var(--rail-green);
+    --sidebar: var(--rail-green);
+    --sidebar-foreground: var(--ground);
+    --sidebar-primary: var(--wine);
+    --sidebar-primary-foreground: var(--ground);
+    --sidebar-accent: var(--field-green);
+    --sidebar-accent-foreground: var(--ground);
+    --sidebar-border: var(--field-green);
+    --sidebar-ring: var(--brass);
+}
+
 @theme {
-    --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+    /* Spec 8.3.2. The families are self-hosted by the Vite fonts plugin
+       (see vite.config.ts); the stacks below are what a font-blocked page
+       renders instead. */
+    --font-body: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    --font-hand: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
 
     --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: var(--radius);
+    --radius-sm: var(--radius);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -59,77 +124,18 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
-}
 
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
-}
-
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    /* The tokens, reachable as utilities: bg-ground, text-ink, border-hairline. */
+    --color-ground: var(--ground);
+    --color-surface: var(--surface);
+    --color-ink: var(--ink);
+    --color-muted-ink: var(--muted-ink);
+    --color-rail-green: var(--rail-green);
+    --color-field-green: var(--field-green);
+    --color-wine: var(--wine);
+    --color-brass: var(--brass);
+    --color-gold: var(--gold);
+    --color-hairline: var(--hairline);
 }
 
 @layer base {
@@ -137,7 +143,40 @@
         @apply border-border;
     }
 
+    html {
+        background-color: var(--ground);
+    }
+
     body {
         @apply bg-background text-foreground;
+
+        font-family: var(--font-body);
+        font-size: 17px;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+@layer components {
+    /* The three type roles of spec 8.3.2, named as the artboards name them
+       (.disp / .lab / .hand in docs/design/canvas/). */
+    .display {
+        font-family: var(--font-display);
+        font-weight: 400;
+        letter-spacing: -0.008em;
+    }
+
+    .label {
+        font-size: 11.5px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--muted-ink);
+    }
+
+    .hand {
+        font-family: var(--font-hand);
+        font-size: 21px;
+        line-height: 1.3;
+        color: var(--wine);
     }
 }
