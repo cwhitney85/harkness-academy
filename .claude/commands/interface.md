@@ -49,7 +49,9 @@ The artboards are fixed-width mockups built to be looked at. They are not a comp
 
 ## 5. Verify against the done-conditions, not against the picture
 
-**Seed first.** Run 8.2's seeder — a fresh course, a lesson mid-flight, an unanswered checkpoint, ungraded homework, a course ready for its exam, and a completed subtopic and module. Every done-condition below assumes those rows exist. If the seeder does not exist yet, stop: it is `/package 8 items 8.2`, not this session's work.
+**Check what is in the database before you assume it needs seeding.** Since 2026-09-02 Colin has been taking a real course on the development database, and `InterfaceFixtureSeeder` deletes every course belonging to `colin@opentutor.test` — his own — before writing its six states. It is out of `DatabaseSeeder` for that reason and never runs as a side effect of `--seed`.
+
+A real course exercises these screens better than the fixture did, so work against it. If a done-condition genuinely needs one of the six states that is not there — a set-aside course, an unsat exam, a completed module — ask Colin before running `php artisan db:seed --class=InterfaceFixtureSeeder`, and never run `migrate:fresh`.
 
 Each spec item states what demonstrates it is done. Those are the acceptance tests — several are mechanically checkable (`no oklch(… 0 0)` remains; the pre-answer DOM contains no `correct_option_id`; no horizontal scroll at 390px). Run them.
 

@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
         // picker has nothing to offer (spec 4.1).
         $this->call(CourseCatalogSeeder::class);
 
+        // Idempotent, like the catalog above: seeding twice does not make a
+        // second one, and nothing here touches a course.
         if (! User::query()->where('email', 'test@example.com')->exists()) {
             User::factory()->create([
                 'name' => 'Test User',
@@ -26,9 +28,19 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // The six states package 8 designs against (spec 8.2). Not sample data
-        // either: until the engines have been run for real there is nothing in
-        // the database for a screen to render.
-        $this->call(InterfaceFixtureSeeder::class);
+        // InterfaceFixtureSeeder is deliberately NOT called here.
+        //
+        // It exists to give package 8's screens something to render before the
+        // engines had ever been run (spec 8.2), and it gets there by deleting
+        // every course belonging to colin@opentutor.test first -- which, now
+        // that a real course is being taught to that same student, is their
+        // progress. It is run when it is wanted and never as a side effect of
+        // `--seed` (Colin, 2026-09-02):
+        //
+        //     php artisan db:seed --class=InterfaceFixtureSeeder
+        //
+        // The tests that assert 8.2's six states call it directly, against
+        // the `opentutor_test` database, so nothing is lost by its absence
+        // here.
     }
 }
