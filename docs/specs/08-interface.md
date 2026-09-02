@@ -283,7 +283,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 
 ## 8.9 Assessment screens
 
-- **8.9.1 MUST** — Homework on the photocopy sheet, explanation revealed only after answering. *Done: the pre-answer DOM contains no `explanation` or `correct_option_id`.*
+- **8.9.1 MUST** — Homework on the photocopy sheet, explanation revealed only after answering. *Done: the pre-answer DOM contains no `explanation` or `correct_option_id`.* *Clarified 2026-09-01 (Colin): **answering is per question, and the `QuizPhotocopy` artboard's "Hand it in" button is therefore not built.** `POST …/answers` takes one question and discloses that question's key in its reply (6.2), so a button that batched them would either record nothing until the last question or do nothing at all — and the rail on the same artboard already says "Answers are kept as you go". This is the photocopy sheet's rule and the refreshers' (8.9.4); it is **not** the exam's, which is sat whole and marked once (8.9.2, D20) and does carry a real hand-in.*
 - **8.9.2 MUST** — Final exam: closed book → opened, sat whole, handed in once. *Done: no per-question feedback appears before hand-in (6.3, D20).*
 - **8.9.3 MUST** — Exam result and the gate it holds, stating the 70% mark. *Done: pass and fail each render; a re-sit reopens the same exam.*
 - **8.9.4 MUST** — Refreshers at all three grains on the photocopy sheet. *Done: lesson, subtopic and module grains render from one component.*
