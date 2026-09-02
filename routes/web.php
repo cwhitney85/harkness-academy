@@ -21,6 +21,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Screen S12 (spec 8.10.2). A module is catalog rather than a course, so
     // it sits here beside the dashboard rather than in routes/courses.php.
     Route::get('modules/{module}', ModuleController::class)->name('modules.show');
+
+    // Spec 7.1's install-instructions page. Static, so `Route::inertia` as
+    // `terms` is; signed in, because it is reached from the user menu and set
+    // in the same `AppLayout` the dashboard is.
+    Route::inertia('install', 'install')->name('install');
 });
 
 require __DIR__.'/settings.php';

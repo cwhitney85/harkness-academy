@@ -1,0 +1,28 @@
+{
+    "name": "OpenTutor",
+    "short_name": "OpenTutor",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#051D0E",
+    "background_color": "#F4F2EB",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

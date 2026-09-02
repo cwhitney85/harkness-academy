@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, Smartphone } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { logout } from '@/routes';
+import { install, logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -42,6 +42,20 @@ export function UserMenuContent({ user }: Props) {
                     >
                         <Settings className="mr-2" />
                         Settings
+                    </Link>
+                </DropdownMenuItem>
+                {/* Spec 7.1. iOS has no install prompt, so the page that
+                    explains its menu has to be findable from inside the app;
+                    this is the one door to it. */}
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href={install()}
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <Smartphone className="mr-2" />
+                        Install on your phone
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>

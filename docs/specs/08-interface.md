@@ -85,6 +85,7 @@ Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of
 ```
   GET /            ──► redirects, never renders: signed in ──► S1, otherwise sign in ──► S1
   GET terms        ──  linked from registration
+  GET install      ──  linked from the user menu: how to put OpenTutor on a phone's home screen (spec 7.1)
 
   S1  DASHBOARD                                        GET /dashboard
       ├─ "Start a course" ────────────────────────►    S2
@@ -231,6 +232,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 |---|---|
 | `home` | entry ──► S1 |
 | `terms` | linked from registration |
+| `install` | linked from the user menu; spec 7.1's install-instructions page, since iOS offers no install prompt |
 | `dashboard` | **S1** |
 | `courses.withdraw` | S1 ──► S1, the card moved to the set-aside list |
 | `modules.show` | **S12** |
