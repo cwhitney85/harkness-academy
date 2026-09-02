@@ -62,11 +62,18 @@ class CourseController extends Controller
      */
     public function store(Request $request, CreateCourse $creator, CourseTransitions $transitions): RedirectResponse
     {
+        // The three fields below are `nullable` because the form always sends
+        // both halves of the either/or and one of them is empty -- and
+        // `ConvertEmptyStringsToNull` makes that null before validation sees
+        // it. Without `nullable`, picking a catalog subtopic was refused for
+        // the free-text name it left blank, and vice versa. `required_if`
+        // still refuses a null on the half that is being used, because null
+        // is empty and empty is what `required` means.
         $validated = $request->validate([
             'source' => ['required', 'in:catalog,free_text'],
-            'subtopic_id' => ['required_if:source,catalog', 'integer', 'exists:subtopics,id'],
-            'module_slug' => ['required_if:source,free_text', 'string', 'exists:modules,slug'],
-            'name' => ['required_if:source,free_text', 'string', 'max:120'],
+            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', 'exists:subtopics,id'],
+            'module_slug' => ['nullable', 'required_if:source,free_text', 'string', 'exists:modules,slug'],
+            'name' => ['nullable', 'required_if:source,free_text', 'string', 'max:120'],
             'level' => ['required', 'integer', 'in:101,201,301'],
             // The student has answered D7b's question with "start from
             // scratch"; the same submission a second time must not ask again.

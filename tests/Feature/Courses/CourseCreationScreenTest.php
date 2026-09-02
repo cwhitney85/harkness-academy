@@ -72,6 +72,59 @@ class CourseCreationScreenTest extends TestCase
         $this->assertSame(1, $course->attempt);
     }
 
+    /**
+     * The payload the screen actually sends, field for field.
+     *
+     * The tests around this one post the minimum the rules require, which is
+     * not what a form submits: `useForm` sends every field it holds, so the
+     * unused half of the either/or arrives empty -- and Laravel's global
+     * `ConvertEmptyStringsToNull` turns empty into null before validation
+     * sees it. A rule set that types those fields without allowing null
+     * refuses a submission that named a catalog subtopic perfectly well.
+     */
+    #[Test]
+    public function the_forms_own_payload_creates_a_course_from_the_catalog(): void
+    {
+        $student = User::factory()->create();
+        $subtopic = $this->subtopic('history', 'medieval-history');
+
+        $this->actingAs($student)
+            ->post(route('courses.store'), [
+                'source' => 'catalog',
+                'module_slug' => 'history',
+                'subtopic_id' => $subtopic->id,
+                // The free-text field the student never touched.
+                'name' => '',
+                'level' => 101,
+                'start_over' => false,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('medieval-history', Course::query()->sole()->subtopic_slug);
+    }
+
+    #[Test]
+    public function the_forms_own_payload_creates_a_course_from_free_text(): void
+    {
+        $student = User::factory()->create();
+
+        $this->actingAs($student)
+            ->post(route('courses.store'), [
+                'source' => 'free_text',
+                'module_slug' => 'history',
+                // The catalog choice the student cleared by typing.
+                'subtopic_id' => null,
+                'name' => 'The Wars of the Roses',
+                'level' => 201,
+                'start_over' => false,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('the-wars-of-the-roses', Course::query()->sole()->subtopic_slug);
+    }
+
     #[Test]
     public function the_student_lands_on_the_knowledge_interview(): void
     {
