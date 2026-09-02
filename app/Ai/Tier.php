@@ -54,6 +54,27 @@ enum Tier: string
     }
 
     /**
+     * How long a call at this tier may take, in seconds.
+     *
+     * Beside the model because it is the same kind of fact about a tier: the
+     * bigger the model and the more it is asked to write in one reply, the
+     * longer it needs. laravel/ai's own default is 60 seconds for every call
+     * it makes, which no `top` structured generation can meet.
+     *
+     * @throws InvalidArgumentException if the tier does not name one.
+     */
+    public function timeout(): int
+    {
+        $timeout = config("ai.tiers.{$this->value}.timeout");
+
+        if (! is_int($timeout) || $timeout <= 0) {
+            throw new InvalidArgumentException("Tier [{$this->value}] has no timeout configured.");
+        }
+
+        return $timeout;
+    }
+
+    /**
      * Whether this tier resolves to a model on its own.
      */
     public function isBillable(): bool

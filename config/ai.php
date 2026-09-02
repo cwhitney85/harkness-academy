@@ -40,6 +40,16 @@ return [
     | bills a cache read at 0.1x the input rate and a 5-minute cache write at
     | 1.25x; those multipliers live in `caching` below.
     |
+    | `timeout` is how long a call at this tier may take, in seconds. It is a
+    | property of the tier for the same reason the model is: a bigger model
+    | asked for a whole syllabus in one structured reply takes minutes, and
+    | laravel/ai's own default is 60 seconds for every call it makes. Under
+    | that default no `top` call could ever finish -- the client hung up at
+    | exactly 60s, Anthropic billed the generation it had already started, and
+    | the student was told to ask again (found on the first live run,
+    | 2026-09-02). Streaming calls were unaffected: the first token arrives
+    | long before the minute is up.
+    |
     */
 
     'tiers' => [
@@ -47,16 +57,19 @@ return [
         'cheap' => [
             'model' => 'claude-haiku-4-5',
             'pricing' => ['input' => 1.00, 'output' => 5.00],
+            'timeout' => 60,
         ],
 
         'mid' => [
             'model' => 'claude-sonnet-5',
             'pricing' => ['input' => 3.00, 'output' => 15.00],
+            'timeout' => 120,
         ],
 
         'top' => [
             'model' => 'claude-opus-5',
             'pricing' => ['input' => 5.00, 'output' => 25.00],
+            'timeout' => 300,
         ],
 
     ],

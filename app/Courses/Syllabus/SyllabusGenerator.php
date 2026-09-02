@@ -16,6 +16,7 @@ use App\Memory\MemoryDocument;
 use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -188,6 +189,17 @@ final class SyllabusGenerator
                 $failure = $e;
             }
         }
+
+        // The student is told only that nothing has changed and to ask again,
+        // which is the right thing to tell them and no help at all to anyone
+        // working out why. Two `top`-tier generations have just been spent and
+        // billed; the reason they were wasted is written down here or nowhere.
+        Log::error('Syllabus generation gave up; the student was asked to try again.', [
+            'course_id' => $course->id,
+            'prompt_key' => $promptKey,
+            'attempts' => self::ATTEMPTS,
+            'reason' => $failure?->getMessage() ?? 'no further detail.',
+        ]);
 
         throw SyllabusUnusable::after($course, self::ATTEMPTS, $failure);
     }

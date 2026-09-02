@@ -160,6 +160,10 @@ final class PendingCall
         return $this;
     }
 
+    /**
+     * Override this call's budget. Unset, the tier's own timeout applies --
+     * never laravel/ai's 60-second default, which no `top` call can meet.
+     */
     public function timeout(int $seconds): self
     {
         $this->timeout = $seconds;
@@ -192,7 +196,7 @@ final class PendingCall
             $response = $agent->prompt(
                 $this->outgoing(),
                 model: $model,
-                timeout: $this->timeout,
+                timeout: $this->timeout ?? $tier->timeout(),
             );
         } catch (Throwable $e) {
             $this->recordFailure($tier, $model, $startedAt);
@@ -224,7 +228,7 @@ final class PendingCall
         $startedAt = hrtime(true);
 
         return $this->agent()
-            ->stream($this->outgoing(), model: $model, timeout: $this->timeout)
+            ->stream($this->outgoing(), model: $model, timeout: $this->timeout ?? $tier->timeout())
             ->then(fn (AgentResponse $response) => $this->record($tier, $model, $response, $startedAt));
     }
 

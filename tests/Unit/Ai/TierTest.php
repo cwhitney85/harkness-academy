@@ -34,6 +34,36 @@ class TierTest extends TestCase
         $this->assertNotSame('a-different-model', Tier::Top->model());
     }
 
+    /**
+     * The bug of 2026-09-02: laravel/ai defaults every call to 60 seconds, and
+     * a `top` structured generation cannot finish inside one. The client hung
+     * up, Anthropic billed the work it had already started, and the student
+     * was told nothing had changed.
+     */
+    #[Test]
+    public function every_billable_tier_states_its_own_timeout(): void
+    {
+        foreach ([Tier::Cheap, Tier::Mid, Tier::Top] as $tier) {
+            $this->assertGreaterThan(0, $tier->timeout(), "Tier [{$tier->value}] must state a timeout.");
+        }
+
+        $this->assertGreaterThan(
+            60,
+            Tier::Top->timeout(),
+            'A `top` call takes longer than laravel/ai\'s 60-second default, which is the whole reason this exists.',
+        );
+    }
+
+    #[Test]
+    public function a_tier_with_no_timeout_configured_is_a_wiring_bug(): void
+    {
+        config()->set('ai.tiers.top.timeout', null);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        Tier::Top->timeout();
+    }
+
     #[Test]
     public function non_billable_tiers_do_not_resolve_to_a_model(): void
     {
