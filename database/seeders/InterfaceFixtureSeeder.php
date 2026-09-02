@@ -300,6 +300,16 @@ class InterfaceFixtureSeeder extends Seeder
     {
         $this->quizzes->create(QuizKind::Final, $course, $course->student, $course, $fixture->exam ?? []);
 
+        // A course with no sitting behind it is left with the book **shut**
+        // (8.2.6: "both the closed book and a re-sit render"). `open()` is
+        // what moves a course to `final_exam`, and a fixture that called it
+        // unconditionally left no state in which 8.9.2's closed book could be
+        // drawn -- and no way for a seeded student to open one, since opening
+        // an exam that already exists adopts it rather than generating.
+        if ($fixture->sittings === []) {
+            return;
+        }
+
         $this->finalExam->open($course);
 
         foreach ($fixture->sittings as $offset => $answers) {

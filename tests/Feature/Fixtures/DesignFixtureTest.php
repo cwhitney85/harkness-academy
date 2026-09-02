@@ -193,7 +193,11 @@ class DesignFixtureTest extends TestCase
     {
         $course = $this->course('ordering-food-in-spanish');
 
-        $this->assertSame(CourseStatus::FinalExam, $course->standing());
+        // Standing in front of it, not sitting at it. `final_exam` is the
+        // status the student's own "Open the book" moves a course into (8.6),
+        // so a fixture that arrived there had opened the book for them and
+        // 8.9.2's closed state could never be drawn from it.
+        $this->assertSame(CourseStatus::Active, $course->standing());
         $this->assertCount(5, $course->lessons);
 
         foreach ($course->lessons as $lesson) {
