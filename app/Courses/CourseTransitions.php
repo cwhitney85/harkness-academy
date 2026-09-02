@@ -158,13 +158,28 @@ final class CourseTransitions
             return null;
         }
 
+        return $this->refusal($latest) === null ? $latest : null;
+    }
+
+    /**
+     * Why this course cannot be picked back up, or null if it can.
+     *
+     * The same three checks `resume` makes, asked without making the move --
+     * what the set-aside list needs to say "a later attempt replaced it"
+     * instead of offering a button that 422s (8.10.3). Public so that the one
+     * statement of the rule serves both the question and the act.
+     *
+     * Post: null iff `resume` would commit.
+     */
+    public function refusal(Course $course): ?ResumeRefusal
+    {
         try {
-            $this->assertResumable($latest);
-        } catch (CourseNotResumable) {
-            return null;
+            $this->assertResumable($course);
+        } catch (CourseNotResumable $e) {
+            return $e->refusal;
         }
 
-        return $latest;
+        return null;
     }
 
     /**

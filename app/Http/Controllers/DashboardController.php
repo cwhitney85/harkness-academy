@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Courses\CourseStatus;
+use App\Courses\CourseTransitions;
 use App\Courses\LessonStatus;
 use App\Courses\NextAction;
 use App\Models\Course;
@@ -29,7 +30,7 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, CourseTransitions $transitions): Response
     {
         $courses = Course::query()
             ->where('user_id', $request->user()->id)
@@ -44,7 +45,18 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'in_progress' => $courses
                 ->filter(fn (Course $course): bool => $course->isOpen())
-                ->map($this->card(...))
+                ->map(fn (Course $course): array => [
+                    ...$this->card($course),
+                    'withdraw_url' => route('courses.withdraw', $course),
+                ])
+                ->values()
+                ->all(),
+            // Apart from the ones in progress, and never mixed in with them
+            // (8.10.3): a course that is set aside is not something the
+            // student is behind on.
+            'set_aside' => $courses
+                ->filter(fn (Course $course): bool => $course->isWithdrawn())
+                ->map(fn (Course $course): array => $this->setAside($course, $transitions))
                 ->values()
                 ->all(),
             // A finished course is not gone: it is the one door to its
@@ -58,6 +70,27 @@ class DashboardController extends Controller
                 'create' => route('courses.create'),
             ],
         ]);
+    }
+
+    /**
+     * A card for a course the student stepped away from.
+     *
+     * Either the way back in or the reason there is none -- asked of
+     * `CourseTransitions`, which owns the rule, so the list cannot offer a
+     * button that 422s (8.10.3, D7b).
+     *
+     * @return array<string, mixed>
+     */
+    private function setAside(Course $course, CourseTransitions $transitions): array
+    {
+        $refusal = $transitions->refusal($course);
+
+        return [
+            ...$this->card($course),
+            'set_aside_on' => $course->withdrawn_at?->toFormattedDayDateString(),
+            'resume_url' => $refusal === null ? route('courses.resume', $course) : null,
+            'refusal' => $refusal?->explanation(),
+        ];
     }
 
     /**
@@ -80,17 +113,34 @@ class DashboardController extends Controller
     }
 
     /**
-     * How far through the teaching a course is, when it is being taught.
+     * The second half of the standing line: what `standing` has not said.
      *
-     * Only `active` has a count worth showing: the pipeline statuses are
-     * already a position, and `standing` names it.
+     * An open course's standing *is* its pipeline position, so there is
+     * nothing to add unless it is being taught, where the count is the whole
+     * story. A course set aside says only that it was set aside, so the
+     * position it still holds -- and returns to (D7d) -- goes here.
      */
     private function detail(Course $course): ?string
     {
-        if ($course->standing() !== CourseStatus::Active) {
+        if ($course->isCompleted()) {
             return null;
         }
 
+        if ($course->status === CourseStatus::Active) {
+            return $this->lessonsDone($course);
+        }
+
+        return $course->isWithdrawn() ? $course->status->title() : null;
+    }
+
+    /**
+     * How far through the teaching a course is.
+     *
+     * Null before approval creates the lessons -- a course can stand at
+     * `active` for the moment between the two.
+     */
+    private function lessonsDone(Course $course): ?string
+    {
         $total = $course->lessons->count();
 
         if ($total === 0) {

@@ -3,6 +3,7 @@
 use App\Courses\Interviews\InterviewKind;
 use App\Http\Controllers\Courses\CourseController;
 use App\Http\Controllers\Courses\CourseResumptionController;
+use App\Http\Controllers\Courses\CourseWithdrawalController;
 use App\Http\Controllers\Courses\InterviewAnswerController;
 use App\Http\Controllers\Courses\InterviewCompletionController;
 use App\Http\Controllers\Courses\InterviewController;
@@ -24,10 +25,10 @@ use Illuminate\Support\Facades\Route;
 |
 | Package 4 owns them by subject and package 8 by schedule.
 |
-| `courses.withdraw` is deliberately absent: setting a course aside is 8.10.3's
-| half of the pair, and the route lands with the card that fires it. `resume`
-| is here because S2's "carry on, or start over?" is one of its two doors
-| (8.7.6).
+| `withdraw` and `resume` are verbs on a course the student is already looking
+| at rather than screens of their own (8.6): the dashboard's card fires the
+| first, and two doors reach the second -- the set-aside list (8.10.3) and
+| S2's "carry on, or start over?" (8.7.6).
 |
 */
 
@@ -37,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::post('courses', [CourseController::class, 'store'])
         ->name('courses.store');
+
+    Route::post('courses/{course}/withdraw', [CourseWithdrawalController::class, 'store'])
+        ->name('courses.withdraw');
 
     Route::post('courses/{course}/resume', [CourseResumptionController::class, 'store'])
         ->name('courses.resume');

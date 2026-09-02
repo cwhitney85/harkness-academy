@@ -232,6 +232,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `home` | entry ──► S1 |
 | `terms` | linked from the welcome page and registration |
 | `dashboard` | **S1** |
+| `courses.withdraw` | S1 ──► S1, the card moved to the set-aside list |
 | `modules.show` | **S12** |
 | `lessons.show` | **S6** / **S7** |
 | `lessons.sections.stream` | S6 paints a section; also S6's replay after `stream.error` |
