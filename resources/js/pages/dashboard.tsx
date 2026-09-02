@@ -17,6 +17,8 @@ import { dashboard } from '@/routes';
 type CourseCard = {
     id: number;
     title: string;
+    /** The catalog subject it sits under; null if that row has gone. */
+    module: string | null;
     level: string;
     attempt: number;
     standing: string;
@@ -26,9 +28,11 @@ type CourseCard = {
 
 export default function Dashboard({
     in_progress: inProgress,
+    completed,
     urls,
 }: {
     in_progress: CourseCard[];
+    completed: CourseCard[];
     urls: { create: string };
 }) {
     return (
@@ -51,16 +55,11 @@ export default function Dashboard({
                 </div>
 
                 {inProgress.length > 0 ? (
-                    <section className="mt-10">
-                        <h2 className="label border-b border-brass/50 pb-1.5 text-brass">
-                            In progress
-                        </h2>
-                        <div className="mt-4 flex flex-col gap-4">
-                            {inProgress.map((course) => (
-                                <Card key={course.id} course={course} />
-                            ))}
-                        </div>
-                    </section>
+                    <Shelf label="In progress">
+                        {inProgress.map((course) => (
+                            <Card key={course.id} course={course} />
+                        ))}
+                    </Shelf>
                 ) : (
                     <p className="mt-10 border-t border-hairline pt-6 text-muted-ink">
                         Nothing is underway. A course begins with two short
@@ -68,8 +67,34 @@ export default function Dashboard({
                         out of it — and a syllabus drawn up from them.
                     </p>
                 )}
+
+                {completed.length > 0 && (
+                    <Shelf label="Finished">
+                        {completed.map((course) => (
+                            <Card key={course.id} course={course} finished />
+                        ))}
+                    </Shelf>
+                )}
             </div>
         </>
+    );
+}
+
+/** A titled list of cards: a label, a brass rule, and what it introduces. */
+function Shelf({
+    label,
+    children,
+}: {
+    label: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="mt-10">
+            <h2 className="label border-b border-brass/50 pb-1.5 text-brass">
+                {label}
+            </h2>
+            <div className="mt-4 flex flex-col gap-4">{children}</div>
+        </section>
     );
 }
 
@@ -81,7 +106,18 @@ export default function Dashboard({
  * that enum and they must not disagree about what `syllabus_revision` is
  * called.
  */
-function Card({ course }: { course: CourseCard }) {
+function Card({
+    course,
+    finished = false,
+}: {
+    course: CourseCard;
+    /**
+     * A finished course's move is not into the course — it is out to what the
+     * module now knows about the student (S12). Where a card leads is still
+     * `NextAction`'s answer; what changes is only what the button is called.
+     */
+    finished?: boolean;
+}) {
     return (
         <article
             id={`course-${course.id}`}
@@ -100,9 +136,19 @@ function Card({ course }: { course: CourseCard }) {
             </p>
 
             <div className="mt-5">
-                <Button asChild size="action">
-                    <Link href={course.url}>Continue</Link>
-                </Button>
+                {finished ? (
+                    course.module && (
+                        <Button asChild size="action" variant="outline">
+                            <Link href={course.url}>
+                                What you know in {course.module}
+                            </Link>
+                        </Button>
+                    )
+                ) : (
+                    <Button asChild size="action">
+                        <Link href={course.url}>Continue</Link>
+                    </Button>
+                )}
             </div>
         </article>
     );

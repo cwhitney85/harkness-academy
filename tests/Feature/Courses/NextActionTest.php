@@ -7,6 +7,7 @@ use App\Courses\LessonStatus;
 use App\Courses\NextAction;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\Module;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -86,15 +87,29 @@ class NextActionTest extends TestCase
     }
 
     /**
-     * The table says `GET /modules/{module}`, which is 8.10.2's URL and does
-     * not exist yet. This test is what will fail-loud when it does.
+     * The rollup row, built by 8.10.2. `ModuleRollupScreenTest` checks it from
+     * a real completed course; here it is the table's own row.
      */
     #[Test]
-    public function a_completed_course_lands_on_the_dashboard_until_8_10_2_builds_the_rollup(): void
+    public function a_completed_course_lands_on_its_module_rollup(): void
     {
-        $course = Course::factory()->completed()->create();
+        $module = Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 1]);
+        $course = Course::factory()->completed()->create(['module_slug' => $module->slug]);
 
-        $this->assertFalse(app('router')->has('modules.show'), 'Once modules.show exists, NextAction owes it this row.');
+        $this->assertSame(route('modules.show', $module), NextAction::url($course));
+    }
+
+    /**
+     * The catalog row is a copy, not a foreign key (4.1), so a course can
+     * outlive its module. Nothing deletes one today; the fallback is here so
+     * that if anything ever does, the card lands somewhere rather than 500ing
+     * the dashboard it sits on.
+     */
+    #[Test]
+    public function a_completed_course_whose_module_is_gone_lands_on_the_dashboard(): void
+    {
+        $course = Course::factory()->completed()->create(['module_slug' => 'no-such-module']);
+
         $this->assertSame(route('dashboard'), NextAction::url($course));
     }
 }

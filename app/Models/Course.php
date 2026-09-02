@@ -63,6 +63,22 @@ class Course extends Model
     }
 
     /**
+     * The catalog module this course's subtopic sits under.
+     *
+     * By slug, because that is the column a course carries: 4.1 has courses
+     * copy the slug rather than point at the row, so that nothing a student
+     * owns breaks when the catalog is re-titled. This is the read back, and
+     * it is only ever read -- null where the catalog row has gone, which
+     * costs the course nothing but its rollup (8.10.2).
+     *
+     * @return BelongsTo<Module, $this>
+     */
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class, 'module_slug', 'slug');
+    }
+
+    /**
      * The lessons the approved syllabus became, in teaching order (4.5.5.1).
      *
      * Empty until approval: a course has no lessons while it still has a draft.

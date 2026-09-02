@@ -43,7 +43,12 @@ function BreadcrumbLink({
   return (
     <Comp
       data-slot="breadcrumb-link"
-      className={cn("hover:text-foreground transition-colors", className)}
+      // A crumb is a control a thumb has to hit, so it clears 44px on its
+      // short side like every other one in the app (spec 8.5.4).
+      className={cn(
+        "inline-flex min-h-11 items-center hover:text-foreground transition-colors",
+        className
+      )}
       {...props}
     />
   )

@@ -34,14 +34,23 @@ class DashboardController extends Controller
         $courses = Course::query()
             ->where('user_id', $request->user()->id)
             // NextAction reads the lessons of an active course and the card
-            // counts them; one load rather than two queries per card.
-            ->with('lessons')
+            // counts them; a completed card names its module and NextAction
+            // resolves the rollup from the same row. One load rather than
+            // three queries per card.
+            ->with(['lessons', 'module'])
             ->orderByDesc('updated_at')
             ->get();
 
         return Inertia::render('dashboard', [
             'in_progress' => $courses
                 ->filter(fn (Course $course): bool => $course->isOpen())
+                ->map($this->card(...))
+                ->values()
+                ->all(),
+            // A finished course is not gone: it is the one door to its
+            // module's rollup (S12), which is the edge 8.6 draws out of S1.
+            'completed' => $courses
+                ->filter(fn (Course $course): bool => $course->isCompleted())
                 ->map($this->card(...))
                 ->values()
                 ->all(),
@@ -61,6 +70,7 @@ class DashboardController extends Controller
         return [
             'id' => $course->id,
             'title' => $course->subtopic_title,
+            'module' => $course->module?->title,
             'level' => $course->skill_level->title(),
             'attempt' => $course->attempt,
             'standing' => $course->standing()->title(),
