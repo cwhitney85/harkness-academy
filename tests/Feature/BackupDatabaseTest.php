@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Process\ExecutableFinder;
 use Tests\TestCase;
@@ -28,7 +29,14 @@ class BackupDatabaseTest extends TestCase
 
         $path = storage_path('framework/testing/backup-test.sql');
 
-        $this->artisan('db:backup', ['--path' => $path])->assertSuccessful();
+        // Through `Artisan::call` rather than the fluent helper so that a
+        // failure carries pg_dump's own words. `assertSuccessful()` reports
+        // "expected 0, got 1" and nothing else, which is exactly what run #13
+        // said while the real answer -- a client too old for the server --
+        // was sitting in the output.
+        $exit = Artisan::call('db:backup', ['--path' => $path]);
+
+        $this->assertSame(0, $exit, 'db:backup failed: '.Artisan::output());
 
         $this->assertFileExists($path);
         $this->assertStringContainsString(
