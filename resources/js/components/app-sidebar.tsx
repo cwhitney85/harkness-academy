@@ -1,7 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Plus } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -14,26 +13,27 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { create } from '@/routes/courses';
 import type { NavItem } from '@/types';
 
+/**
+ * The rail the course surfaces are framed in — S1 and S12 (spec 8.10).
+ *
+ * The two edges leaving the dashboard that are not a course: back to the
+ * dashboard itself, and S2. The starter kit's footer links pointed a student
+ * at the React starter kit's GitHub repository, which is the same placeholder
+ * 8.10.1 came here to replace.
+ */
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Your courses',
         href: dashboard(),
         icon: LayoutGrid,
     },
-];
-
-const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Start a course',
+        href: create(),
+        icon: Plus,
     },
 ];
 
@@ -57,7 +57,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

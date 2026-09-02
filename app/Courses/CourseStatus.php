@@ -54,6 +54,28 @@ enum CourseStatus: string
     }
 
     /**
+     * What a student sees this standing called (spec 8.10.1).
+     *
+     * Here rather than on the screen, for SkillLevel::title()'s reason: a
+     * course card, the set-aside list and the rollup would otherwise each
+     * invent their own word for `syllabus_revision`.
+     */
+    public function title(): string
+    {
+        return match ($this) {
+            self::Created => 'Not started yet',
+            self::KnowledgeInterview => 'Saying what you already know',
+            self::GoalsInterview => 'Saying what you want from it',
+            self::SyllabusDraft => 'A syllabus waiting for you',
+            self::SyllabusRevision => 'A syllabus being redrawn',
+            self::Active => 'Being taught',
+            self::FinalExam => 'At the final exam',
+            self::Withdrawn => 'Set aside',
+            self::Completed => 'Completed',
+        };
+    }
+
+    /**
      * Whether `courses.status` may hold this value.
      */
     public function isPipelinePosition(): bool
