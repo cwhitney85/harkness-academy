@@ -51,7 +51,7 @@ The artboards are fixed-width mockups built to be looked at. They are not a comp
 
 **Check what is in the database before you assume it needs seeding.** Since 2026-09-02 Colin has been taking a real course on the development database, and `InterfaceFixtureSeeder` deletes every course belonging to `colin@opentutor.test` — his own — before writing its six states. It is out of `DatabaseSeeder` for that reason and never runs as a side effect of `--seed`.
 
-A real course exercises these screens better than the fixture did, so work against it. If a done-condition genuinely needs one of the six states that is not there — a set-aside course, an unsat exam, a completed module — ask Colin before running `php artisan db:seed --class=InterfaceFixtureSeeder`, and never run `migrate:fresh`.
+A real course exercises these screens better than the fixture did, so work against it. If a done-condition genuinely needs one of the six states that is not there — a set-aside course, an unsat exam, a completed module — ask Colin before running `php artisan db:seed --class=InterfaceFixtureSeeder`, take a restore point first (`php artisan db:backup`), and never run `migrate:fresh`.
 
 Each spec item states what demonstrates it is done. Those are the acceptance tests — several are mechanically checkable (`no oklch(… 0 0)` remains; the pre-answer DOM contains no `correct_option_id`; no horizontal scroll at 390px). Run them.
 

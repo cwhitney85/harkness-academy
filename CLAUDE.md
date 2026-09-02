@@ -10,7 +10,7 @@ LLM personal-tutor PWA. Laravel 13 + Inertia/React + Postgres. Anthropic-direct 
 
 ## Standing conventions
 
-- **The development database holds real work.** Colin is taking a real course on it. Never run `migrate:fresh`, `migrate:refresh`, `db:wipe` or `db:seed` against it unless he asks for that specific command in that message — an earlier "yes" does not carry. `InterfaceFixtureSeeder` deletes every course belonging to `colin@opentutor.test`, which is now his own, so it is out of `DatabaseSeeder` and runs only when named: `php artisan db:seed --class=InterfaceFixtureSeeder`. Tests are safe — they run against `opentutor_test`.
+- **The development database holds real work.** Colin is taking a real course on it. Never run `migrate:fresh`, `migrate:refresh`, `db:wipe` or `db:seed` against it unless he asks for that specific command in that message — an earlier "yes" does not carry. `InterfaceFixtureSeeder` deletes every course belonging to `colin@opentutor.test`, which is now his own, so it is out of `DatabaseSeeder` and runs only when named: `php artisan db:seed --class=InterfaceFixtureSeeder`. Tests are safe — they run against `opentutor_test`. When a destructive command is genuinely wanted, take a restore point first: `php artisan db:backup` (writes `storage/backups/`, prints the `psql` line that restores it).
 - **No model IDs outside `config/ai.php`** — call sites name capability tiers (`cheap`/`mid`/`top`) through the AI gateway (spec 2.1).
 - **No memory access outside the path API** (spec 3.2). Model-facing docs live in the memory tree; app-queried state lives in relational rows.
 - **Prompts are files in `prompts/`** with frontmatter (spec 2.3.1) — never inline strings.

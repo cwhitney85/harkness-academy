@@ -198,7 +198,9 @@ final class SyllabusGenerator
             'course_id' => $course->id,
             'prompt_key' => $promptKey,
             'attempts' => self::ATTEMPTS,
-            'reason' => $failure?->getMessage() ?? 'no further detail.',
+            // Reaching here means every attempt threw, so there is always a
+            // reason to give.
+            'reason' => $failure->getMessage(),
         ]);
 
         throw SyllabusUnusable::after($course, self::ATTEMPTS, $failure);
