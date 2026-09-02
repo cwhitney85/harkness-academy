@@ -252,7 +252,11 @@ function CoverRules({
                     >
                         {written[index] && (
                             <span
-                                className="hand absolute top-[-19px] left-1.5 whitespace-nowrap text-pen normal-case"
+                                // Ink overruns a printed rule, as ink does;
+                                // what it may not do is run off the cover, so
+                                // it is bounded by what is left of the width
+                                // inside the book's border.
+                                className="hand absolute top-[-19px] left-1.5 max-w-[210px] overflow-hidden whitespace-nowrap text-pen normal-case"
                                 style={{
                                     transform: `rotate(${tilt}deg)`,
                                     letterSpacing: 0,

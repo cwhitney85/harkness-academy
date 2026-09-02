@@ -75,6 +75,7 @@ export type LessonScreen = {
         question: string;
         explanation: string;
         complete: string;
+        refresher: string;
         homework: string;
         exam: string;
     };

@@ -31,7 +31,12 @@ export default function Crest({
                 stroke={line}
                 strokeWidth={1.8}
             />
-            <path d="M2 15l15 7 15-7" stroke={line} strokeWidth={1.6} fill="none" />
+            <path
+                d="M2 15l15 7 15-7"
+                stroke={line}
+                strokeWidth={1.6}
+                fill="none"
+            />
             <text
                 x={17}
                 y={13}

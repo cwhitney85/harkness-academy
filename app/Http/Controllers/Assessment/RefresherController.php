@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Assessment;
 
+use App\Assessment\AnsweredQuestions;
 use App\Assessment\Exceptions\RefresherNotAvailable;
 use App\Assessment\Exceptions\RefresherUnusable;
 use App\Assessment\QuizDocument;
@@ -14,6 +15,8 @@ use App\Models\Module;
 use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -54,7 +57,15 @@ class RefresherController extends Controller
         return $this->generated(fn (): Quiz => $refreshers->forModule($student, $module));
     }
 
-    public function show(Request $request, Quiz $refresher): JsonResponse
+    /**
+     * Screen S11 -- the refresher, on the photocopy sheet (spec 8.9.4).
+     *
+     * One screen for all three grains, because one material serves all three
+     * (8.4.2): what a lesson refresher and a module refresher differ in is the
+     * scope printed at the head of the sheet, and that is a string the quiz
+     * already carries.
+     */
+    public function show(Request $request, Quiz $refresher): Response
     {
         $this->authorize('view', $refresher);
 
@@ -62,7 +73,34 @@ class RefresherController extends Controller
             throw new NotFoundHttpException("Quiz [{$refresher->id}] is not a refresher.");
         }
 
-        return response()->json($this->payload($refresher));
+        $document = QuizDocument::of($refresher);
+
+        return Inertia::render('refreshers/show', [
+            'refresher' => [
+                'quiz_id' => $refresher->id,
+                'scope' => $document->scope(),
+                'questions' => $document->clientPayload()['quiz']['questions'],
+                'suggested_reading' => $document->suggestedReading(),
+                'progress' => array_map(
+                    static fn (array $row): array => [
+                        'question_id' => $row['question_id'],
+                        'answered' => $row['answered'],
+                        'correct' => $row['correct'],
+                        'attempts' => $row['attempts'],
+                    ],
+                    AnsweredQuestions::on($refresher, $request->user()),
+                ),
+            ],
+            // A module-grain refresher hangs off no course (6.5), so the head
+            // of the sheet says what it covers and nothing else.
+            'course' => $refresher->course?->subtopic_title,
+            'student' => $request->user()->name,
+            'date' => $refresher->created_at->format('j M Y'),
+            'urls' => [
+                'answers' => route('refreshers.answers.store', $refresher),
+                'dashboard' => route('dashboard'),
+            ],
+        ]);
     }
 
     /**
@@ -95,6 +133,10 @@ class RefresherController extends Controller
 
         return [
             'quiz_id' => $refresher->id,
+            // Where the refresher just generated is read (8.6's three doors
+            // into S11). The screen that asked for it follows this rather
+            // than assembling a URL from the id.
+            'url' => route('refreshers.show', $refresher),
             'scope' => $document->scope(),
             'questions' => $document->clientPayload()['quiz']['questions'],
             'suggested_reading' => $document->suggestedReading(),

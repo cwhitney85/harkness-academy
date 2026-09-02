@@ -49,6 +49,7 @@ export default function QuizSheet({
     questions,
     answers,
     onAnswer,
+    notes,
     children,
 }: {
     /** The course this practice belongs to, printed across the head. */
@@ -65,6 +66,12 @@ export default function QuizSheet({
     questions: QuizQuestion[];
     answers: QuizAnswers;
     onAnswer: (questionId: string, optionId: string) => void;
+    /**
+     * What the marker wrote under a question, by question id — the verdict and
+     * the explanation, which a student earns by answering and never before
+     * (spec 5.2.3, 8.9.1). A sheet with none is a sheet not yet handed in.
+     */
+    notes?: Record<string, ReactNode>;
     /** What sits below the sheet, on the ground: the action and its counts. */
     children?: ReactNode;
 }) {
@@ -162,7 +169,13 @@ export default function QuizSheet({
                                                 // 44px is the touch minimum
                                                 // (spec 8.5.4); the sheet's own
                                                 // line is already 28px of it.
-                                                className="relative inline-flex min-h-[44px] cursor-pointer items-center px-[7px] text-left"
+                                                // `self-start` keeps the pen
+                                                // circle round the answer: a
+                                                // stacked option would
+                                                // otherwise fill the column
+                                                // and be circled across its
+                                                // whole width.
+                                                className="relative inline-flex min-h-[44px] cursor-pointer items-center self-start px-[7px] text-left"
                                             >
                                                 {answers[question.id] ===
                                                     option.id && (
@@ -182,6 +195,11 @@ export default function QuizSheet({
                                         ),
                                     )}
                                 </div>
+                                {notes?.[question.id] && (
+                                    <div className="mt-1 border-l-2 border-pen pl-3 text-[13.5px] leading-[1.7] text-toner/85">
+                                        {notes[question.id]}
+                                    </div>
+                                )}
                             </div>
                         </li>
                     ))}

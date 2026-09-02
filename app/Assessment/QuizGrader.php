@@ -6,6 +6,7 @@ use App\Assessment\Exceptions\UnansweredQuestion;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -104,6 +105,37 @@ final class QuizGrader
     }
 
     /**
+     * The last whole sitting this student had at this quiz, read back (6.3).
+     *
+     * The screen that shows a result is the same URL the exam was sat on
+     * (spec 8.6), so a reload -- or a student coming back a week later -- has
+     * to be able to ask what happened. Reading it here rather than in the
+     * controller keeps `attempt`-is-the-sitting-number in the one class that
+     * writes it.
+     *
+     * Post: the returned sitting is the same one `sitting()` returned when it
+     *       was recorded, because both derive from the stored marks rather
+     *       than re-grading. A question left unanswered in that sitting is
+     *       absent from the marks and so is counted wrong, as Sitting says.
+     */
+    public function lastSitting(Quiz $quiz, User $student): ?Sitting
+    {
+        $number = (int) $this->attempts($quiz, $student)->max('attempt');
+
+        if ($number === 0) {
+            return null;
+        }
+
+        $marks = $this->attempts($quiz, $student)
+            ->where('attempt', $number)
+            ->get()
+            ->mapWithKeys(static fn (QuizAttempt $attempt): array => [$attempt->question_id => $attempt->correct])
+            ->all();
+
+        return Sitting::of(QuizDocument::of($quiz), $number, $marks);
+    }
+
+    /**
      * The question an answer claims to answer, checked both ways.
      *
      * @return array<string, mixed>
@@ -165,11 +197,21 @@ final class QuizGrader
 
     private function nextAttempt(Quiz $quiz, User $student, string $questionId): int
     {
-        return 1 + (int) QuizAttempt::query()
-            ->where('quiz_id', $quiz->id)
-            ->where('user_id', $student->id)
+        return 1 + (int) $this->attempts($quiz, $student)
             ->where('question_id', $questionId)
             ->max('attempt');
+    }
+
+    /**
+     * This student's rows on this quiz, unordered.
+     *
+     * @return Builder<QuizAttempt>
+     */
+    private function attempts(Quiz $quiz, User $student): Builder
+    {
+        return QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $student->id);
     }
 
     /**
@@ -181,9 +223,6 @@ final class QuizGrader
      */
     private function nextSitting(Quiz $quiz, User $student): int
     {
-        return 1 + (int) QuizAttempt::query()
-            ->where('quiz_id', $quiz->id)
-            ->where('user_id', $student->id)
-            ->max('attempt');
+        return 1 + (int) $this->attempts($quiz, $student)->max('attempt');
     }
 }

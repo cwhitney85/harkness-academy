@@ -7,9 +7,11 @@ use App\Assessment\QuizKind;
 use App\Assessment\Quizzes;
 use App\Lessons\CompleteLesson;
 use App\Memory\MemoryTree;
+use App\Models\Lesson;
 use App\Models\Memory;
 use App\Models\MemoryVersion;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -28,16 +30,17 @@ class HomeworkTest extends AssessmentTestCase
     {
         $lesson = $this->completeLesson($this->lesson());
 
-        $response = $this->actingAs($lesson->course->student)
-            ->getJson("/lessons/{$lesson->id}/homework")
-            ->assertOk();
+        $props = $this->screen($lesson);
 
-        $response->assertJsonPath('state', 'ready');
-        $response->assertJsonPath('homework.scope', 'Letters as numbers');
-        $response->assertJsonPath('homework.suggested_reading.0.title', 'Khan Academy: intro to variables');
-        $response->assertJsonPath('homework.progress.0.answered', false);
+        $this->assertSame('ready', $props['state']);
+        $this->assertSame('Letters as numbers', $props['homework']['scope']);
+        $this->assertSame(
+            'Khan Academy: intro to variables',
+            $props['homework']['suggested_reading'][0]['title'],
+        );
+        $this->assertFalse($props['homework']['progress'][0]['answered']);
 
-        foreach ($response->json('homework.questions') as $question) {
+        foreach ($props['homework']['questions'] as $question) {
             $this->assertArrayNotHasKey('correct_option_id', $question);
             $this->assertArrayNotHasKey('explanation', $question);
         }
@@ -48,11 +51,10 @@ class HomeworkTest extends AssessmentTestCase
     {
         $lesson = $this->lesson();
 
-        $this->actingAs($lesson->course->student)
-            ->getJson("/lessons/{$lesson->id}/homework")
-            ->assertOk()
-            ->assertJsonPath('state', 'pending')
-            ->assertJsonPath('homework', null);
+        $props = $this->screen($lesson);
+
+        $this->assertSame('pending', $props['state']);
+        $this->assertNull($props['homework']);
     }
 
     #[Test]
@@ -61,7 +63,7 @@ class HomeworkTest extends AssessmentTestCase
         $lesson = $this->completeLesson($this->lesson());
         $stranger = User::factory()->create();
 
-        $this->actingAs($stranger)->getJson("/lessons/{$lesson->id}/homework")->assertForbidden();
+        $this->actingAs($stranger)->get("/lessons/{$lesson->id}/homework")->assertForbidden();
 
         $this->actingAs($stranger)
             ->postJson("/lessons/{$lesson->id}/homework/answers", ['question_id' => 'h1', 'option_id' => 'a'])
@@ -83,9 +85,7 @@ class HomeworkTest extends AssessmentTestCase
 
         // A reload shows the verdict but not the explanation again -- one
         // disclosure point, the same rule 5.2.3 holds for checkpoints.
-        $progress = $this->actingAs($lesson->course->student)
-            ->getJson("/lessons/{$lesson->id}/homework")
-            ->json('homework.progress.0');
+        $progress = $this->screen($lesson)['homework']['progress'][0];
 
         $this->assertSame(['question_id' => 'h1', 'answered' => true, 'correct' => false, 'attempts' => 1], $progress);
     }
@@ -98,6 +98,22 @@ class HomeworkTest extends AssessmentTestCase
         $this->actingAs($lesson->course->student)
             ->postJson("/lessons/{$lesson->id}/homework/answers", ['question_id' => 'nope', 'option_id' => 'a'])
             ->assertStatus(422);
+    }
+
+    /**
+     * S8's props (spec 8.9.1). The route answers a page rather than JSON since
+     * package 8 built the screen; what it carries is unchanged.
+     *
+     * @return array<string, mixed>
+     */
+    private function screen(Lesson $lesson): array
+    {
+        return $this->inertiaProps(
+            $this->actingAs($lesson->course->student)
+                ->get("/lessons/{$lesson->id}/homework")
+                ->assertOk()
+                ->assertInertia(fn (AssertableInertia $page) => $page->component('lessons/homework'))
+        );
     }
 
     #[Test]

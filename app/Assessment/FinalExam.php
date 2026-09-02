@@ -157,6 +157,23 @@ final class FinalExam
         return new ExamResult($passed, $sitting, $course->standing());
     }
 
+    /**
+     * The last sitting this course's exam had, if it has been sat (spec 6.3).
+     *
+     * S10 is a state of S9 rather than a URL of its own (spec 8.6), so the
+     * result has to survive a reload: this is what makes "pass and fail each
+     * render" true on a plain GET rather than only in the reply to the POST
+     * that handed the book in.
+     */
+    public function lastSitting(Course $course): ?Sitting
+    {
+        $exam = $this->exam($course);
+
+        return $exam instanceof Quiz
+            ? $this->grader->lastSitting($exam, $course->student)
+            : null;
+    }
+
     public function passMark(): float
     {
         return (float) config('assessment.final_exam.pass_mark', 0.7);

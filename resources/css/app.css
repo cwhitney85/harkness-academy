@@ -313,13 +313,18 @@
     /* An option in the blue book is a line of type on a rule and also
        something a finger has to hit. Under a touch pointer it takes two rules
        instead of one, so the target clears 44px (spec 8.5.4) without the type
-       leaving the 30px rhythm (8.4.3); under a mouse it keeps the artboards'
-       single rule. */
+       leaving the 30px rhythm (8.4.3); at a desk it keeps the artboards'
+       single rule.
+
+       Width as well as pointer, and for the reason the checkpoint options
+       found in the 8.8 session: a phone-width viewport is a phone whatever
+       the pointer says it is, and a browser sized down to one is where the
+       390px audit is actually run. */
     .leaf-option {
         line-height: var(--leaf-rhythm);
     }
 
-    @media (pointer: coarse) {
+    @media (pointer: coarse), (max-width: 767px) {
         .leaf-option {
             min-height: calc(2 * var(--leaf-rhythm));
         }

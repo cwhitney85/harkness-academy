@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Lessons;
 
-use App\Courses\LessonStatus;
+use App\Courses\LessonRail;
 use App\Http\Controllers\Controller;
 use App\Lessons\LessonState;
 use App\Models\Lesson;
@@ -52,6 +52,7 @@ class LessonController extends Controller
                 'question' => route('lessons.questions.store', $lesson),
                 'explanation' => route('lessons.explanations.store', $lesson),
                 'complete' => route('lessons.complete', $lesson),
+                'refresher' => route('lessons.refreshers.store', $lesson),
                 'homework' => route('lessons.homework.show', $lesson),
                 'exam' => route('courses.final-exam.show', $lesson->course),
             ],
@@ -61,30 +62,13 @@ class LessonController extends Controller
     /**
      * The course, as the rail draws it: every lesson, in order, marked.
      *
-     * Titles come off the approved syllabus in one read rather than through
-     * `Lesson::syllabusEntry()` per row, which would parse the same JSON once
-     * per lesson to answer the same question.
-     *
      * @return array<string, mixed>
      */
     private function course(Lesson $lesson): array
     {
-        $course = $lesson->course;
-
-        /** @var list<array<string, mixed>> $entries */
-        $entries = $course->approvedSyllabus->syllabus_json['lessons'];
-        $titles = array_column($entries, 'title', 'position');
-
         return [
-            'title' => $course->subtopic_title,
-            'lessons' => $course->lessons->map(static fn (Lesson $each): array => [
-                'position' => $each->position,
-                'title' => $titles[$each->position] ?? "Lesson {$each->position}",
-                'completed' => $each->status === LessonStatus::Completed,
-                'url' => $each->status === LessonStatus::Locked
-                    ? null
-                    : route('lessons.show', $each),
-            ])->all(),
+            'title' => $lesson->course->subtopic_title,
+            'lessons' => LessonRail::of($lesson->course),
         ];
     }
 }

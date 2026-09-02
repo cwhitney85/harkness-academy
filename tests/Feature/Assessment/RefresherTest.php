@@ -10,6 +10,7 @@ use App\Lessons\SummaryDocument;
 use App\Memory\MemoryTree;
 use App\Models\Quiz;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -179,10 +180,14 @@ class RefresherTest extends AssessmentTestCase
             $this->assertArrayNotHasKey('explanation', $question);
         }
 
+        // 8.9.4 -- the three grains land on one screen, addressed by the URL
+        // the POST hands back rather than by one the caller assembles.
         $this->actingAs($lesson->course->student)
-            ->getJson("/refreshers/{$created['quiz_id']}")
+            ->get($created['url'])
             ->assertOk()
-            ->assertJsonPath('quiz_id', $created['quiz_id']);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('refreshers/show')
+                ->where('refresher.quiz_id', $created['quiz_id']));
 
         // Answering teaches: a refresher gates nothing, so the key is the
         // point of answering.
@@ -202,7 +207,7 @@ class RefresherTest extends AssessmentTestCase
         $homework = $lesson->quizzes()->ofKind(QuizKind::Homework)->firstOrFail();
 
         $this->actingAs($lesson->course->student)
-            ->getJson("/refreshers/{$homework->id}")
+            ->get("/refreshers/{$homework->id}")
             ->assertNotFound();
 
         $this->actingAs($lesson->course->student)
@@ -221,7 +226,7 @@ class RefresherTest extends AssessmentTestCase
 
         $this->actingAs($stranger)->postJson("/lessons/{$lesson->id}/refreshers")->assertForbidden();
         $this->actingAs($stranger)->postJson("/courses/{$lesson->course_id}/refreshers")->assertForbidden();
-        $this->actingAs($stranger)->getJson("/refreshers/{$quiz->id}")->assertForbidden();
+        $this->actingAs($stranger)->get("/refreshers/{$quiz->id}")->assertForbidden();
 
         $this->actingAs($stranger)
             ->postJson("/refreshers/{$quiz->id}/answers", ['question_id' => 'r-variable', 'option_id' => 'a'])
