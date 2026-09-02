@@ -83,8 +83,8 @@ Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of
 ### The map
 
 ```
-  GET /            ──► sign in ──►  S1
-  GET terms        ──  linked from the welcome page and registration
+  GET /            ──► redirects, never renders: signed in ──► S1, otherwise sign in ──► S1
+  GET terms        ──  linked from registration
 
   S1  DASHBOARD                                        GET /dashboard
       ├─ "Start a course" ────────────────────────►    S2
@@ -230,7 +230,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | Route | Edge |
 |---|---|
 | `home` | entry ──► S1 |
-| `terms` | linked from the welcome page and registration |
+| `terms` | linked from registration |
 | `dashboard` | **S1** |
 | `courses.withdraw` | S1 ──► S1, the card moved to the set-aside list |
 | `modules.show` | **S12** |
