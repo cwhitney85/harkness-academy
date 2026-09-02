@@ -148,7 +148,7 @@ Chosen workflow:
 2. `PLAN.md` (repo root): global acceptance test, dependency graph, status table with done-condition checklists, WONTs.
 3. `CLAUDE.md` (repo root, auto-loaded every session): pointers + conventions + session ritual.
 4. One session = one package (or one deep node), serial through week 2; end-of-session ritual updates PLAN.md.
-5. Parallel worktree lanes only in weeks 3–4, only for decoupled packages (7 PWA, tooling, 6.x against 6.1's fixed contract); founder reviews and merges every lane — never auto-merge.
+5. Parallel worktree lanes only in weeks 3–4, only for decoupled packages (tooling, 6.x against 6.1's fixed contract); founder reviews and merges every lane — never auto-merge. **Package 7 was the first name on this list and came off it 2026-08-31** (spec 8.11.5): package 8 owns responsive behaviour, the palette the manifest's `theme_color` must match, and the crest its icons derive from, so 7 consumes an interface that does not exist until 8 lands and rule 6 below refuses it a lane.
 6. Parallelism rule: **a lane may open only when every interface it consumes has landed on main.**
 
 ## W3. Default branch — **`master`** (founder convention).
@@ -425,6 +425,8 @@ Rejected: **B "Foolscap"** (EB Garamond on warm cream, the course as a printed o
 Also rejected, after being drawn: the repp stripe (noisy), varsity numerals (did not read as varsity), a ribbon bookmark (noisy), and a stamped completion seal. Kept: colour fields, the drop cap, the crest, and a handwritten margin annotation in the tutor's voice.
 
 Rider (added 2026-08-31, Colin): **the measure is 72 *characters*, not 72 CSS `ch`.** The three products were measured in sans-serifs, where the digit `0` and the average character are close to the same width; Newsreader's digits are 0.566em against an average character of 0.407em, so taking `ch` literally would have set a 693px line of ~100 characters and made the phone number arithmetically unreachable (44 `ch` is 424px at 390px). The column is `--measure: 29.3em` plus a fixed 20px gutter — ~72 characters at 1440px, ~50 at 390px, one rule at both widths and no font-size rule. Spec 8.3.3 and 8.2.3 carry the amended numbers.
+
+Rider (recorded 2026-09-02): **the design phase was to be judged on a real generated course, and was judged on written substitutes instead** (spec 8.11.4). No course had ever been generated when the artboards were drawn — the engines for packages 4–6 all landed engine-only — so the twenty artboards carry Spanish teaching prose written to the schemas the engines emit, and `InterfaceFixtureSeeder` writes that same prose through the classes that own each column rather than through the models (8.2.9 WONT). The condition is dropped as **met by substitute**: the content is schema-faithful, not engine-produced, which is enough to test a layout and not enough to test it against real output. **Falsification moves to the dogfood cycle**: if a real generated course breaks a layout these mockups predicted would hold — a lesson section longer than any drawn, an exam question that will not sit on the 30px rhythm, an objective that wraps past the rail — the substitution was wrong and the layout owes a fix.
 
 Rider: the annotation is the one place the tutor speaks *as a person* rather than as prose, and it is keyed to what the student said in their interview. It is the cheapest personality in the whole design and the closest to twee — watch it in the dogfood cycle.
 
