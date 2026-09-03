@@ -71,12 +71,20 @@ Infrastructure canvas → **Add compute** → **Managed queue**:
 | Type | Standard |
 | Memory | Flex 256 MiB |
 | `--backoff` | 0 |
-| **`--timeout`** | **900** |
+| **`--timeout`** | **360** |
 | `--tries` | 1 |
 | `--force` | off |
 | Autoscaling | min 0, max 3 workers |
 
-**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call gets 300 seconds (`config/ai.php`) and both generators make up to two attempts — `SyllabusGenerator::ATTEMPTS` and `assessment.final_exam.generation_attempts` are both 2 — so a legitimate syllabus or exam job runs up to ~600 seconds. At 60 the worker kills every one of them mid-generation, which is the same failure this queue exists to remove, one layer down and harder to see.
+**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call is capped at 300 seconds by `config/ai.php`, so at 60 the worker kills every syllabus and exam generation mid-call — the same failure this queue exists to remove, one layer down and harder to see.
+
+360 sits just above the app's own ceiling, so our error handling wins over the worker's. It does not cover the theoretical worst case of both attempts running the full 300 seconds, and deliberately: the retry exists for *unusable output*, not slowness, so a second attempt normally begins within seconds of the first and both fit well inside 360. The case it truncates — a first attempt burning the entire 300s — is the one where retrying is least likely to help.
+
+**Both numbers are ceilings, not measurements.** `usage_events.latency_ms` records every call and the Queues dashboard graphs processing duration; after a handful of real generations, tighten `top` in `config/ai.php` and this timeout with it. That also shrinks the Flex exposure below.
+
+**Cloud will warn that timeouts over 90 seconds want the Pro class, and it is right.** Flex workers run on interruptible capacity with a 90-second shutdown grace, so any job over 90 seconds can be killed mid-run and redelivered — no timeout value changes that. Both generation jobs are idempotent, so a redelivery is safe; it costs one more `top`-tier call. Staying on Flex accepts that trade. Regular interruptions on the Queues dashboard are the signal to move to Pro, not the warning itself.
+
+A killed job still ends the student's wait: both jobs implement `failed()`, which marks the `GenerationRequest` failed. Without it a worker kill would leave the row open and the screen polling forever.
 
 `--tries` and `--backoff` are defaults for jobs that define neither, and every job here defines its own: `PipelineJob` returns 3 and `[10, 60, 300]` from `config/lessons.php` (5.4.5), and both generation jobs set `$tries = 1` because the services already retry internally. A job property beats the flag, so these two fields only guard a job that forgets — 1 and 0 keep that guard tight. `--force` only runs jobs while the app is in maintenance mode; leave it off.
 
