@@ -1,5 +1,5 @@
-import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 import PipelineShell from '@/components/pipeline-shell';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,8 @@ type Props = {
     revisions: { used: number; allowed: number; remaining: number };
     exam: { questions: { min: number; max: number }; pass_mark: number };
     urls: { generate: string; revise: string; approve: string };
+    /** A generation is out on the queue and has not landed (ledger D25). */
+    generating: boolean;
     /** Why the last attempt at this screen's own POSTs was refused, if it was. */
     failure: string | null;
 };
@@ -76,6 +78,7 @@ export default function SyllabusScreen({
     revisions,
     exam,
     urls,
+    generating,
     failure,
 }: Props) {
     const [asking, setAsking] = useState(false);
@@ -85,6 +88,15 @@ export default function SyllabusScreen({
     const revise = useForm({ feedback: '' });
 
     const heading = course.title;
+
+    if (generating) {
+        return (
+            <PipelineShell step="syllabus" course={heading}>
+                <Head title="Your syllabus" />
+                <Drawing revising={syllabus !== null} />
+            </PipelineShell>
+        );
+    }
 
     if (!syllabus) {
         return (
@@ -315,5 +327,46 @@ function Mismatch({ note }: { note: string }) {
                 This does not stop you — approve it if it is what you wanted.
             </p>
         </aside>
+    );
+}
+
+/**
+ * The generation is out on the queue (ledger D25).
+ *
+ * It waits on the same URL rather than sending the student anywhere, which is
+ * `lessons/homework`'s Pending exactly — the same five-second reload, because
+ * the same thing is true: what they asked for is arriving, and a screen saying
+ * it does not exist would be saying something untrue.
+ *
+ * A revision keeps the previous syllabus behind this, so the copy says so: the
+ * one thing a student sending work back needs to know is that they have not
+ * lost what they had.
+ */
+function Drawing({ revising }: { revising: boolean }) {
+    useEffect(() => {
+        const timer = window.setInterval(() => router.reload(), 5000);
+
+        return () => window.clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="measure py-12 sm:py-16">
+            <p className="label mb-3 text-wine">
+                {revising ? 'Revision' : 'Syllabus'}
+            </p>
+            <h1 className="display text-[32px] leading-[1.1] sm:text-[40px]">
+                Your syllabus is being drawn up
+            </h1>
+            <p className="mt-5 text-muted-ink">
+                It is written from both interviews in one pass, which takes a
+                minute or two. This page will show it as soon as it is ready —
+                you can leave and come back.
+            </p>
+            {revising && (
+                <p className="mt-4 text-muted-ink">
+                    Your previous syllabus is untouched until this one arrives.
+                </p>
+            )}
+        </div>
     );
 }

@@ -67,15 +67,7 @@ final class SyllabusGenerator
      */
     public function first(Course $course): CourseSyllabus
     {
-        $this->assertOpen($course);
-
-        if ($course->status !== CourseStatus::SyllabusDraft) {
-            throw SyllabusNotDraftable::because($course, "it stands at [{$course->status->value}], not [syllabus_draft].");
-        }
-
-        if ($course->syllabi()->exists()) {
-            throw SyllabusNotDraftable::because($course, 'it already has a syllabus; revise it instead.');
-        }
+        $this->assertDraftable($course);
 
         [$wk, $criteria] = $this->inputs($course);
 
@@ -103,28 +95,7 @@ final class SyllabusGenerator
      */
     public function revision(Course $course, string $feedback): CourseSyllabus
     {
-        $this->assertOpen($course);
-
-        $previous = $course->latestSyllabus()->first();
-
-        if ($previous === null) {
-            throw SyllabusNotDraftable::because($course, 'there is no draft to revise.');
-        }
-
-        if ($course->approvedSyllabus()->exists()) {
-            throw SyllabusNotDraftable::because($course, 'its syllabus is already approved.');
-        }
-
-        $used = $previous->generation - 1;
-        $cap = (int) config('courses.max_syllabus_revisions');
-
-        if ($used >= $cap) {
-            throw SyllabusNotDraftable::because($course, "all {$cap} revisions are used; approve it or start over.");
-        }
-
-        if (trim($feedback) === '') {
-            throw SyllabusNotDraftable::because($course, 'a revision needs feedback saying what to change.');
-        }
+        $previous = $this->assertRevisable($course, $feedback);
 
         if ($course->status === CourseStatus::SyllabusDraft) {
             $this->transitions->to($course, CourseStatus::SyllabusRevision);
@@ -310,5 +281,80 @@ final class SyllabusGenerator
         if (! $course->isOpen()) {
             throw CourseNotOpen::for($course);
         }
+    }
+
+    /**
+     * Why this course cannot be asked for a syllabus right now, or null.
+     *
+     * Asking without generating, on `CourseTransitions::refusal()`'s precedent
+     * (8.10.3). Generation runs on the queue now (ledger D25), so a controller
+     * that dispatched first would turn "you have used all three revisions"
+     * into a wait followed by a failure, when it is knowable in the request.
+     *
+     * The checks are not restated here -- this runs the same two asserts the
+     * generators run, so the two can never drift apart.
+     */
+    public function refusal(Course $course, ?string $feedback = null): ?string
+    {
+        try {
+            $feedback === null
+                ? $this->assertDraftable($course)
+                : $this->assertRevisable($course, $feedback);
+        } catch (CourseNotOpen|SyllabusNotDraftable $e) {
+            return $e->getMessage();
+        }
+
+        return null;
+    }
+
+    /**
+     * Pre-flight for generation 1.
+     *
+     * @throws CourseNotOpen|SyllabusNotDraftable
+     */
+    private function assertDraftable(Course $course): void
+    {
+        $this->assertOpen($course);
+
+        if ($course->status !== CourseStatus::SyllabusDraft) {
+            throw SyllabusNotDraftable::because($course, "it stands at [{$course->status->value}], not [syllabus_draft].");
+        }
+
+        if ($course->syllabi()->exists()) {
+            throw SyllabusNotDraftable::because($course, 'it already has a syllabus; revise it instead.');
+        }
+    }
+
+    /**
+     * Pre-flight for a revision, handing back the draft being revised.
+     *
+     * @throws CourseNotOpen|SyllabusNotDraftable
+     */
+    private function assertRevisable(Course $course, string $feedback): CourseSyllabus
+    {
+        $this->assertOpen($course);
+
+        $previous = $course->latestSyllabus()->first();
+
+        if ($previous === null) {
+            throw SyllabusNotDraftable::because($course, 'there is no draft to revise.');
+        }
+
+        if ($course->approvedSyllabus()->exists()) {
+            throw SyllabusNotDraftable::because($course, 'its syllabus is already approved.');
+        }
+
+        $used = $previous->generation - 1;
+        $cap = (int) config('courses.max_syllabus_revisions');
+
+        if ($used >= $cap) {
+            throw SyllabusNotDraftable::because($course, "all {$cap} revisions are used; approve it or start over.");
+        }
+
+        if (trim($feedback) === '') {
+            throw SyllabusNotDraftable::because($course, 'a revision needs feedback saying what to change.');
+        }
+
+        return $previous;
     }
 }

@@ -83,8 +83,8 @@ export type SittingResult = {
 
 /** Screens S9 and S10 — the final exam and its gate (spec 8.9.2, 8.9.3). */
 export type FinalExamScreen = {
-    /** Which of the three the server says to draw; never decided here. */
-    state: 'closed' | 'open' | 'result';
+    /** Which of the four the server says to draw; never decided here. */
+    state: 'closed' | 'opening' | 'open' | 'result';
     course: { title: string; lessons: RailLesson[] };
     student: string;
     date: string;
@@ -93,6 +93,8 @@ export type FinalExamScreen = {
     /** A book already sat opens straight to the leaf, no ceremony (8.4.4). */
     resit: boolean;
     sitting: SittingResult | null;
+    /** Set when the writing failed on the queue (ledger D25). */
+    failure: string | null;
     urls: {
         open: string;
         sittings: string;

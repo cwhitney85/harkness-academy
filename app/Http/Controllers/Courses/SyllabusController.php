@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Courses;
 
 use App\Assessment\QuizLength;
 use App\Courses\CourseStatus;
-use App\Courses\Exceptions\MissingCourseDocument;
-use App\Courses\Exceptions\SyllabusNotDraftable;
-use App\Courses\Exceptions\SyllabusUnusable;
+use App\Courses\GenerationKind;
 use App\Courses\NextAction;
+use App\Courses\Syllabus\DrawUpSyllabus;
 use App\Courses\Syllabus\SyllabusGenerator;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
+use App\Models\GenerationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -48,6 +48,7 @@ class SyllabusController extends Controller
         }
 
         $draft = $course->latestSyllabus()->first();
+        $pending = GenerationRequest::for($course, GenerationKind::Syllabus);
 
         return Inertia::render('courses/syllabus', [
             'course' => [
@@ -59,10 +60,17 @@ class SyllabusController extends Controller
             'revisions' => $this->revisions($draft),
             'exam' => $this->exam(),
 
-            // Flashed by the three POSTs below when they refuse. Read here
-            // rather than shared globally, so nothing outside this screen has
-            // to know the word `failure` (spec 8.7.4).
-            'failure' => $request->session()->get('failure'),
+            // Is a generation out? The row is the wait (ledger D25), and its
+            // absence is how the screen knows the draft above is the whole
+            // story rather than a stale one.
+            'generating' => $pending instanceof GenerationRequest && ! $pending->hasFailed(),
+
+            // Flashed by the three POSTs below when they refuse, or carried on
+            // the request row when the failure happened on the queue with no
+            // response left to report it in. One field either way: the student
+            // is owed a sentence, not a provenance (spec 8.7.4).
+            'failure' => $request->session()->get('failure')
+                ?? ($pending instanceof GenerationRequest ? $pending->failure : null),
             'urls' => [
                 'generate' => route('courses.syllabus.store', $course),
                 'revise' => route('courses.syllabus.revisions.store', $course),
@@ -72,22 +80,34 @@ class SyllabusController extends Controller
     }
 
     /**
-     * Draw up generation 1 (spec 4.5.4).
+     * Ask for generation 1 (spec 4.5.4, ledger D25).
      *
      * Pre:  the course stands at `syllabus_draft` and has no syllabus rows.
-     * Post: one draft exists, or nothing was written and the course has not
-     *       moved (SyllabusGenerator fails closed).
+     * Post: a `GenerationRequest` is open and `DrawUpSyllabus` is queued; or
+     *       nothing was asked for and the refusal is flashed back.
+     *
+     * **The generation itself no longer happens here.** It runs for minutes
+     * and the edge cuts the request long before it finishes, so what the
+     * student gets back is the wait rather than the syllabus. What is still
+     * decided in the request is whether asking is allowed at all -- that is
+     * knowable now, and a refusal delivered after a two-minute wait would be
+     * a worse answer to the same question.
      */
     public function store(Request $request, Course $course, SyllabusGenerator $generator): RedirectResponse
     {
         $this->authorize('participate', $course);
 
-        try {
-            $generator->first($course);
-        } catch (SyllabusUnusable) {
-            return back()->with('failure', 'The syllabus could not be drawn up just now. Nothing has changed — ask again.');
-        } catch (SyllabusNotDraftable|MissingCourseDocument $e) {
-            return back()->with('failure', $e->getMessage());
+        $refusal = $generator->refusal($course);
+
+        if ($refusal !== null) {
+            return back()->with('failure', $refusal);
+        }
+
+        // Null means a request was already open: the student pressed twice, or
+        // a second tab did. Falling through to the redirect shows them the
+        // wait that is already running rather than buying a second generation.
+        if (GenerationRequest::open($course, GenerationKind::Syllabus) !== null) {
+            DrawUpSyllabus::dispatch($course->id);
         }
 
         return redirect()->route('courses.syllabus.show', $course);

@@ -243,13 +243,20 @@ class FinalExamTest extends AssessmentTestCase
         $course = $this->taughtCourse();
         $this->scriptModel([$this->examResponse()]);
 
-        $response = $this->actingAs($course->student)
+        // The POST now carries nothing of the exam at all: it asks for the
+        // writing and answers 202 (ledger D25), so the key cannot travel on
+        // it by construction rather than by remembering to strip it.
+        $this->actingAs($course->student)
             ->postJson("/courses/{$course->id}/final-exam")
-            ->assertOk();
+            ->assertStatus(202)
+            ->assertJsonMissingPath('exam');
 
-        $response->assertJsonPath('standing', CourseStatus::FinalExam->value);
+        $this->assertSame(CourseStatus::FinalExam, $course->refresh()->status);
 
-        foreach ($response->json('exam.questions') as $question) {
+        // The screen is where the exam is served, so that is where the
+        // no-key rule now has to hold.
+        foreach ($this->inertiaProps($this->actingAs($course->student)
+            ->get("/courses/{$course->id}/final-exam"))['questions'] as $question) {
             $this->assertArrayNotHasKey('correct_option_id', $question);
             $this->assertArrayNotHasKey('explanation', $question);
         }

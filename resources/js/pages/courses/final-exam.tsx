@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import AssessmentShell from '@/components/assessment-shell';
 import type { RailRow } from '@/components/assessment-shell';
@@ -29,11 +29,12 @@ export default function FinalExamPage({
     questions,
     resit,
     sitting,
+    failure: reported,
     urls,
 }: FinalExamScreen) {
     const [answers, setAnswers] = useState<QuizAnswers>({});
     const [busy, setBusy] = useState(false);
-    const [failure, setFailure] = useState<string | null>(null);
+    const [failure, setFailure] = useState<string | null>(reported);
 
     const percent = Math.round(pass_mark * 100);
 
@@ -69,6 +70,23 @@ export default function FinalExamPage({
             .catch((error: Error) => setFailure(error.message))
             .finally(() => setBusy(false));
     }
+
+    /**
+     * The book is being written on the queue (ledger D25).
+     *
+     * The same five-second reload the homework and the syllabus wait on, and
+     * for the same reason: the exam is arriving, so the screen waits on its
+     * own URL until the server says `open`.
+     */
+    useEffect(() => {
+        if (state !== 'opening') {
+            return;
+        }
+
+        const timer = window.setInterval(() => router.reload(), 5000);
+
+        return () => window.clearInterval(timer);
+    }, [state]);
 
     function handIn() {
         setBusy(true);
@@ -134,8 +152,14 @@ export default function FinalExamPage({
                         }))
                     }
                     open={state === 'open'}
-                    resit={resit}
-                    pending={busy}
+                    // A re-sit opens straight to the leaf (8.4.4) — but not
+                    // while the book is still being written, or the student
+                    // would be handed an empty one.
+                    resit={resit && state !== 'opening'}
+                    // The prop already means "being written"; `opening` is
+                    // that same fact, now arriving from the server rather than
+                    // from this component's own click.
+                    pending={busy || state === 'opening'}
                     onOpen={open}
                 >
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -271,6 +295,10 @@ function Standing({
 }: Pick<FinalExamScreen, 'state' | 'sitting'>) {
     if (state === 'closed') {
         return <>Not yet attempted.</>;
+    }
+
+    if (state === 'opening') {
+        return <>Being written.</>;
     }
 
     if (state === 'open') {

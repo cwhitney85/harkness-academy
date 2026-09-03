@@ -125,7 +125,9 @@ class AssessmentScreenTest extends TestCase
 
         $this->actingAs($course->student)
             ->postJson(route('courses.final-exam.store', $course))
-            ->assertOk();
+            // 202: the writing is queued (ledger D25). On the `sync` driver
+            // this suite runs, it has finished by the time this returns.
+            ->assertStatus(202);
 
         $open = $this->inertiaProps($this->visitExam($course));
 
@@ -186,7 +188,9 @@ class AssessmentScreenTest extends TestCase
 
         $this->actingAs($course->student)
             ->postJson(route('courses.final-exam.store', $course))
-            ->assertOk();
+            // 202: the writing is queued (ledger D25). On the `sync` driver
+            // this suite runs, it has finished by the time this returns.
+            ->assertStatus(202);
 
         $again = $this->inertiaProps($this->visitExam($course));
 
@@ -276,7 +280,9 @@ class AssessmentScreenTest extends TestCase
 
         $this->actingAs($course->student)
             ->postJson(route('courses.final-exam.store', $course))
-            ->assertOk();
+            // 202: the writing is queued (ledger D25). On the `sync` driver
+            // this suite runs, it has finished by the time this returns.
+            ->assertStatus(202);
 
         return $course->refresh();
     }

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Courses;
 
-use App\Courses\Exceptions\MissingCourseDocument;
-use App\Courses\Exceptions\SyllabusNotDraftable;
-use App\Courses\Exceptions\SyllabusUnusable;
+use App\Courses\GenerationKind;
+use App\Courses\Syllabus\DrawUpSyllabus;
 use App\Courses\Syllabus\SyllabusGenerator;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -21,10 +21,14 @@ use Illuminate\Validation\ValidationException;
  * on and a revision that changed nothing would still burn one of three.
  *
  * Running out of revisions is a 422 rather than a hidden button, so the screen
- * can say *why* approve is the only move left (8.6). A failed regeneration
- * leaves the previous draft exactly where it was and is recoverable by asking
- * again -- the course sits at `syllabus_revision` and `revision()` accepts it
- * back from there.
+ * can say *why* approve is the only move left (8.6). Both that and the empty
+ * feedback above are still decided in the request: they are knowable without
+ * calling the model, and only the generation itself goes to the queue (ledger
+ * D25).
+ *
+ * A failed regeneration leaves the previous draft exactly where it was and is
+ * recoverable by asking again -- the course sits at `syllabus_revision` and
+ * `revision()` accepts it back from there.
  */
 class SyllabusRevisionController extends Controller
 {
@@ -36,14 +40,14 @@ class SyllabusRevisionController extends Controller
             'feedback' => ['required', 'string', 'min:1', 'max:2000'],
         ]);
 
-        try {
-            $generator->revision($course, $validated['feedback']);
-        } catch (SyllabusNotDraftable $e) {
-            throw ValidationException::withMessages(['feedback' => $e->getMessage()]);
-        } catch (SyllabusUnusable) {
-            return back()->with('failure', 'The revision could not be drawn up just now. Your previous syllabus is untouched — ask again, or approve what you have.');
-        } catch (MissingCourseDocument $e) {
-            return back()->with('failure', $e->getMessage());
+        $refusal = $generator->refusal($course, $validated['feedback']);
+
+        if ($refusal !== null) {
+            throw ValidationException::withMessages(['feedback' => $refusal]);
+        }
+
+        if (GenerationRequest::open($course, GenerationKind::Syllabus) !== null) {
+            DrawUpSyllabus::dispatch($course->id, $validated['feedback']);
         }
 
         return redirect()->route('courses.syllabus.show', $course);

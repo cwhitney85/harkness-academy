@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Assessment;
 
-use App\Assessment\Exceptions\ExamNotAvailable;
-use App\Assessment\Exceptions\ExamUnusable;
 use App\Assessment\FinalExam;
 use App\Assessment\QuizDocument;
+use App\Assessment\WriteFinalExam;
 use App\Courses\CourseStatus;
+use App\Courses\GenerationKind;
 use App\Courses\LessonRail;
 use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,10 +22,14 @@ use Inertia\Response;
 /**
  * Screens S9 and S10 -- the final exam and its gate (spec 8.9.2, 8.9.3).
  *
- * GET renders; POST opens the exam, which generates it at the `top` tier and
+ * GET renders; POST asks for the exam, which is written at the `top` tier and
  * moves the course to `final_exam`. Two verbs because they cost different
  * things: reading is free and the screen does it on every visit, while opening
  * spends the most expensive call in the system.
+ *
+ * **The writing itself runs on the queue** (ledger D25). It takes longer than
+ * any edge will hold a request open, so the POST asks and the screen waits on
+ * the `opening` state until the book is there.
  *
  * **The screen has three states and the server picks which** (8.6 draws S9 and
  * S10 at one URL). A student sitting in front of an open book, a student
@@ -55,15 +60,28 @@ class FinalExamController extends Controller
         }
 
         $seated = $course->isOpen() && $course->status === CourseStatus::FinalExam;
+        $pending = GenerationRequest::for($course, GenerationKind::FinalExam);
+        $writing = $pending instanceof GenerationRequest && ! $pending->hasFailed();
 
         return Inertia::render('courses/final-exam', [
-            // `closed` is the book as it is handed over, `open` is the student
-            // sitting in front of it, `result` is what a sitting did.
+            // `closed` is the book as it is handed over, `opening` is it being
+            // written, `open` is the student sitting in front of it, `result`
+            // is what a sitting did.
+            //
+            // `opening` is checked before `open` because the two are true
+            // together for a moment: `FinalExam::open()` moves the course and
+            // the job settles the request a beat later, and showing a book the
+            // student cannot answer yet is worse than showing the wait twice.
             'state' => match (true) {
+                $writing => 'opening',
                 $seated => 'open',
                 $sitting !== null => 'result',
                 default => 'closed',
             },
+
+            // Carried on the request row when the writing failed on the queue,
+            // where there was no response left to report it in (ledger D25).
+            'failure' => $pending instanceof GenerationRequest ? $pending->failure : null,
             'course' => [
                 'title' => $course->subtopic_title,
                 'lessons' => LessonRail::of($course),
@@ -98,31 +116,22 @@ class FinalExamController extends Controller
     {
         $this->authorize('participate', $course);
 
-        try {
-            $exam = $exams->open($course);
-        } catch (ExamNotAvailable $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        } catch (ExamUnusable $e) {
-            // Failed closed on purpose: the course has not moved and nothing
-            // was written, so asking again is the whole recovery (6.3).
-            return response()->json([
-                'message' => 'The exam could not be written. Nothing has changed; try again in a moment.',
-                'reason' => $e->getMessage(),
-            ], 503);
+        // Availability is knowable without the model, so it stays a 422 in the
+        // request rather than becoming a wait that ends in a refusal.
+        $refusal = $exams->refusal($course);
+
+        if ($refusal !== null) {
+            return response()->json(['message' => $refusal], 422);
         }
 
-        $course->refresh();
+        if (GenerationRequest::open($course, GenerationKind::FinalExam) !== null) {
+            WriteFinalExam::dispatch($course->id);
+        }
 
-        return response()->json([
-            'course_id' => $course->id,
-            'standing' => $course->standing()->value,
-            'available' => $exams->isAvailable($course),
-            'pass_mark' => $exams->passMark(),
-            'exam' => [
-                'quiz_id' => $exam->id,
-                'scope' => QuizDocument::of($exam)->scope(),
-                'questions' => QuizDocument::of($exam)->clientPayload()['quiz']['questions'],
-            ],
-        ]);
+        // 202: the book is being written, and the screen reloads onto the
+        // `opening` state to wait for it (ledger D25). Nothing of the exam is
+        // in this reply, which keeps the answer key out of it by construction
+        // rather than by remembering to strip it.
+        return response()->json(['state' => 'opening'], 202);
     }
 }

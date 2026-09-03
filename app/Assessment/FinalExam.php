@@ -106,6 +106,26 @@ final class FinalExam
     }
 
     /**
+     * Why this course cannot be asked for its exam right now, or null.
+     *
+     * Asking without opening, on `SyllabusGenerator::refusal()`'s precedent.
+     * The writing runs on the queue now (ledger D25), and availability is
+     * knowable without the model -- so a controller that dispatched first
+     * would turn "two lessons still to finish" into a wait ending in a
+     * refusal. Runs the same assert `open()` runs, so the two cannot drift.
+     */
+    public function refusal(Course $course): ?string
+    {
+        try {
+            $this->assertAvailable($course);
+        } catch (ExamNotAvailable $e) {
+            return $e->getMessage();
+        }
+
+        return null;
+    }
+
+    /**
      * The exam this course already has, if any.
      */
     public function exam(Course $course): ?Quiz
