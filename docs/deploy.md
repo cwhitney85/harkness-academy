@@ -63,11 +63,17 @@ Leave the **scheduler off**. Nothing in the app is scheduled, and a scheduler fi
 - `CompletionPipeline` — the chain that writes homework and the working-knowledge summaries after a lesson (5.4.1). It has dispatched queued jobs since package 5. **An environment without a worker completes lessons and silently never writes their homework.**
 - `DrawUpSyllabus` and `WriteFinalExam` — the two `top`-tier generations. They run for minutes, and Cloudflare (Laravel Cloud's networking layer) cuts a request at about 100 seconds, so neither can be done in the request that asks for it.
 
-Infrastructure canvas → **Add compute** → **Managed queue**. Name it, take the **Flex** class and the default 256 MiB, and deploy.
+Infrastructure canvas → **Add compute** → **Managed queue**. Name it `model-work` — every job on it is a call to the model, which is the only thing that would ever justify a second queue. Take a **standard** queue, the **Flex** class, 256 MiB, and an autoscaling range of **0 to 3** workers. Then deploy.
+
+Nothing in the codebase names a queue: no job calls `->onQueue()`, so everything dispatches to the environment default, and the first managed queue is the default. The name is a label, and renaming it later touches no code.
+
+**Standard, not FIFO.** The lesson chain is ordered, which is the trap — but `Bus::chain` enforces that itself by dispatching each job only after the previous one succeeds. FIFO would break it: FIFO supports no per-job delays, and `config/lessons.php` sets `backoff => [10, 60, 300]`, which is delayed retries.
+
+**There are no worker options to set.** A managed queue asks for four things — name, type, memory, autoscaling range — and Cloud manages pickup, visibility and shutdown itself. If the form in front of you wants `backoff`, `timeout`, `tries` or `force`, you are in the **New background process** dialog, which is the path the paragraph below rules out. `tries` and `backoff` are decided in the repo anyway (5.4.5, and one attempt for the two generations because the services already retry themselves), and a job property beats a worker flag.
 
 Flex is available on every plan, including Starter, and is billed per second only while a job runs — a three-minute generation costs a fraction of a cent, plus roughly $0.13/month of polling. Its 90 seconds is the grace period a worker gets *when it must stop*, not a cap on job length: a long generation completes normally and is only at risk if a worker is interrupted, where the job is redelivered. Both generation jobs are idempotent, so a redelivery costs nothing when the work already landed. Move the queue to **Pro** (Growth plan) if redelivery ever costs real money.
 
-Do **not** run `queue:work` as an app-cluster background process instead. With Scale to Zero the App cluster stops at the sleep timeout *even mid-job*, and this app's queued work is long AI calls.
+Do **not** run `queue:work` as an app-cluster background process instead. With Scale to Zero the App cluster stops at the sleep timeout *even mid-job*, and this app's queued work is long AI calls. It would also need its `--timeout` raised past 300 seconds by hand: no job here sets `$timeout`, so the worker's would apply, and the default 60 seconds kills a syllabus generation mid-call. A managed queue has no fixed runtime limit and the question does not arise.
 
 Deploying a managed queue sets `QUEUE_CONNECTION=cloud` environment-wide, overriding the `database` driver in `.env.example`. `aws/aws-sdk-php` is already installed (`laravel/ai` requires it), but Cloud reads `composer.json` rather than the lock, so it is listed there explicitly.
 
