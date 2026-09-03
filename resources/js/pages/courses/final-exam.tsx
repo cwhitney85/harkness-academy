@@ -136,7 +136,10 @@ export default function FinalExamPage({
                 <BlueBook
                     title={course.title}
                     terms={
-                        state === 'closed'
+                        // `opening` is a shut book too, so it reads the shut
+                        // book's terms — what the exam will be — rather than
+                        // the instructions for answering one it cannot see.
+                        state === 'closed' || state === 'opening'
                             ? `Drawn from every lesson you have finished. The book is collected whole and marked once — no answer is shown until you hand it in. ${percent} per cent to pass, and a re-sit is the same examination.`
                             : 'Answer every question. The book is collected whole and marked once — no answer is disclosed until it is handed in. A re-sit is the same examination.'
                     }
