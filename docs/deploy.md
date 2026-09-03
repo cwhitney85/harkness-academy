@@ -40,8 +40,11 @@ In practice you set almost nothing:
 
 | Variable | When |
 |---|---|
+| `ANTHROPIC_API_KEY` | **Always.** Nothing injects it, and without it the app deploys clean and dies at the first interview — a 500 on the interview's stream, surfacing as a 422 on the answer that follows it. Prefer a **linked secret** over a custom variable: Secrets Manager encrypts it in the browser, never shows it again and is KMS-backed. Organization → Settings → Secrets → New secret, then link it to the environment (the **Link secrets** button in General Settings' injected variables section) and deploy from the staged-changes banner. Do not also set a custom variable of the same name — custom variables outrank linked secrets, so a leftover one silently shadows every later rotation. |
 | `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy. |
 | `APP_NAME` | Only if the injected value is not `OpenTutor` — it renders user-visibly through Inertia's shared props. |
+
+A variable only reaches the application on a **deploy**, not a restart: the build runs `php artisan optimize`, which caches config and freezes every `env()` value into that cache.
 
 Do **not** paste a locally generated `APP_KEY` over Cloud's. Cloud generates and manages one; replacing it buys nothing and puts a production secret through your terminal history.
 
@@ -51,15 +54,29 @@ Do **not** paste a locally generated `APP_KEY` over Cloud's. Cloud generates and
 
 Leave **Octane** and **Inertia SSR** off. Octane is not in `composer.json` and enabling it fails the build; SSR would also require `npm run build:ssr`. Neither is needed, and Octane's interaction with the SSE constraint below is unknown — not a variable to introduce before 5.1.
 
-Leave the **scheduler off** and add **no background process** until there is work for them. Nothing in the app is scheduled and nothing dispatches jobs, so both would burn compute for nothing — and a scheduler firing on a cadence holds the environment awake for the whole sleep timeout, defeating Scale to Zero. Spec 1.1's queue/scheduler requirement is met at the application layer (`queue:work` drains, `schedule:run` exits 0); Cloud-side enablement waits for package 4.
+Leave the **scheduler off**. Nothing in the app is scheduled, and a scheduler firing on a cadence holds the environment awake for the whole sleep timeout, defeating Scale to Zero.
 
-When package 4 does queue work, use **managed queues**, not an app-cluster `queue:work` process: with Scale to Zero the App cluster stops at the sleep timeout *even mid-job*, and OpenTutor's queued work is long AI calls. Two prerequisites, both package 4's: add `aws/aws-sdk-php` to `composer.json`, and note that creating a managed queue sets `QUEUE_CONNECTION=cloud` environment-wide, overriding the `database` driver — a ledger-worthy decision, not a checkbox.
+**A queue is not optional — see step 8.** This paragraph used to say to add no background process "until there is work for them", and by the time anyone reread it the work had existed for two packages.
 
-**8. Deploy.** Click Deploy. Cloud issues the free `*.laravel.cloud` domain with TLS on the first successful deployment.
+**8. Add a managed queue.** Required, not optional (ledger D25). Three things in this app run on the queue, and nothing drains them without this:
+
+- `CompletionPipeline` — the chain that writes homework and the working-knowledge summaries after a lesson (5.4.1). It has dispatched queued jobs since package 5. **An environment without a worker completes lessons and silently never writes their homework.**
+- `DrawUpSyllabus` and `WriteFinalExam` — the two `top`-tier generations. They run for minutes, and Cloudflare (Laravel Cloud's networking layer) cuts a request at about 100 seconds, so neither can be done in the request that asks for it.
+
+Infrastructure canvas → **Add compute** → **Managed queue**. Name it, take the **Flex** class and the default 256 MiB, and deploy.
+
+Flex is available on every plan, including Starter, and is billed per second only while a job runs — a three-minute generation costs a fraction of a cent, plus roughly $0.13/month of polling. Its 90 seconds is the grace period a worker gets *when it must stop*, not a cap on job length: a long generation completes normally and is only at risk if a worker is interrupted, where the job is redelivered. Both generation jobs are idempotent, so a redelivery costs nothing when the work already landed. Move the queue to **Pro** (Growth plan) if redelivery ever costs real money.
+
+Do **not** run `queue:work` as an app-cluster background process instead. With Scale to Zero the App cluster stops at the sleep timeout *even mid-job*, and this app's queued work is long AI calls.
+
+Deploying a managed queue sets `QUEUE_CONNECTION=cloud` environment-wide, overriding the `database` driver in `.env.example`. `aws/aws-sdk-php` is already installed (`laravel/ai` requires it), but Cloud reads `composer.json` rather than the lock, so it is listed there explicitly.
+
+**9. Deploy.** Click Deploy. Cloud issues the free `*.laravel.cloud` domain with TLS on the first successful deployment.
 
 ## After the first deploy
 
 - Set `APP_URL` to the assigned domain and redeploy.
+- Confirm the queue is draining. The **Queues** dashboard under Monitoring shows job volume and failures for a managed queue; `php artisan queue:monitor cloud:<queue name>` from the **Commands** tab reports its backlog. Commands run through `bash -c "…"`, so avoid double quotes inside them — an `--execute="…"` dies on its own quoting before it ever reaches PHP.
 - Register an account against the live URL. Registration exercises Postgres writes and the 18+ attestation (spec 1.2) in one step.
 - Confirm `/up` returns 200.
 
