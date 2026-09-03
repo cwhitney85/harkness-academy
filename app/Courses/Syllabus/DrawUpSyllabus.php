@@ -14,6 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Drawing up a syllabus, off the request that asked for it (ledger D25).
@@ -99,5 +100,32 @@ class DrawUpSyllabus implements ShouldQueue
         }
 
         $request?->settle();
+    }
+
+    /**
+     * The job died without reaching its own `catch` (ledger D25).
+     *
+     * A worker `--timeout` kill, an out-of-memory restart, a Flex worker
+     * reclaimed mid-run: none of them unwind through `handle`, so without this
+     * the request row stays open and the student watches a screen that polls
+     * for a generation nobody is running. The wait has to end in an answer,
+     * and "ask again" is a true one -- the generators fail closed, so nothing
+     * was written and nothing moved.
+     */
+    public function failed(?Throwable $e): void
+    {
+        $course = Course::query()->find($this->courseId);
+
+        if (! $course instanceof Course) {
+            return;
+        }
+
+        Log::warning('Syllabus generation was killed before it could report.', [
+            'course_id' => $this->courseId,
+            'reason' => $e?->getMessage(),
+        ]);
+
+        GenerationRequest::for($course, GenerationKind::Syllabus)
+            ?->fail('The syllabus could not be drawn up just now. Nothing has changed — ask again.');
     }
 }

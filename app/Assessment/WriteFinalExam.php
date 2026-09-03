@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Opening the book, off the request that asked for it (ledger D25).
@@ -72,5 +73,26 @@ class WriteFinalExam implements ShouldQueue
         }
 
         $request?->settle();
+    }
+
+    /**
+     * The job died without reaching its own `catch` -- `DrawUpSyllabus`'s
+     * reason, and the same obligation: a wait has to end in an answer.
+     */
+    public function failed(?Throwable $e): void
+    {
+        $course = Course::query()->find($this->courseId);
+
+        if (! $course instanceof Course) {
+            return;
+        }
+
+        Log::warning('Exam generation was killed before it could report.', [
+            'course_id' => $this->courseId,
+            'reason' => $e?->getMessage(),
+        ]);
+
+        GenerationRequest::for($course, GenerationKind::FinalExam)
+            ?->fail('The exam could not be written. Nothing has changed; try again in a moment.');
     }
 }

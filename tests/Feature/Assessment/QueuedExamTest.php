@@ -96,4 +96,22 @@ class QueuedExamTest extends AssessmentTestCase
         $this->assertSame('closed', $props['state']);
         $this->assertStringContainsString('could not be written', (string) $props['failure']);
     }
+
+    /** `QueuedSyllabusTest`'s twin: a killed job still ends the wait. */
+    #[Test]
+    public function a_job_killed_before_it_could_report_still_ends_the_wait(): void
+    {
+        $course = $this->taughtCourse();
+
+        GenerationRequest::open($course, GenerationKind::FinalExam);
+
+        (new WriteFinalExam($course->id))->failed(new \RuntimeException('killed'));
+
+        $props = $this->inertiaProps(
+            $this->actingAs($course->student)->get(route('courses.final-exam.show', $course)),
+        );
+
+        $this->assertSame('closed', $props['state']);
+        $this->assertStringContainsString('could not be written', (string) $props['failure']);
+    }
 }

@@ -191,6 +191,34 @@ class QueuedSyllabusTest extends TestCase
         $this->assertNull(GenerationRequest::for($course, GenerationKind::Syllabus));
     }
 
+    /**
+     * A job killed by the worker -- a `--timeout` kill, an out-of-memory
+     * restart, a Flex worker reclaimed mid-run -- never unwinds through
+     * `handle`, so the wait has to be ended by `failed()` instead. Without it
+     * the row stays open and the student polls a screen forever.
+     */
+    #[Test]
+    public function a_job_killed_before_it_could_report_still_ends_the_wait(): void
+    {
+        $course = $this->course();
+
+        GenerationRequest::open($course, GenerationKind::Syllabus);
+
+        (new DrawUpSyllabus($course->id))->failed(new \RuntimeException('killed'));
+
+        $request = GenerationRequest::for($course, GenerationKind::Syllabus);
+
+        $this->assertNotNull($request);
+        $this->assertTrue($request->hasFailed());
+
+        $props = $this->inertiaProps(
+            $this->actingAs($course->student)->get(route('courses.syllabus.show', $course)),
+        );
+
+        $this->assertFalse($props['generating']);
+        $this->assertStringContainsString('ask again', (string) $props['failure']);
+    }
+
     private function course(): Course
     {
         return Course::factory()
