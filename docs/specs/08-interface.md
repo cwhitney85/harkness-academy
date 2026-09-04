@@ -275,6 +275,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 - **8.7.4 MUST** — Syllabus approve/revise (4.5.4) including the revision request field. *Done: approve advances the course; revise regenerates against the typed request.*
 - **8.7.5 MUST** — Level-mismatch banner (4.5.7) when `subtopic_mismatch` is non-null, non-blocking. *Done: a mismatched course still approves.*
 - **8.7.6 SHOULD** — "Carry on, or start over?" — when `CourseTransitions::resumable` returns a withdrawn attempt at the chosen subtopic and level, creation asks D7b's question in D7b's words instead of creating a second course. *Done: picking up sends `POST /courses/{course}/resume` and lands on the resume table's URL for that course's status; starting over creates attempt + 1.* Pairs with 8.10.3 — see the note there.
+- **8.7.7 SHOULD** — The syllabus screen states what the exam actually does. After 6.3.3 the exam draws on every concept the lessons declare, so the panel's "The final exam draws on" — followed by the `final_exam_concepts` list — is no longer true; the list is the exam's *emphasis*, which is that field's only remaining job once 6.3.1 stops using it as a gate. *Done: the panel's wording no longer claims the listed concepts are the exam's scope, and the question count shown is 6.3.2's computed number. Not in scope: whether 44 raw slugs is good layout.*
 
 ## 8.8 Lesson screens
 
@@ -291,6 +292,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 - **8.9.2 MUST** — Final exam: closed book → opened, sat whole, handed in once. *Done: no per-question feedback appears before hand-in (6.3, D20).*
 - **8.9.3 MUST** — Exam result and the gate it holds, stating the 70% mark. *Done: pass and fail each render; a re-sit reopens the same exam.*
 - **8.9.4 MUST** — Refreshers at all three grains on the photocopy sheet. *Done: lesson, subtopic and module grains render from one component.*
+- **8.9.5 MUST** — The exam screen shows a queued generation failure. `WriteFinalExam` records a student-facing message on the `GenerationRequest` row and the controller passes it as a prop, but the screen copies that prop into local state once at mount and the five-second poll leaves the component mounted, so the arriving failure is never read — the button silently re-enables and the student is told nothing (found 2026-09-04, three failed exam generations in a row). One file: the syllabus screen reads its own failure prop directly and is correct. *Done: with generation forced to fail, the screen states why within one poll interval and the button returns to its pressable state; with generation succeeding, no failure text appears.*
 
 ## 8.10 Course surfaces
 
