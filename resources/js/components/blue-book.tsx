@@ -33,6 +33,7 @@ export default function BlueBook({
     answers,
     onAnswer,
     open,
+    failure = null,
     resit = false,
     pending = false,
     onOpen,
@@ -52,6 +53,10 @@ export default function BlueBook({
     onAnswer: (questionId: string, optionId: string) => void;
     /** Whether the exam exists yet. False renders the closed book. */
     open: boolean;
+    /** Why the last attempt to open the book failed, if it did (8.9.5). The
+     *  shut book has to carry this itself: nothing below it is rendered until
+     *  it is open, so there is nowhere else for the student to be told. */
+    failure?: string | null;
     /** Whether this is a second or later sitting (spec 8.4.4). */
     resit?: boolean;
     /** The exam is being written — opening spends the costliest call we make,
@@ -76,6 +81,7 @@ export default function BlueBook({
                 <ClosedBook
                     title={title}
                     terms={terms}
+                    failure={failure}
                     pending={pending}
                     onOpen={onOpen}
                 />
@@ -117,11 +123,13 @@ export default function BlueBook({
 function ClosedBook({
     title,
     terms,
+    failure,
     pending,
     onOpen,
 }: {
     title: string;
     terms: string;
+    failure: string | null;
     pending: boolean;
     onOpen: () => void;
 }) {
@@ -160,6 +168,11 @@ function ClosedBook({
                 >
                     {pending ? 'Opening…' : 'Open the book'}
                 </button>
+                {failure && (
+                    <p className="label text-wine" role="alert">
+                        {failure}
+                    </p>
+                )}
             </div>
         </div>
     );

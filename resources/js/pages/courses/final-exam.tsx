@@ -34,7 +34,22 @@ export default function FinalExamPage({
 }: FinalExamScreen) {
     const [answers, setAnswers] = useState<QuizAnswers>({});
     const [busy, setBusy] = useState(false);
-    const [failure, setFailure] = useState<string | null>(reported);
+    const [refusal, setRefusal] = useState<string | null>(null);
+
+    /**
+     * Why the last attempt failed — whether the POST refused it or the queue
+     * did (8.9.5).
+     *
+     * The prop is read on every render rather than copied into state at mount.
+     * The five-second wait below reloads onto this same mounted component, so
+     * a failure `WriteFinalExam` records only ever arrives as a *new prop*, and
+     * a copy taken at mount could never see it: the button would re-enable
+     * having said nothing about why.
+     *
+     * A press in flight clears the last attempt's word, which is what clearing
+     * the state used to do.
+     */
+    const failure = refusal ?? (busy ? null : reported);
 
     const percent = Math.round(pass_mark * 100);
 
@@ -63,11 +78,11 @@ export default function FinalExamPage({
      *  way, adopted rather than generated a second time (6.3). */
     function open() {
         setBusy(true);
-        setFailure(null);
+        setRefusal(null);
 
         postJson(urls.open, {})
             .then(refresh)
-            .catch((error: Error) => setFailure(error.message))
+            .catch((error: Error) => setRefusal(error.message))
             .finally(() => setBusy(false));
     }
 
@@ -90,24 +105,24 @@ export default function FinalExamPage({
 
     function handIn() {
         setBusy(true);
-        setFailure(null);
+        setRefusal(null);
 
         postJson(urls.sittings, { answers })
             // The result is the same URL in its `result` state, so the server
             // decides what the student now sees rather than this screen
             // remembering it.
             .then(refresh)
-            .catch((error: Error) => setFailure(error.message))
+            .catch((error: Error) => setRefusal(error.message))
             .finally(() => setBusy(false));
     }
 
     function practise() {
         setBusy(true);
-        setFailure(null);
+        setRefusal(null);
 
         postJson<{ url: string }>(urls.refresher, {})
             .then((refresher) => router.visit(refresher.url))
-            .catch((error: Error) => setFailure(error.message))
+            .catch((error: Error) => setRefusal(error.message))
             .finally(() => setBusy(false));
     }
 
@@ -155,6 +170,7 @@ export default function FinalExamPage({
                         }))
                     }
                     open={state === 'open'}
+                    failure={failure}
                     // A re-sit opens straight to the leaf (8.4.4) — but not
                     // while the book is still being written, or the student
                     // would be handed an empty one.
