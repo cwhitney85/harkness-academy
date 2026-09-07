@@ -17,6 +17,15 @@ use Illuminate\JsonSchema\Types\Type;
  * here, tagged in checkpoints (5.2.2), reported in summaries (5.4.2), drawn on
  * by exams and refreshers (6.3/6.4). SyllabusConcepts is what the rest of the
  * system resolves them through.
+ *
+ * **`final_exam_concepts` is emphasis, and its description is the only place
+ * the model is told so** -- `prompts/syllabus/generate.md` never names the
+ * field. It read "slugs the final exam draws on", which invites a list
+ * written as a scope: the first real course declared 44 of them, trying to
+ * name everything the exam might ask, against an exam of 12 questions. Since
+ * 6.3.3 the exam is written across every lesson whatever this list says, so
+ * the description warns that a longer one buys no coverage (8.7.7, and the
+ * same correction the syllabus screen's panel took).
  */
 final class SyllabusSchema
 {
@@ -72,7 +81,7 @@ final class SyllabusSchema
 
             'final_exam_concepts' => $schema->array()->min(1)->required()->unique()->items(
                 $schema->string()->pattern(self::SLUG_PATTERN),
-            )->description('Slugs the final exam draws on. Every one must be declared by a lesson section.'),
+            )->description('Where the final exam should put its weight -- not its scope. The exam is written across every lesson of the syllabus (6.3.1), so a longer list here buys no coverage. Every slug must be declared by a lesson section.'),
 
             'subtopic_mismatch' => $schema->string()->nullable()->required()
                 ->description('Null unless the goals do not fit the chosen subtopic; then one sentence saying how. A flag, never a refusal (spec 4.5.7).'),
