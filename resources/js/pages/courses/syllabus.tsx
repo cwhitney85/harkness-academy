@@ -22,6 +22,14 @@ import InputError from '@/components/input-error';
  * Revising is bounded and the screen says by how much, because running out is
  * a thing that happens to a student mid-thought and "approve is the only move
  * left" needs a reason attached to it.
+ *
+ * **`final_exam_concepts` is the exam's emphasis, not its scope** (8.7.7).
+ * The panel said "the final exam draws on" over that list, which was true
+ * while 6.3.1 gated questions on it and stopped being true on 2026-09-04:
+ * the exam is sat on every lesson, and a student reading the old wording
+ * would revise for a third of what they are asked. The count beside it is
+ * the controller's, computed from the lesson count (6.3.2) -- the screen
+ * states no number of its own.
  */
 
 type Lesson = {
@@ -230,15 +238,17 @@ export default function SyllabusScreen({
                 </ol>
 
                 <section className="mt-9 border border-t-[3px] border-hairline border-t-brass bg-surface px-5 py-5 sm:px-6">
-                    <h2 className="label text-brass">
-                        The final exam draws on
-                    </h2>
-                    <p className="label mt-2.5 text-wine">
-                        {syllabus.final_exam_concepts.join(' · ')}
-                    </p>
+                    <h2 className="label text-brass">The final exam</h2>
                     <p className="mt-3 text-[16px] text-muted-ink">
-                        {exam.questions} questions.{' '}
-                        {Math.round(exam.pass_mark * 100)} per cent to pass.
+                        {exam.questions} questions, drawn from every lesson
+                        above. {Math.round(exam.pass_mark * 100)} per cent to
+                        pass.
+                    </p>
+                    <h3 className="label mt-4 text-brass">
+                        The weight falls on
+                    </h3>
+                    <p className="label mt-2 text-wine">
+                        {syllabus.final_exam_concepts.join(' · ')}
                     </p>
                 </section>
 
