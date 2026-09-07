@@ -90,6 +90,12 @@ export type FinalExamScreen = {
     date: string;
     pass_mark: number;
     questions: QuizQuestion[];
+    /**
+     * What this student has already ticked in the sitting they are on
+     * (6.3.4). Empty for a book not yet open, and for a re-sit — the sheet is
+     * cleared at hand-in. Selections only; no verdict is ever in here (D20).
+     */
+    sheet: QuizAnswers;
     /** A book already sat opens straight to the leaf, no ceremony (8.4.4). */
     resit: boolean;
     sitting: SittingResult | null;
@@ -97,6 +103,7 @@ export type FinalExamScreen = {
     failure: string | null;
     urls: {
         open: string;
+        answers: string;
         sittings: string;
         refresher: string;
         dashboard: string;

@@ -138,11 +138,16 @@ final class QuizGrader
     /**
      * The question an answer claims to answer, checked both ways.
      *
+     * Public because grading is not the only thing that has to agree on what
+     * a legal selection is: the final exam's answer sheet (6.3.4) records
+     * selections it will later hand to `sitting()`, and two definitions of
+     * "answerable" would let a student fill in a book that cannot be marked.
+     *
      * @return array<string, mixed>
      *
      * @throws UnansweredQuestion
      */
-    private function answerable(Quiz $quiz, string $questionId, string $optionId): array
+    public function answerable(Quiz $quiz, string $questionId, string $optionId): array
     {
         $question = QuizDocument::of($quiz)->question($questionId);
 

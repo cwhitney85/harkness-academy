@@ -149,6 +149,7 @@ Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of
       ├─ Open the book ──► POST /courses/{course}/final-exam ──► S9 opened (course moves to final_exam)
       ├─ 503 exam unusable ──► S9 still closed; nothing written, nothing moved (fails closed, 4.5.1)
       ├─ re-sit ──► S9 opens straight to the leaf, same exam, no animation (8.4.4)
+      ├─ tick an answer ──► POST /courses/{course}/final-exam/answers ──► S9, the sheet saved, nothing marked (6.3.4)
       └─ Hand in ──► POST /courses/{course}/final-exam/sittings ──► S10
 
   S10 EXAM RESULT AND GATE                             (S9's URL, after a sitting)
@@ -246,6 +247,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `lessons.homework.answers.store` | S8 ──► S8 with the explanation revealed |
 | `courses.final-exam.show` | S7/S8 ──► **S9**; and **S10** after a sitting |
 | `courses.final-exam.store` | S9 closed ──► S9 opened |
+| `courses.final-exam.answers.store` | S9 ──► S9, the answer sheet saved (6.3.4) |
 | `courses.final-exam.sittings.store` | S9 ──► S10 |
 | `lessons.refreshers.store` | S7 ──► S11 (lesson grain) |
 | `courses.refreshers.store` | S10, S12 ──► S11 (subtopic grain) |

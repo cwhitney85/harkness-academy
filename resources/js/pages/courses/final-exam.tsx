@@ -27,14 +27,31 @@ export default function FinalExamPage({
     date,
     pass_mark,
     questions,
+    sheet,
     resit,
     sitting,
     failure: reported,
     urls,
 }: FinalExamScreen) {
-    const [answers, setAnswers] = useState<QuizAnswers>({});
+    const [answers, setAnswers] = useState<QuizAnswers>(sheet);
+    const [held, setHeld] = useState<QuizAnswers>(sheet);
     const [busy, setBusy] = useState(false);
     const [refusal, setRefusal] = useState<string | null>(null);
+
+    /**
+     * The book the server is holding for this sitting (6.3.4).
+     *
+     * Local state is what the student is ticking; the prop is what survived
+     * the tab being closed. The two are reconciled whenever a *new* sheet
+     * arrives rather than once at mount, for 8.9.5's reason: every reload
+     * below leaves this component mounted, so a value read only at mount could
+     * never see the empty sheet a hand-in leaves behind, and the ticks of a
+     * sitting already marked would open the re-sit.
+     */
+    if (held !== sheet) {
+        setHeld(sheet);
+        setAnswers(sheet);
+    }
 
     /**
      * Why the last attempt failed — whether the POST refused it or the queue
@@ -62,15 +79,13 @@ export default function FinalExamPage({
     ];
 
     /**
-     * Read the screen's next state off the server.
+     * Read the screen's next state off the server, ticks included.
      *
-     * The ticks do not travel with it. **A sitting is one filled-in book**: a
-     * re-sit is a fresh one, and an Inertia reload leaves this component
-     * mounted, so a book handed in with two answers on it would otherwise open
-     * again with those two answers already ticked.
+     * **A sitting is one filled-in book**: a re-sit is a fresh one, which is
+     * why the server clears the sheet at hand-in and why the effect above
+     * follows it down to empty rather than this function clearing it here.
      */
     function refresh() {
-        setAnswers({});
         router.reload();
     }
 
@@ -102,6 +117,26 @@ export default function FinalExamPage({
 
         return () => window.clearInterval(timer);
     }, [state]);
+
+    /**
+     * Tick an answer, and write the whole sheet down (6.3.4).
+     *
+     * Saved on every selection rather than debounced: a save is a small POST
+     * and losing the last one is losing the answer the student was in the
+     * middle of. **A failed save is not shown.** The sheet is a convenience —
+     * the book in front of the student is unaffected, hand-in sends this same
+     * state whether or not the save landed, and a red line about a draft
+     * during a final exam would be alarming out of all proportion to it.
+     */
+    function choose(questionId: string, optionId: string) {
+        setAnswers((chosen) => {
+            const ticked = { ...chosen, [questionId]: optionId };
+
+            postJson(urls.answers, { answers: ticked }).catch(() => {});
+
+            return ticked;
+        });
+    }
 
     function handIn() {
         setBusy(true);
@@ -163,12 +198,7 @@ export default function FinalExamPage({
                     date={date}
                     questions={questions}
                     answers={answers}
-                    onAnswer={(questionId, optionId) =>
-                        setAnswers((chosen) => ({
-                            ...chosen,
-                            [questionId]: optionId,
-                        }))
-                    }
+                    onAnswer={choose}
                     open={state === 'open'}
                     failure={failure}
                     // A re-sit opens straight to the leaf (8.4.4) — but not

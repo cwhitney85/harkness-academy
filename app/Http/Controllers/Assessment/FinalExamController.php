@@ -96,6 +96,13 @@ class FinalExamController extends Controller
             'questions' => $seated && $exam instanceof Quiz
                 ? QuizDocument::of($exam)->clientPayload()['quiz']['questions']
                 : [],
+            // What the student has already ticked in the book they are
+            // sitting now, cleared at hand-in so a re-sit opens empty
+            // (6.3.4). Selections only: no verdict travels with them.
+            // Cast so an empty sheet crosses the wire as `{}` rather than as
+            // the `[]` an empty PHP array encodes to.
+            'sheet' => (object) ($seated ? $exams->sheet($course) : []),
+
             // A book already sat is opened straight to the leaf, with no
             // ceremony (8.4.4).
             'resit' => $sitting !== null,
@@ -105,6 +112,7 @@ class FinalExamController extends Controller
             ],
             'urls' => [
                 'open' => route('courses.final-exam.store', $course),
+                'answers' => route('courses.final-exam.answers.store', $course),
                 'sittings' => route('courses.final-exam.sittings.store', $course),
                 'refresher' => route('courses.refreshers.store', $course),
                 'dashboard' => route('dashboard'),

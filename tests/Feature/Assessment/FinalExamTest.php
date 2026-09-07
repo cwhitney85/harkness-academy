@@ -384,47 +384,4 @@ class FinalExamTest extends AssessmentTestCase
 
         return $answers;
     }
-
-    /**
-     * A `json/quiz.v1` exam for the two-lesson fixture: two questions each.
-     *
-     * @return array<string, mixed>
-     */
-    private function examResponse(): array
-    {
-        $questions = [];
-
-        // Lesson 1 teaches variable, expression and coefficient; lesson 2
-        // teaches equation, variable and inverse-operation. Two questions per
-        // lesson is what QuizLength::exam() asks of a course this long.
-        $rows = [
-            ['e1', 'variable', 'What does the letter in 3n + 2 stand for?'],
-            ['e2', 'expression', 'Which of these is an expression?'],
-            ['e3', 'equation', 'Which of these is an equation?'],
-            ['e4', 'inverse-operation', 'To undo "add 7", what do you do?'],
-        ];
-
-        foreach ($rows as [$id, $slug, $prompt]) {
-            $questions[] = [
-                'id' => $id,
-                'prompt' => $prompt,
-                'options' => [
-                    ['id' => 'a', 'text' => 'The right answer'],
-                    ['id' => 'b', 'text' => 'A plausible mistake'],
-                    ['id' => 'c', 'text' => 'Another plausible mistake'],
-                ],
-                'correct_option_id' => 'a',
-                'explanation' => "Because of {$slug}.",
-                'concept_tag' => $slug,
-            ];
-        }
-
-        return [
-            'quiz' => [
-                'scope' => 'Algebra: Getting Comfortable with the Unknown',
-                'questions' => $questions,
-                'suggested_reading' => [],
-            ],
-        ];
-    }
 }

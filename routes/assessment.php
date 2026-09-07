@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Assessment\FinalExamAnswerSheetController;
 use App\Http\Controllers\Assessment\FinalExamController;
 use App\Http\Controllers\Assessment\FinalExamSittingController;
 use App\Http\Controllers\Assessment\HomeworkAnswerController;
@@ -38,6 +39,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('courses/{course}/final-exam', [FinalExamController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('courses.final-exam.store');
+
+    // Saved as the student ticks, so a closed tab does not lose a
+    // half-finished book (6.3.4). Nothing is graded here -- the sitting below
+    // is still the only thing that marks anything.
+    Route::post('courses/{course}/final-exam/answers', [FinalExamAnswerSheetController::class, 'store'])
+        ->name('courses.final-exam.answers.store');
 
     Route::post('courses/{course}/final-exam/sittings', [FinalExamSittingController::class, 'store'])
         ->name('courses.final-exam.sittings.store');

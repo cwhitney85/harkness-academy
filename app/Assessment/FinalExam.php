@@ -12,6 +12,7 @@ use App\Courses\LessonStatus;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Memory\MemoryTree;
 use App\Models\Course;
+use App\Models\ExamAnswerSheet;
 use App\Models\Quiz;
 use Throwable;
 
@@ -150,21 +151,12 @@ final class FinalExam
      */
     public function sit(Course $course, array $answers): ExamResult
     {
-        if (! $course->isOpen()) {
-            throw ExamNotAvailable::because($course, 'it has already ended.');
-        }
-
-        if ($course->status !== CourseStatus::FinalExam) {
-            throw ExamNotAvailable::because($course, "it stands at [{$course->status->value}]; open the exam first.");
-        }
-
-        $exam = $this->exam($course);
-
-        if (! $exam instanceof Quiz) {
-            throw ExamNotAvailable::because($course, 'no exam has been generated for it.');
-        }
-
+        $exam = $this->seated($course);
         $sitting = $this->grader->sitting($exam, $course->student, $answers);
+
+        // The book is in. What is left of the sheet is a draft of a sitting
+        // that has happened, and a re-sit opens an empty book (6.3.4).
+        ExamAnswerSheet::query()->where($this->sheetKeys($exam, $course, $sitting->number))->delete();
 
         $passed = $sitting->score() >= $this->passMark();
 
@@ -175,6 +167,73 @@ final class FinalExam
             : $this->transitions->to($course, CourseStatus::Active);
 
         return new ExamResult($passed, $sitting, $course->standing());
+    }
+
+    /**
+     * Write down what the student has ticked so far (spec 6.3.4, ledger D26).
+     *
+     * Pre:  the course is open, stands at `final_exam`, and has an exam; every
+     *       question id is one that exam asks and every option one that
+     *       question offers -- the same rule grading applies, through the same
+     *       method, so a sheet cannot be filled in with what cannot be marked.
+     * Post: exactly one sheet for (exam, student, the sitting about to
+     *       happen), holding those selections and **no verdict of any kind**.
+     *       Nothing is graded, nothing is disclosed, and the course has not
+     *       moved.
+     *
+     * Replaced whole rather than merged: the screen holds the whole book, so
+     * the last save is the student's last word, and un-ticking is then an
+     * ordinary save rather than a second endpoint.
+     *
+     * @param  array<string, string>  $answers  question id => option id
+     *
+     * @throws ExamNotAvailable|UnansweredQuestion
+     */
+    public function save(Course $course, array $answers): void
+    {
+        $exam = $this->seated($course);
+
+        $selections = [];
+
+        foreach ($answers as $questionId => $optionId) {
+            $this->grader->answerable($exam, (string) $questionId, $optionId);
+
+            $selections[(string) $questionId] = $optionId;
+        }
+
+        $keys = $this->sheetKeys($exam, $course, $this->nextSitting($exam, $course));
+
+        // One statement, so two selections clicked in the same second cannot
+        // race each other into two rows the unique index would then refuse.
+        ExamAnswerSheet::query()->upsert(
+            [[...$keys, 'selections' => json_encode($selections, JSON_THROW_ON_ERROR)]],
+            array_keys($keys),
+            ['selections'],
+        );
+    }
+
+    /**
+     * What the student has ticked in the book they are sitting now (6.3.4).
+     *
+     * Post: question id => option id, empty when nothing has been ticked --
+     *       which is also what a re-sit reads, because the sheet is cleared at
+     *       hand-in.
+     *
+     * @return array<string, string>
+     */
+    public function sheet(Course $course): array
+    {
+        $exam = $this->exam($course);
+
+        if (! $exam instanceof Quiz) {
+            return [];
+        }
+
+        $sheet = ExamAnswerSheet::query()
+            ->where($this->sheetKeys($exam, $course, $this->nextSitting($exam, $course)))
+            ->first();
+
+        return $sheet instanceof ExamAnswerSheet ? $sheet->selections : [];
     }
 
     /**
@@ -197,6 +256,65 @@ final class FinalExam
     public function passMark(): float
     {
         return (float) config('assessment.final_exam.pass_mark', 0.7);
+    }
+
+    /**
+     * The exam this student is sitting right now.
+     *
+     * Three checks, shared by `sit()` and `save()`: a sheet is part of sitting
+     * the exam, so anything that may not be sat may not be written on either,
+     * and the student is owed the same sentence about why.
+     *
+     * @throws ExamNotAvailable
+     */
+    private function seated(Course $course): Quiz
+    {
+        if (! $course->isOpen()) {
+            throw ExamNotAvailable::because($course, 'it has already ended.');
+        }
+
+        if ($course->status !== CourseStatus::FinalExam) {
+            throw ExamNotAvailable::because($course, "it stands at [{$course->status->value}]; open the exam first.");
+        }
+
+        $exam = $this->exam($course);
+
+        if (! $exam instanceof Quiz) {
+            throw ExamNotAvailable::because($course, 'no exam has been generated for it.');
+        }
+
+        return $exam;
+    }
+
+    /**
+     * The sitting number the next hand-in will carry.
+     *
+     * Read through the grader, which is where `attempt`-is-the-sitting-number
+     * lives, so a sheet is filed under the number its answers will be recorded
+     * at rather than under a second opinion about which sitting this is.
+     */
+    private function nextSitting(Quiz $exam, Course $course): int
+    {
+        return 1 + ($this->grader->lastSitting($exam, $course->student)->number ?? 0);
+    }
+
+    /**
+     * What identifies one student's sheet for one sitting of one exam.
+     *
+     * The three columns of `exam_answer_sheets_one_per_sitting`, in one place,
+     * because they are read, written and cleared from three different methods
+     * and the student column is what keeps one student's book out of
+     * another's hands.
+     *
+     * @return array{quiz_id: int, user_id: int, attempt: int}
+     */
+    private function sheetKeys(Quiz $exam, Course $course, int $sitting): array
+    {
+        return [
+            'quiz_id' => $exam->id,
+            'user_id' => $course->student->id,
+            'attempt' => $sitting,
+        ];
     }
 
     /**
