@@ -29,7 +29,7 @@
 | `lesson.summarize` | mid | lesson_transcript, guidance_doc, checkpoint_results | `json/lesson-summary.v1` | 5.4 |
 | `wk.update` | mid | prior_wk_doc, lesson_summary_json, homework_results | markdown (full replacement) | 5.4, 6.2 |
 | `homework.generate` | mid | lesson_summary_json, homework_focus | `json/quiz.v1` + suggested_reading[] | 6.2 |
-| `exam.final` | top | syllabus_json, wk_doc | `json/quiz.v1` | 6.3 |
+| `exam.final` | top | syllabus_json, wk_doc, question_count | `json/quiz.v1` | 6.3 |
 | `quiz.refresher` | cheap | scope_docs, scope_label | `json/quiz.v1` | 6.4/6.5 |
 | `explainer.select` | cheap | selection, surrounding_chunk, subtopic, skill_level | short markdown (≤200 words) | 5.5 |
 

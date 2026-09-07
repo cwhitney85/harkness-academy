@@ -58,7 +58,7 @@ class SyllabusController extends Controller
             ],
             'syllabus' => $draft instanceof CourseSyllabus ? $this->draft($draft) : null,
             'revisions' => $this->revisions($draft),
-            'exam' => $this->exam(),
+            'exam' => $this->exam($draft),
 
             // Is a generation out? The row is the wait (ledger D25), and its
             // absence is how the screen knows the draft above is the whole
@@ -151,19 +151,20 @@ class SyllabusController extends Controller
      * What the final exam this syllabus names will ask of the student.
      *
      * Read from the classes that enforce them rather than written on the
-     * screen: `QuizLength::exam()` bounds the question count (D20) and
-     * `assessment.final_exam.pass_mark` is the gate. A screen that stated
-     * "eight to twelve questions, seventy per cent" in its own words would go
-     * on saying it after either number changed.
+     * screen: `QuizLength::exam()` fixes the question count at two per lesson
+     * (6.3.2) and `assessment.final_exam.pass_mark` is the gate. A screen that
+     * stated "eight to twelve questions, seventy per cent" in its own words
+     * would go on saying it after either number changed -- and did, until the
+     * count stopped being a range.
      *
      * @return array<string, mixed>
      */
-    private function exam(): array
+    private function exam(?CourseSyllabus $draft): array
     {
-        $length = QuizLength::exam();
+        $lessons = $draft instanceof CourseSyllabus ? count($draft->syllabus_json['lessons']) : 0;
 
         return [
-            'questions' => ['min' => $length->min, 'max' => $length->max],
+            'questions' => QuizLength::exam($lessons)->min,
             'pass_mark' => (float) config('assessment.final_exam.pass_mark'),
         ];
     }

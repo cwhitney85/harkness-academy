@@ -62,7 +62,9 @@ class SyllabusScreenTest extends TestCase
                 ->has('syllabus.lessons', 2)
                 ->has('syllabus.final_exam_concepts', 3)
                 ->where('syllabus.generation', 1)
-                ->where('exam.questions.min', 8)
+                // Two questions per lesson, the number the exam then asks
+                // (6.3.2) -- this draft has two lessons.
+                ->where('exam.questions', 4)
                 ->where('exam.pass_mark', 0.7),
             );
     }

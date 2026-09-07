@@ -206,7 +206,7 @@ final class SpanishPronunciation
     }
 
     /**
-     * Eight questions -- the floor of QuizLength::exam(), so 0.7 asks for six.
+     * Six questions -- two per lesson (6.3.2), so 0.7 asks for five.
      *
      * @return array<string, mixed>
      */
@@ -222,8 +222,6 @@ final class SpanishPronunciation
                     ['id' => 'sp-x4', 'prompt' => 'The single r between two vowels is closest to…', 'options' => [['id' => 'a', 'text' => 'an English r'], ['id' => 'b', 'text' => 'the dd in the American pronunciation of ladder'], ['id' => 'c', 'text' => 'a rolled trill']], 'correct_option_id' => 'b', 'explanation' => 'A single light tap of the tongue against the ridge behind the teeth.', 'concept_tag' => 'rolled-r'],
                     ['id' => 'sp-x5', 'prompt' => 'How do b and v differ in Spanish?', 'options' => [['id' => 'a', 'text' => 'They do not — they are the same sound'], ['id' => 'b', 'text' => 'V is softer everywhere'], ['id' => 'c', 'text' => 'V is like an English v between vowels']], 'correct_option_id' => 'a', 'explanation' => 'One sound, two spellings. What changes the sound is position in the word, not which letter is written.', 'concept_tag' => 'b-v-merger'],
                     ['id' => 'sp-x6', 'prompt' => 'Where does the stress fall in «ciudad»?', 'options' => [['id' => 'a', 'text' => 'On ciu'], ['id' => 'b', 'text' => 'On dad'], ['id' => 'c', 'text' => 'It needs an accent mark to say']], 'correct_option_id' => 'b', 'explanation' => 'It ends in d, so rule two applies: the last syllable.', 'concept_tag' => 'default-stress'],
-                    ['id' => 'sp-x7', 'prompt' => 'And in «hablan»?', 'options' => [['id' => 'a', 'text' => 'On ha'], ['id' => 'b', 'text' => 'On blan'], ['id' => 'c', 'text' => 'Evenly']], 'correct_option_id' => 'a', 'explanation' => 'It ends in n, so rule one applies: the second-to-last syllable.', 'concept_tag' => 'default-stress'],
-                    ['id' => 'sp-x8', 'prompt' => 'Why are «esta» and «está» different words?', 'options' => [['id' => 'a', 'text' => 'The accent changes the vowel sound'], ['id' => 'b', 'text' => 'The accent moves the stress, and the two stressed forms mean this and is'], ['id' => 'c', 'text' => 'The accent is optional']], 'correct_option_id' => 'b', 'explanation' => 'The mark does one job — the stress is here instead — and that alone separates two common words.', 'concept_tag' => 'written-accent'],
                 ],
                 'suggested_reading' => [],
             ],
@@ -231,7 +229,7 @@ final class SpanishPronunciation
     }
 
     /**
-     * Three of eight: below the 0.7 mark, so the course goes back to `active`.
+     * Two of six: below the 0.7 mark, so the course goes back to `active`.
      *
      * @return array<string, string>
      */
@@ -244,13 +242,11 @@ final class SpanishPronunciation
             'sp-x4' => 'a',
             'sp-x5' => 'c',
             'sp-x6' => 'a',
-            'sp-x7' => 'a',
-            'sp-x8' => 'a',
         ];
     }
 
     /**
-     * Seven of eight on the re-sit -- the same exam, never disclosed (D20).
+     * Five of six on the re-sit -- the same exam, never disclosed (D20).
      *
      * @return array<string, string>
      */
@@ -262,9 +258,7 @@ final class SpanishPronunciation
             'sp-x3' => 'a',
             'sp-x4' => 'b',
             'sp-x5' => 'a',
-            'sp-x6' => 'b',
-            'sp-x7' => 'a',
-            'sp-x8' => 'a',
+            'sp-x6' => 'a',
         ];
     }
 }

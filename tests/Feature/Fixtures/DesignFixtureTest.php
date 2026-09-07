@@ -212,8 +212,9 @@ class DesignFixtureTest extends TestCase
         $exam = $course->morphMany(Quiz::class, 'quizzable')->ofKind(QuizKind::Final)->firstOrFail();
         $asked = count(QuizDocument::of($exam)->questions());
 
-        $this->assertGreaterThanOrEqual(QuizLength::exam()->min, $asked);
-        $this->assertLessThanOrEqual(QuizLength::exam()->max, $asked);
+        // Two per lesson, the length a generated exam would have been given
+        // (6.3.2) -- a hand-written fixture is still held to it.
+        $this->assertSame(QuizLength::exam($course->lessons->count())->min, $asked);
 
         $this->assertSame(0, QuizAttempt::query()->where('quiz_id', $exam->id)->count(), 'the closed book has not been sat');
     }
@@ -235,7 +236,8 @@ class DesignFixtureTest extends TestCase
 
         $exam = $exams->first();
         $total = count(QuizDocument::of($exam)->questions());
-        $pass = QuizLength::exam()->toPass($total, (float) config('assessment.final_exam.pass_mark'));
+        $pass = QuizLength::exam($course->lessons->count())
+            ->toPass($total, (float) config('assessment.final_exam.pass_mark'));
 
         $sittings = QuizAttempt::query()
             ->where('quiz_id', $exam->id)

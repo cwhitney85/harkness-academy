@@ -8,6 +8,7 @@ use App\Assessment\FinalExam;
 use App\Assessment\QuizKind;
 use App\Assessment\Quizzes;
 use App\Courses\CourseStatus;
+use App\Courses\Syllabus\SyllabusConcepts;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\User;
@@ -24,7 +25,7 @@ use PHPUnit\Framework\Attributes\Test;
 class FinalExamTest extends AssessmentTestCase
 {
     #[Test]
-    public function the_exam_is_scoped_by_the_syllabus_final_exam_concepts(): void
+    public function the_exam_covers_every_lesson_the_syllabus_teaches(): void
     {
         $course = $this->taughtCourse();
 
@@ -35,36 +36,43 @@ class FinalExamTest extends AssessmentTestCase
         $this->assertSame(QuizKind::Final, $exam->kind);
         $this->assertSame($course->getMorphClass(), $exam->quizzable_type);
 
-        // Every concept the syllabus named for the exam is reachable through
-        // some question -- checked in code, not hoped for in the prompt.
-        $this->assertSame(
-            ['variable', 'equation', 'inverse-operation'],
-            $course->approvedSyllabus->syllabus_json['final_exam_concepts'],
-        );
+        // Two questions per lesson, and every lesson reachable through one of
+        // them -- checked in code, not hoped for in the prompt (6.3.1).
+        $this->assertCount(2 * $course->lessons->count(), $exam->payload['quiz']['questions']);
 
-        $tags = array_column($exam->payload['quiz']['questions'], 'concept_tag');
+        $concepts = SyllabusConcepts::of($course->approvedSyllabus);
+        $covered = [];
 
-        foreach ($course->approvedSyllabus->syllabus_json['final_exam_concepts'] as $slug) {
-            $this->assertContains($slug, $tags);
+        foreach (array_column($exam->payload['quiz']['questions'], 'concept_tag') as $tag) {
+            $covered = [...$covered, ...$concepts->taughtIn($tag)];
+        }
+
+        foreach ($course->lessons as $lesson) {
+            $this->assertContains($lesson->position, $covered);
         }
     }
 
     #[Test]
-    public function an_exam_that_misses_a_declared_concept_is_refused_and_nothing_moves(): void
+    public function an_exam_that_skips_a_lesson_is_refused_and_says_which(): void
     {
         $course = $this->taughtCourse();
 
-        $narrow = $this->examResponse();
-        $narrow['quiz']['questions'] = [$narrow['quiz']['questions'][0]];
+        // Four questions, all of them about lesson 1 -- the right length and
+        // the right shape, and still not an exam on this course.
+        $lopsided = $this->examResponse();
 
-        // Two attempts, both narrow (spec 4.5.1's shape: one retry, then fail).
-        $this->scriptModel([$narrow, $narrow]);
+        foreach ($lopsided['quiz']['questions'] as $index => $question) {
+            $lopsided['quiz']['questions'][$index]['concept_tag'] = $index === 0 ? 'expression' : 'coefficient';
+        }
+
+        // Two attempts, both lopsided (spec 4.5.1's shape: one retry, then fail).
+        $this->scriptModel([$lopsided, $lopsided]);
 
         try {
             app(FinalExam::class)->open($course);
-            $this->fail('An exam missing a declared concept should be refused.');
+            $this->fail('An exam that asks nothing from a lesson should be refused.');
         } catch (ExamUnusable $e) {
-            $this->assertStringContainsString('equation', $e->getMessage());
+            $this->assertStringContainsString('lesson 2 (Keeping Both Sides Equal)', $e->getMessage());
         }
 
         // D10.4: a failed generation writes nothing and moves nothing.
@@ -73,11 +81,58 @@ class FinalExamTest extends AssessmentTestCase
     }
 
     #[Test]
+    public function an_exam_that_omits_declared_exam_concepts_still_passes(): void
+    {
+        $course = $this->taughtCourse();
+
+        // Neither `variable` nor `equation` is asked about, and both are named
+        // in `final_exam_concepts`. Every lesson is still examined, which is
+        // the whole of the rule now (6.3.1).
+        $partial = $this->examResponse();
+        $partial['quiz']['questions'][0]['concept_tag'] = 'expression';
+        $partial['quiz']['questions'][1]['concept_tag'] = 'coefficient';
+        $partial['quiz']['questions'][2]['concept_tag'] = 'inverse-operation';
+        $partial['quiz']['questions'][3]['concept_tag'] = 'inverse-operation';
+
+        $this->assertSame(
+            ['variable', 'equation', 'inverse-operation'],
+            $course->approvedSyllabus->syllabus_json['final_exam_concepts'],
+        );
+
+        $this->scriptModel([$partial]);
+
+        $exam = app(FinalExam::class)->open($course);
+
+        $this->assertNotContains('variable', array_column($exam->payload['quiz']['questions'], 'concept_tag'));
+    }
+
+    #[Test]
+    public function a_tag_the_lessons_declare_is_kept_and_an_invented_one_is_dropped(): void
+    {
+        $course = $this->taughtCourse();
+
+        // `expression` is declared by a lesson section and is *not* in
+        // `final_exam_concepts` -- before 6.3.3 it was stripped, and lesson 1
+        // went uncovered with it.
+        $mixed = $this->examResponse();
+        $mixed['quiz']['questions'][0]['concept_tag'] = 'expression';
+        $mixed['quiz']['questions'][1]['concept_tag'] = 'quadratic-formula';
+
+        $this->scriptModel([$mixed]);
+
+        $exam = app(FinalExam::class)->open($course);
+        $tags = array_column($exam->payload['quiz']['questions'], 'concept_tag');
+
+        $this->assertSame('expression', $tags[0]);
+        $this->assertNull($tags[1]);
+    }
+
+    #[Test]
     public function an_exam_too_short_to_grade_against_a_fraction_is_refused(): void
     {
         $course = $this->taughtCourse();
 
-        // Three questions covering all three concepts: correctly scoped, and
+        // Three questions still touching both lessons: correctly scoped, and
         // still ungradable -- at a 0.7 pass mark it silently demands a perfect
         // score, which is not the number anyone configured.
         $short = $this->examResponse();
@@ -89,7 +144,7 @@ class FinalExamTest extends AssessmentTestCase
             app(FinalExam::class)->open($course);
             $this->fail('An exam too short to grade against a fraction should be refused.');
         } catch (ExamUnusable $e) {
-            $this->assertStringContainsString('between 8 and 12 questions', $e->getMessage());
+            $this->assertStringContainsString('exactly 4 questions', $e->getMessage());
         }
 
         $this->assertSame(0, Quiz::query()->ofKind(QuizKind::Final)->count());
@@ -138,15 +193,15 @@ class FinalExamTest extends AssessmentTestCase
         $this->scriptModel([$this->examResponse()]);
         $exam = app(FinalExam::class)->open($course);
 
-        // Five of eight is 0.625, below the 0.7 pass mark.
+        // Two of four is 0.5, below the 0.7 pass mark.
         $result = app(FinalExam::class)->sit($course->refresh(), [
-            ...$this->allCorrect(), 'e2' => 'b', 'e3' => 'b', 'e4' => 'b',
+            ...$this->allCorrect(), 'e2' => 'b', 'e3' => 'b',
         ]);
 
         $this->assertFalse($result->passed);
-        $this->assertSame(5, $result->sitting->correct);
-        $this->assertSame(8, $result->sitting->total);
-        $this->assertSame(['equation', 'inverse-operation', 'variable'], $result->sitting->conceptsMissed);
+        $this->assertSame(2, $result->sitting->correct);
+        $this->assertSame(4, $result->sitting->total);
+        $this->assertSame(['expression', 'equation'], $result->sitting->conceptsMissed);
         $this->assertSame(CourseStatus::Active, $result->standing);
 
         $course->refresh();
@@ -158,7 +213,7 @@ class FinalExamTest extends AssessmentTestCase
         // One row per answer, all at the same sitting number.
         $attempts = QuizAttempt::query()->where('quiz_id', $exam->id)->get();
 
-        $this->assertCount(8, $attempts);
+        $this->assertCount(4, $attempts);
         $this->assertSame([1], array_values(array_unique($attempts->pluck('attempt')->all())));
     }
 
@@ -173,7 +228,7 @@ class FinalExamTest extends AssessmentTestCase
         // raise the score.
         $result = app(FinalExam::class)->sit($course->refresh(), ['e1' => 'a']);
 
-        $this->assertSame(8, $result->sitting->total);
+        $this->assertSame(4, $result->sitting->total);
         $this->assertSame(1, $result->sitting->correct);
         $this->assertFalse($result->passed);
     }
@@ -271,7 +326,7 @@ class FinalExamTest extends AssessmentTestCase
             ->json();
 
         $this->assertFalse($result['passed']);
-        $this->assertSame(['variable', 'equation', 'inverse-operation'], $result['concepts_missed']);
+        $this->assertSame(['variable', 'expression', 'equation', 'inverse-operation'], $result['concepts_missed']);
         $this->assertArrayNotHasKey('correct_option_id', $result);
         $this->assertArrayNotHasKey('explanation', $result);
     }
@@ -331,7 +386,7 @@ class FinalExamTest extends AssessmentTestCase
     }
 
     /**
-     * A `json/quiz.v1` exam covering all three of the syllabus's exam concepts.
+     * A `json/quiz.v1` exam for the two-lesson fixture: two questions each.
      *
      * @return array<string, mixed>
      */
@@ -339,17 +394,15 @@ class FinalExamTest extends AssessmentTestCase
     {
         $questions = [];
 
-        // Eight questions: the three tagged ones the scope check reads, plus
-        // five more so the exam is a legal length (QuizLength::exam).
+        // Lesson 1 teaches variable, expression and coefficient; lesson 2
+        // teaches equation, variable and inverse-operation. Two questions per
+        // lesson is what QuizLength::exam() asks of a course this long.
         $rows = [
             ['e1', 'variable', 'What does the letter in 3n + 2 stand for?'],
-            ['e2', 'equation', 'Which of these is an equation?'],
-            ['e3', 'inverse-operation', 'To undo "add 7", what do you do?'],
+            ['e2', 'expression', 'Which of these is an expression?'],
+            ['e3', 'equation', 'Which of these is an equation?'],
+            ['e4', 'inverse-operation', 'To undo "add 7", what do you do?'],
         ];
-
-        foreach (range(4, 8) as $n) {
-            $rows[] = ["e{$n}", 'variable', "A further question about variables, number {$n}."];
-        }
 
         foreach ($rows as [$id, $slug, $prompt]) {
             $questions[] = [

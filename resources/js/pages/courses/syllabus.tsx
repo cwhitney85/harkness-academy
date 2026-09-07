@@ -48,7 +48,7 @@ type Props = {
     course: { id: number; title: string; level: string };
     syllabus: Syllabus | null;
     revisions: { used: number; allowed: number; remaining: number };
-    exam: { questions: { min: number; max: number }; pass_mark: number };
+    exam: { questions: number; pass_mark: number };
     urls: { generate: string; revise: string; approve: string };
     /** A generation is out on the queue and has not landed (ledger D25). */
     generating: boolean;
@@ -237,7 +237,7 @@ export default function SyllabusScreen({
                         {syllabus.final_exam_concepts.join(' · ')}
                     </p>
                     <p className="mt-3 text-[16px] text-muted-ink">
-                        {exam.questions.min} to {exam.questions.max} questions.{' '}
+                        {exam.questions} questions.{' '}
                         {Math.round(exam.pass_mark * 100)} per cent to pass.
                     </p>
                 </section>

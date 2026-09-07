@@ -236,25 +236,37 @@ final class FinalExam
     }
 
     /**
-     * Write an exam that covers what the syllabus said it would.
+     * Write an exam that covers every lesson the syllabus teaches (6.3.1).
      *
-     * "Scoped by `final_exam_concepts`" is checked here rather than hoped for
-     * in the prompt: every declared exam concept has to be reachable through
-     * some question, and a tag outside that scope is dropped the way 5.2.2
-     * drops an invented one. A schema cannot state either rule -- the legal
-     * set is one document's, not the contract's.
+     * "Covers the course" is checked here rather than hoped for in the prompt:
+     * every lesson has to be reachable through some question, and a tag the
+     * syllabus does not declare is dropped the way 5.2.2 drops an invented
+     * one. A schema cannot state either rule -- the legal set is one
+     * document's, not the contract's.
+     *
+     * **Per lesson, not per concept, and that is the 2026-09-04 repair.** The
+     * rule used to require every slug in `final_exam_concepts` to be some
+     * question's tag. A question carries exactly one tag, so coverage could
+     * never exceed the question count, and the first real course declared 44
+     * exam concepts against a 12-question exam: it was unsatisfiable, and no
+     * fixture had ever been large enough to say so (6.3.5 now is). Lessons are
+     * what the exam is sat on, they are bounded by the same depth parameters
+     * that set the question count, and `final_exam_concepts` goes back to
+     * being the emphasis it reads as.
      *
      * @throws ExamUnusable
      */
     private function askUntilUsable(Course $course): QuizDocument
     {
         $syllabus = $course->approvedSyllabus;
-        $scope = array_values($syllabus->syllabus_json['final_exam_concepts']);
+        $concepts = SyllabusConcepts::of($syllabus);
 
-        // Every exam slug is declared by a lesson section (4.5.2.2 checks this
-        // before a syllabus row is written), so the exam's vocabulary is the
-        // narrower of the two and the one that matters here.
-        SyllabusConcepts::of($syllabus)->assertDeclared($scope);
+        // Every concept the lessons declare, not the exam list: a question
+        // about a real lesson-4 concept outside that list would otherwise lose
+        // its tag, and its lesson would count as uncovered (6.3.3).
+        $vocabulary = $concepts->declared();
+        $lessons = $this->lessonTitles($syllabus->syllabus_json);
+        $length = QuizLength::exam(count($lessons));
 
         $vars = [
             'syllabus_json' => json_encode(
@@ -263,6 +275,10 @@ final class FinalExam
             ),
             'wk_doc' => $this->memory->get($course->student, $course->workingKnowledgePath())
                 ?? 'No working-knowledge document has been written for this subtopic.',
+            // The arithmetic is done here rather than by the model: asking a
+            // `top`-tier call to multiply and then rejecting its answer is the
+            // most expensive way to get a number we already have (6.3.2).
+            'question_count' => (string) $length->min,
         ];
 
         $attempts = (int) config('assessment.final_exam.generation_attempts', 2);
@@ -275,7 +291,7 @@ final class FinalExam
                     ->prompt('exam.final', $vars)
                     ->feature(self::FEATURE)
                     ->for($course->user_id)
-                    ->schema(QuizSchema::definition(QuizLength::exam()))
+                    ->schema(QuizSchema::definition($length))
                     ->generate();
 
                 if (! is_array($response->structured)) {
@@ -284,12 +300,12 @@ final class FinalExam
                     continue;
                 }
 
-                $document = QuizDocument::in($response->structured, QuizKind::Final)->withResolvedTags($scope);
+                $document = QuizDocument::in($response->structured, QuizKind::Final)->withResolvedTags($vocabulary);
 
                 $defects = [
                     ...$document->defects(),
-                    ...$this->uncovered($document, $scope),
-                    ...$this->misjudgedLength($document),
+                    ...$this->unexamined($document, $concepts, $lessons),
+                    ...$this->misjudgedLength($document, $length),
                 ];
 
                 if ($defects === []) {
@@ -306,24 +322,65 @@ final class FinalExam
     }
 
     /**
-     * The exam concepts no question asks about.
+     * The lessons no question asks anything from (spec 6.3.1).
      *
-     * @param  list<string>  $scope
+     * A tag reaches its lesson through `SyllabusConcepts`, which already holds
+     * slug => lesson positions -- every position, because a concept taught in
+     * two lessons is the same concept in both (the prompts require it), so a
+     * question about it is a question about either.
+     *
+     * Pre: `$document` has had its tags resolved against the same syllabus,
+     *      so no tag here is undeclared.
+     *
+     * @param  array<int, string>  $lessons  position => title
      * @return list<string>
      */
-    private function uncovered(QuizDocument $document, array $scope): array
+    private function unexamined(QuizDocument $document, SyllabusConcepts $concepts, array $lessons): array
     {
-        $missing = array_values(array_diff($scope, $document->conceptTags()));
+        $covered = [];
+
+        foreach ($document->conceptTags() as $tag) {
+            foreach ($concepts->taughtIn($tag) as $position) {
+                $covered[$position] = true;
+            }
+        }
+
+        $missing = [];
+
+        foreach ($lessons as $position => $title) {
+            if (! isset($covered[$position])) {
+                $missing[] = "{$position} ({$title})";
+            }
+        }
 
         return $missing === []
             ? []
-            : ['It asks nothing about ['.implode(', ', $missing).'].'];
+            : ['It asks nothing from lesson '.implode(', nor from lesson ', $missing).'.'];
+    }
+
+    /**
+     * Every lesson the syllabus teaches, by position.
+     *
+     * @param  array<string, mixed>  $syllabus  a `json/syllabus.v1` document
+     * @return array<int, string> position => title
+     */
+    private function lessonTitles(array $syllabus): array
+    {
+        $lessons = [];
+
+        foreach ($syllabus['lessons'] as $lesson) {
+            $lessons[(int) $lesson['position']] = (string) $lesson['title'];
+        }
+
+        ksort($lessons);
+
+        return $lessons;
     }
 
     /**
      * An exam the wrong length to grade against a fraction.
      *
-     * The schema already states the range, and a provider that honours it will
+     * The schema already states the length, and a provider that honours it will
      * never reach this. It is checked again here because this is the one quiz
      * whose length changes what passing means: `pass_mark` is a fraction, so a
      * three-question exam quietly turns 0.7 into "get all three right". The
@@ -333,9 +390,8 @@ final class FinalExam
      *
      * @return list<string>
      */
-    private function misjudgedLength(QuizDocument $document): array
+    private function misjudgedLength(QuizDocument $document, QuizLength $length): array
     {
-        $length = QuizLength::exam();
         $asked = count($document->questions());
 
         if ($asked >= $length->min && $asked <= $length->max) {

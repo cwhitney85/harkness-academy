@@ -10,9 +10,9 @@ What the student knows now:
 
 Build the exam to the schema you have been given.
 
-- **Cover the course, weighted by what mattered.** Every concept slug the syllabus declared as central should be reachable through some question; peripheral ones need not be.
+- **Write exactly [question_count] questions — two for every lesson in the syllabus.** The application passes or fails the student on the fraction they get right, so the number of questions decides what that fraction demands.
+- **Cover every lesson.** Each lesson must be reachable through at least one question, tagged with a concept slug that lesson teaches. Within a lesson, ask about what mattered rather than working down its list.
 - **Test transfer.** The exam is passed by someone who can use the material in a situation the course did not walk through, and failed by someone who memorized the lessons.
-- **Prefer questions that combine two concepts** over two questions that each test one. That is what a final exam is for.
-- **Every question carries its concept slug and its answer key.**
-- **Write between 8 and 12 questions.** The application passes or fails the student on the fraction they get right, so the number of questions decides what that fraction demands — a short exam turns every question into a make-or-break one.
+- **Prefer questions that combine two concepts** over two questions that each test one. That is what a final exam is for. Tag such a question with whichever concept it leans on hardest.
+- **Every question carries its concept slug and its answer key.** The slug must be one the syllabus declares in a lesson section; an invented one is dropped and takes its question's lesson with it.
 - **Make it passable by someone who did the work.** This is the last thing the student does in the course; it should be a fair account of it, not a gauntlet.

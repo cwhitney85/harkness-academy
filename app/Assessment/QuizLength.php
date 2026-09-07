@@ -11,34 +11,54 @@ namespace App\Assessment;
  * final exam is the last thing a student does in a course, and one range
  * covering both would be wrong for each.
  *
- * **The exam range is the one that carries weight.** `assessment.final_exam.pass_mark`
+ * **The exam's length is the one that carries weight.** `assessment.final_exam.pass_mark`
  * is a fraction, so what it demands in whole questions depends on how many
  * there are -- and until this class existed nothing fixed that number. An
  * unbounded exam meant a 0.7 pass mark could ask for 7 of 10 (70%) or 3 of 3
- * (100%) depending on how long the model felt like being. Narrowing the range
- * is what makes the configured number mean roughly one thing:
+ * (100%) depending on how long the model felt like being.
  *
- * | Questions | Needed to pass at 0.7 | Effective |
- * |---|---|---|
- * | 8 | 6 | 75.0% |
- * | 9 | 7 | 77.8% |
- * | 10 | 7 | 70.0% |
- * | 12 | 9 | 75.0% |
+ * The exam asks **two questions per lesson** (spec 6.3.2), so its length is a
+ * property of the course rather than a range:
  *
- * A residual spread of 70–78% is inherent to counting whole questions; the
- * 70–100% it replaces was not.
+ * | Lessons | Questions | Needed to pass at 0.7 | Effective |
+ * |---|---|---|---|
+ * | 5 | 10 | 7 | 70.0% |
+ * | 7 | 14 | 10 | 71.4% |
+ * | 8 | 16 | 12 | 75.0% |
+ * | 10 | 20 | 14 | 70.0% |
+ *
+ * A residual spread is inherent to counting whole questions; the 70-100% an
+ * unbounded exam allowed was not. The fixed 8-12 range this replaces was no
+ * narrower -- and it was arithmetically at war with the coverage rule, which
+ * is how a real course of 8 lessons and 44 exam concepts arrived at an exam
+ * that could not be written at all (found 2026-09-04, ledger D20 rider 3).
  */
 final readonly class QuizLength
 {
+    /**
+     * How many questions each lesson is worth in the final exam (spec 6.3.2).
+     *
+     * "The student picks 1-5 per lesson" is a v1.1 idea; until then it is one
+     * number, here, and the prompt is handed the product rather than the rule.
+     */
+    public const PER_LESSON = 2;
+
     private function __construct(public int $min, public int $max) {}
 
     /**
-     * Long enough that one question is not a large slice of the grade, short
-     * enough to sit through on a phone (spec 6.3).
+     * Two questions for every lesson the syllabus teaches (spec 6.3.2).
+     *
+     * Pre: `$lessons` is how many lessons the course has -- the caller has
+     *      the syllabus in hand already, and this class does not read rows.
+     *
+     * An exact length rather than a range, because the coverage rule it is
+     * paired with is per lesson (6.3.1): the number of questions is what makes
+     * covering every lesson possible, so leaving it to the model is leaving it
+     * to the model whether the exam can be written at all.
      */
-    public static function exam(): self
+    public static function exam(int $lessons): self
     {
-        return new self(8, 12);
+        return new self(self::PER_LESSON * $lessons, self::PER_LESSON * $lessons);
     }
 
     /**
@@ -64,11 +84,14 @@ final readonly class QuizLength
      * appear in two places. This method is what a test compares them through,
      * the way LessonState publishes limits read from the classes that enforce
      * them (5.3): a prompt asking for a length the schema rejects would burn a
-     * retry on every single call.
+     * retry on every single call. The exam's number is a prompt *variable*
+     * (6.3.2), so what its file holds is the sentence around it.
      */
     public function describe(): string
     {
-        return "between {$this->min} and {$this->max} questions";
+        return $this->min === $this->max
+            ? "exactly {$this->min} questions"
+            : "between {$this->min} and {$this->max} questions";
     }
 
     /**
