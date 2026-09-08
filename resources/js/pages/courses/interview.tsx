@@ -51,11 +51,13 @@ const HEADINGS = {
         title: 'What you already know',
         lead: 'A short conversation about where you are starting from. Answer as roughly as you like — "I can order a coffee, I cannot hold a conversation" is more useful than a careful list.',
         done: 'Done — write it up',
+        writing: 'Writing up what you know…',
     },
     goals: {
         title: 'What you want out of this',
         lead: 'The same again, for where you want to end up. What you say here is what the course is built to get you to.',
         done: 'Done — build my syllabus',
+        writing: 'Writing up what you want…',
     },
 } as const;
 
@@ -81,6 +83,15 @@ function Conversation({
     const [draft, setDraft] = useState('');
     const [busy, setBusy] = useState(false);
     const [failure, setFailure] = useState<string | null>(null);
+    /**
+     * Done has been pressed and the write-up is being made (8.12.3).
+     *
+     * The summary is a model call inside the request, so the press is followed
+     * by a wait long enough for a student to conclude nothing happened. It is
+     * cleared when the visit finishes rather than on success alone: the
+     * write-up fails closed (4.5.1) and Done has to be pressable again.
+     */
+    const [writing, setWriting] = useState(false);
 
     // Guards the one request that is destructive if it is made twice. A ref
     // rather than state because React's StrictMode runs effects twice on
@@ -168,6 +179,38 @@ function Conversation({
             });
     }
 
+    /**
+     * The Done button (8.12.3, 2.3.4).
+     *
+     * One press only: the summary is written on the way through this POST, and
+     * a second press while the first is out spends a second model call on the
+     * same transcript. A 422 is the summary being unusable — the transcript is
+     * intact, the course has not moved, and the sentence the controller sends
+     * is the one the student needs before pressing again (4.5.1).
+     */
+    function finish() {
+        if (writing) {
+            return;
+        }
+
+        setWriting(true);
+        setFailure(null);
+
+        router.post(
+            urls.complete,
+            {},
+            {
+                preserveScroll: true,
+                onError: (errors) =>
+                    setFailure(
+                        errors.complete ??
+                            'That could not be written up just now. Nothing is lost — press Done again.',
+                    ),
+                onFinish: () => setWriting(false),
+            },
+        );
+    }
+
     return (
         <PipelineShell
             step={kind}
@@ -203,16 +246,11 @@ function Conversation({
                     <div className="flex items-center gap-4">
                         <button
                             type="button"
-                            onClick={() =>
-                                router.post(
-                                    urls.complete,
-                                    {},
-                                    { preserveScroll: true },
-                                )
-                            }
-                            className="label flex min-h-11 items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+                            disabled={writing}
+                            onClick={finish}
+                            className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:cursor-default disabled:no-underline disabled:opacity-70"
                         >
-                            {copy.done}
+                            {writing ? copy.writing : copy.done}
                         </button>
                         <span className="grow" />
                         <span className="label">

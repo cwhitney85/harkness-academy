@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import InterviewScreen from '@/pages/courses/interview';
@@ -28,9 +28,11 @@ vi.mock('@/lib/turn-stream', () => ({
     },
 }));
 
+const post = vi.fn();
+
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
-    router: { reload: vi.fn(), post: vi.fn() },
+    router: { reload: vi.fn(), post: (...args: unknown[]) => post(...args) },
 }));
 
 // Hoisted above the imports: jsdom has neither of these, the screen uses both
@@ -49,6 +51,7 @@ vi.hoisted(() => {
 afterEach(() => {
     cleanup();
     requested.length = 0;
+    post.mockClear();
 });
 
 function props(kind: 'knowledge' | 'goals') {
@@ -78,4 +81,35 @@ test('the goals stream is requested after a client-side visit from the knowledge
         '/courses/7/interviews/knowledge/stream',
         '/courses/7/interviews/goals/stream',
     ]);
+});
+
+/**
+ * Spec 8.12.3 — Done is pressed once.
+ *
+ * The write-up is a model call made inside this POST, so the press is followed
+ * by a wait a student reads as nothing having happened. A second press while
+ * the first is out spends a second call on the same transcript. The button
+ * disables and says what is being made until the visit finishes.
+ */
+test('Done disables itself and names the write-up, and cannot be pressed twice', () => {
+    render(<InterviewScreen {...props('knowledge')} />);
+
+    const done = screen.getByRole('button', { name: 'Done — write it up' });
+
+    fireEvent.click(done);
+
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post.mock.calls[0][0]).toBe(
+        '/courses/7/interviews/knowledge/complete',
+    );
+
+    const working = screen.getByRole('button', {
+        name: 'Writing up what you know…',
+    });
+
+    expect(working.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(working);
+
+    expect(post).toHaveBeenCalledTimes(1);
 });
