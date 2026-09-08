@@ -10,3 +10,16 @@
 - **7.4 WONT** — An in-page install button. `beforeinstallprompt` still requires a fetch handler to be present, which would mean a service worker, which 7.3 refuses. Install is discovered through the browser's own menu.
 
 *Note: "Lighthouse installable" was this package's original done-condition. Lighthouse removed its PWA category in v12 (May 2024), so the check no longer exists; 7.1's real-device verification replaces it.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+On a deployed build, with one real iPhone and one real Android:
+
+1. Open the app in Safari on the iPhone and add it to the home screen from Safari's own share menu — no in-page button offers to do it, and none needs to.
+2. Open the app in Chrome on the Android and install it from Chrome's own menu.
+3. Launch both from the home screen. Each shows the crest as its icon and the app's short name beneath it; each opens at the start URL with no browser chrome, in the app's own colours rather than the browser's default.
+4. Reach the install-instructions page in a normal browser tab. It describes the steps that just worked on iOS, which is the only place iOS students can learn them.
+
+Nothing in this test works offline, and nothing is expected to.

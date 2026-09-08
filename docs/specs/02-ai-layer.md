@@ -40,3 +40,15 @@ Deliberate absences: grading (code, 5.2.4), module rollup (derived, 3.3), GUIDAN
 - **2.3.3 Composition & cache order — MUST.** `lesson.system` = [persona | criteria | wk | guidance], most-stable-first (matches 5.1 cached prefix); persona prepends only here. *Done: order unit test; persona edit leaves other prompts byte-identical.*
 - **2.3.4 Interview completion — MUST.** One tool `signal_complete(reason)`; Done button bypasses to same summarization. Provider-neutral. *Done: fake-provider test both paths.*
 - **2.3.5 Prompt fixtures — SHOULD.** Golden tests for template rendering only; no model-output goldens (flaky by nature). *Done: 1:1 render coverage.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+Against a truncated `usage_events` table:
+
+1. Drive one `mid`-tier call and one `top`-tier call from anywhere in the app. Both write a `usage_events` row carrying feature, tier, model, input / cached / output tokens, latency and cost — and the total spend of those two calls is one SQL query.
+2. Every `feature` written is a key in 2.3.2's inventory, and every model named is one `config/ai.php` resolves. `grep` for a model ID anywhere outside that file returns nothing.
+3. Repeat a call over the same stable prefix. The second row's cached-read tokens are above zero — the prefix was read from cache, not rewritten.
+4. Edit `tiers.mid.model` to another model and repeat step 1. The `mid` row names the new model and nothing else in the diff changed.
+5. Render a prompt with a variable missing from its frontmatter, and one with an undeclared variable supplied. Both throw rather than rendering a hole.

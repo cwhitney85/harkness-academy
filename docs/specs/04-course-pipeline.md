@@ -36,3 +36,17 @@ State machine (ledger D7, amended by D7c): created → knowledge_interview → g
 - **4.6 MUST** — The opener is not a student turn. `InterviewSession::OPENING_TURN` is the string "I am ready to start.", appended as `Speaker::Student`, so it renders as something the student typed. *Done: neither interview shows it; the model still opens the conversation.*
   - **4.6.1 SHOULD** — Establish whether the opener is needed at all before changing how it is stored — removal is a smaller change than hiding. *Done: the finding is recorded in the unit's plan file; if it is not needed, 4.6 is satisfied by removal.*
 - **4.7 MUST** — The knowledge → goals transition opens the goals stream without a page refresh. Both screens render `courses/interview`, and the open is guarded by `opened = useRef(false)`; an Inertia visit between the two URLs leaves the component mounted, so the ref is still true and the goals stream is never requested. Belongs to the mounted-component unit — see [D28](../02-design.md). *Done: completing the knowledge interview lands on the goals interview with the tutor's first question streaming, no error shown and no manual reload; a test asserts the goals stream is requested after a client-side visit from the knowledge URL.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+As a signed-in student with no open course in the subtopic:
+
+1. Create a course from the catalog at 101, and a second from free text in another subtopic. Both exist as rows; a third attempt at either subtopic while it is open is refused.
+2. Answer the knowledge interview. It closes itself at the fifth question with the tutor saying that is enough — and asking to stop at question three does not end it, while the always-visible Done button does, at any point. The transcript is summarized into working knowledge, folded into whatever was there before.
+3. Answer the goals interview. Exactly four tutor questions, the first two being what the student hopes to gain and what drew them to the subject; the transcript becomes the criteria document for this level. Arriving here from the knowledge interview needs no page refresh.
+4. Ask for a syllabus. The request returns immediately and the screen waits on the generation; the draft that arrives declares five to ten lessons, each with an objective, sections, concepts and a homework focus, pinned to the versions of working knowledge and criteria it was written from. Press twice — the second press costs nothing.
+5. Send free-text feedback and get a new draft. Do it three times and the fourth offer is approve-or-restart. A generation that fails leaves the previous draft standing and says so.
+6. Approve. In one transaction the lesson rows appear with the first unlocked and the rest locked, a guidance document is rendered for each, the draft is stamped approved and the course is active.
+7. Set the course aside, then take it back up: it returns at the position it left. Withdraw it and create the subtopic again — attempt 2, with attempt 1's working knowledge intact.

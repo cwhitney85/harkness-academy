@@ -19,3 +19,17 @@
 
 - **6.6 MUST** — The correct option's position is distributed, not left to the model. No shuffle exists anywhere in `app/` or `resources/js/`: options render in the order the model emitted them and the model chooses `correct_option_id`, and observed checkpoints cluster on A and B. *Done: across 40 generated questions no option position holds the correct answer more than 40% of the time; a test asserts the distribution over a fixed set.*
   - **6.6.1 SHOULD** — Four options become the norm rather than the ceiling. `QuestionSchema::MIN_OPTIONS` is 3, so many questions have no D to choose. *Done: the constants express the intended shape; a D position exists to be chosen.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+On a course whose lessons are all complete:
+
+1. Open the last lesson's homework. Answer one question: its explanation and its key appear only then, and the page held neither before. That attempt is visible in the next working-knowledge update.
+2. Open the final exam. The request is queued and the screen waits; the paper that arrives asks two questions per lesson — ten for a five-lesson course, twenty for a ten-lesson one — and every lesson in the syllabus is reachable through at least one question, including lessons whose concepts are nowhere in `final_exam_concepts`. Nothing on the page or in its payload discloses an answer.
+3. Answer six of the questions and reload. The six ticks are still there and no verdict is. Another student cannot see that sheet.
+4. Hand in a failing paper. The sitting is recorded, the course stays active, no draft sheet remains, and re-sitting opens the same exam with nothing ticked.
+5. Re-sit and pass at 70%. The course is stamped completed.
+6. Take a refresher at each of the three grains. The lesson grain's questions are traceable to that lesson's summary; the subtopic grain draws on its working knowledge; the module grain walks the rollup and draws on at least two subtopics.
+7. Across the questions generated in this run, the correct answer is not clustered on any one option position, and four options are the norm.
