@@ -81,3 +81,17 @@ With `-W` it *does* resolve, by **downgrading guzzle to 7.15.5** and dragging ~2
 **So client-side behaviour is proven by `vitest` + `jsdom` + `@testing-library/react`** (`npm test`, wired into `composer ci:check`). No browser, no served app, no fake gateway in another process. Revisit Dusk if it ever accepts guzzle 8 — and note that it would then also need the AI faked *inside* `php artisan serve`, since `GatewayAgent::fake()` swaps a container singleton and cannot reach another process.
 
 One jsdom gap to know when writing such a test: `use-mobile` calls `matchMedia` at **module scope**, so a stub installed in `beforeAll` is already too late. Hoist it — `vi.hoisted()` runs before the imports.
+
+## T7. The model writes `**bold**`, and the student read the asterisks
+
+*Found 2026-09-08 on the first real course, repaired as spec item 8.8.7.*
+
+`lesson.section` invites `*emphasis*` and nothing else, so `lesson-section.tsx` read exactly that: `split(/\*([^*\n]+)\*/g)`, one span, no markdown dependency. Real output does not honour the invitation. Course 1's section 2 carried `**absolute payoff**`, `**relative payoff**` and `**cross-scenario-subtraction-error**` alongside the `*emphasis*` the prompt asked for, and against a body that requires a non-`*` character the pairing lands one asterisk late: the student read `an *absolute payoff` and then eleven lines of unintended italics, closing on `same*`.
+
+**Three things generalise from it.**
+
+1. **A prompt is a request, not a grammar.** Anything that parses model output has to survive syntax the prompt never invited — here by pairing *runs* of asterisks rather than matching one exact shape, so `*this*` and `**this**` are both simply the one emphasis the design has.
+2. **A renderer that cuts text into strings and parses each piece separately breaks every span that crosses a cut.** The explainer's mark cut the paragraph in two and asked each half for its own pair; the fix reads the markup first and lays the mark over the runs, which is also what makes the mark findable — the student selected text with the asterisks already gone.
+3. **Streaming is a partial-input problem.** A paragraph mid-arrival always holds an unclosed opener. Treating it as emphasis that has not finished yet is right and needs no special case; printing it is a stray asterisk on every section the tutor teaches.
+
+It was visible on screen for as long as the course had run. Nobody looked at the prose with an eye for *this*, and no test rendered anything but well-formed input.

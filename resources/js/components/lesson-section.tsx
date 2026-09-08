@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 import type { LessonTurn } from '@/types';
 
 /**
@@ -112,60 +114,124 @@ function Prose({
     mark: string | null;
     streaming?: boolean;
 }) {
-    const paragraphs = content.split(/\n{2,}/);
+    const paragraphs = content.split(/\n{2,}/).map(runs);
 
     return (
         <>
-            {paragraphs.map((paragraph, index) => (
-                <p key={index} className="mb-[15px] sm:mb-[17px]">
-                    {index === 0 && dropCap && (
-                        <span className="display float-left mt-1 mr-[9px] text-[52px] leading-[0.82] text-wine sm:mt-1.5 sm:mr-3 sm:text-[68px] sm:leading-[0.8]">
-                            {paragraph.charAt(0)}
-                        </span>
-                    )}
-                    {inline(
-                        index === 0 && dropCap ? paragraph.slice(1) : paragraph,
-                        mark,
-                    )}
-                    {streaming && index === paragraphs.length - 1 && (
-                        <span className="ml-[3px] inline-block h-[18px] w-2 -translate-y-[3px] bg-wine align-baseline" />
-                    )}
-                </p>
-            ))}
+            {paragraphs.map((paragraph, index) => {
+                const [capital, body] =
+                    index === 0 && dropCap
+                        ? opening(paragraph)
+                        : ['', paragraph];
+
+                return (
+                    <p key={index} className="mb-[15px] sm:mb-[17px]">
+                        {capital !== '' && (
+                            <span className="display float-left mt-1 mr-[9px] text-[52px] leading-[0.82] text-wine sm:mt-1.5 sm:mr-3 sm:text-[68px] sm:leading-[0.8]">
+                                {capital}
+                            </span>
+                        )}
+                        {inline(body, mark)}
+                        {streaming && index === paragraphs.length - 1 && (
+                            <span className="ml-[3px] inline-block h-[18px] w-2 -translate-y-[3px] bg-wine align-baseline" />
+                        )}
+                    </p>
+                );
+            })}
         </>
     );
+}
+
+/** A stretch of a paragraph, and whether the model emphasised it. */
+type Run = { text: string; em: boolean };
+
+/**
+ * `*emphasis*`, the only markup `lesson.section` invites, read as runs.
+ *
+ * Asterisks pair off in order, so an opener with no closer yet — which is what
+ * every paragraph still arriving holds — runs to the end of what has landed
+ * rather than being printed as a literal asterisk (8.8.7). The emphasis simply
+ * grows as the rest of the span streams in.
+ *
+ * A run of asterisks is one delimiter, because the model writes `**this**` as
+ * well as `*this*` whatever the prompt asks it for. Both are the one emphasis
+ * this design has; what matters is that neither leaves an asterisk on the page.
+ */
+function runs(text: string): Run[] {
+    return text
+        .split(/\*+/)
+        .map((part, index) => ({ text: part, em: index % 2 === 1 }))
+        .filter((run) => run.text !== '');
+}
+
+/**
+ * The section's opening letter, off the front of the first run so it can be
+ * set as the drop cap: the letter the reader sees, never the asterisk that
+ * opened an emphasis span in front of it.
+ */
+function opening(paragraph: Run[]): [string, Run[]] {
+    const [first, ...rest] = paragraph;
+
+    if (first === undefined) {
+        return ['', paragraph];
+    }
+
+    return [
+        first.text.charAt(0),
+        [{ ...first, text: first.text.slice(1) }, ...rest],
+    ];
 }
 
 /**
  * Emphasis, and the one marked phrase, inside a paragraph.
  *
+ * The mark is looked for in the text the student can actually see — the runs
+ * with their asterisks already taken out — because that is what their
+ * selection was made of. It is then laid over those runs rather than cutting
+ * the paragraph in two around it, which is what keeps an emphasis span
+ * containing the mark one `<em>` instead of two unpaired halves (8.8.7).
+ *
  * The mark is drawn as the artboards draw it: a wash of gold with a brass
  * underline, which is the same pair that labels and rules everything else in
  * the design (8.3.4) rather than a highlighter colour of its own.
  */
-function inline(text: string, mark: string | null) {
-    const at = mark === null ? -1 : text.indexOf(mark);
+function inline(paragraph: Run[], mark: string | null) {
+    const plain = paragraph.map((run) => run.text).join('');
+    const from = mark === null ? -1 : plain.indexOf(mark);
+    const to = mark === null ? -1 : from + mark.length;
+    let at = 0;
 
-    if (at === -1 || mark === null) {
-        return emphasise(text);
+    return paragraph.map((run, index) => {
+        const start = at;
+        at += run.text.length;
+
+        const content =
+            from === -1 ? run.text : wash(run.text, from - start, to - start);
+
+        return run.em ? (
+            <em key={index}>{content}</em>
+        ) : (
+            <Fragment key={index}>{content}</Fragment>
+        );
+    });
+}
+
+/** So much of one run as the mark covers, `from` and `to` being run-relative. */
+function wash(text: string, from: number, to: number) {
+    const start = Math.max(from, 0);
+    const end = Math.min(to, text.length);
+
+    if (start >= end) {
+        return text;
     }
 
     return (
         <>
-            {emphasise(text.slice(0, at))}
+            {text.slice(0, start)}
             <mark className="bg-gold/50 text-ink shadow-[0_1.5px_0_var(--brass)]">
-                {mark}
+                {text.slice(start, end)}
             </mark>
-            {emphasise(text.slice(at + mark.length))}
+            {text.slice(end)}
         </>
     );
-}
-
-/** `*emphasis*`, the only markup `lesson.section` invites. */
-function emphasise(text: string) {
-    return text
-        .split(/\*([^*\n]+)\*/g)
-        .map((part, index) =>
-            index % 2 === 1 ? <em key={index}>{part}</em> : part,
-        );
 }
