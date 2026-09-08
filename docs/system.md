@@ -63,7 +63,7 @@ Two pairs share a URL by design: a completed lesson and a sat exam are *states o
 
 **Outside the twelve**, and reached from the user menu or from the sign-in flow rather than from a course: the terms page, the install-instructions page, the three settings screens (profile, security, and an appearance screen that is deliberately unreachable while dark mode is unshipped), and the seven authentication screens the starter kit provides — sign in, register, forgot and reset password, confirm password, verify email, and the two-factor challenge.
 
-**Three shells, plus the starter kit's app layout** ([D30](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured. The dashboard and the module rollup are not any of those and are set in the app layout. Settings, auth and the install page sit outside the twelve and use the starter kit's own chrome.
+**Three shells, plus the starter kit's app layout** ([D30](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured. The dashboard and the module rollup are not any of those and are set in the app layout. All three shells draw the same crest at the head of their rail, and it is the link back to the dashboard — the only way out of a course that is not the browser's address bar (8.5.7). Settings, auth and the install page sit outside the twelve and use the starter kit's own chrome.
 
 ## 4. The routes, by subsystem
 
