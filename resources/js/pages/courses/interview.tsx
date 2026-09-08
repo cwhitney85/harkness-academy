@@ -28,6 +28,11 @@ import type { TurnEvent } from '@/types';
  * vocabulary has no way to say so (5.2.5). So every finished turn is followed
  * by a reload: if the course has moved on, the server redirects, and if it has
  * not, the transcript is simply repainted from its rows.
+ *
+ * That reload is what makes this screen an instance of the mounted-component
+ * class (ledger D28). `router.reload()` preserves state, so when the redirect
+ * it follows lands on the *other* interview, React is handed the same key and
+ * keeps the component mounted — guards and all. Hence the wrapper below.
  */
 
 type Turn = { id: number; speaker: 'student' | 'tutor'; content: string };
@@ -54,7 +59,12 @@ const HEADINGS = {
     },
 } as const;
 
-export default function InterviewScreen({
+/** `kind` is what every piece of state below describes, so it is the key. */
+export default function InterviewScreen(props: Interview) {
+    return <Conversation key={props.kind} {...props} />;
+}
+
+function Conversation({
     course,
     kind,
     turns,
