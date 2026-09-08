@@ -13,7 +13,6 @@ use App\Lessons\Streaming\TurnKind;
 use App\Lessons\Streaming\TurnStart;
 use App\Models\Course;
 use App\Models\InterviewMessage;
-use Closure;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Ai\Responses\StreamableAgentResponse;
@@ -53,7 +52,24 @@ trait StreamsTurns
         StreamableAgentResponse $response,
         array $logContext,
     ): StreamedResponse {
-        return $this->interviewTurn(function (EventStream $out, string $turnId) use ($course, $kind, $response, $logContext): void {
+        return response()->stream(function () use ($course, $kind, $response, $logContext): void {
+            $out = new EventStream(function (string $frame): void {
+                echo $frame;
+
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+
+                flush();
+            });
+
+            $turnId = (string) Str::uuid();
+
+            // Sent before the first token so a client can paint the tutor's
+            // empty turn immediately, which is 8.8.2's rule for a lesson and
+            // costs nothing to keep true here.
+            $out->send(new TurnStart(turnId: $turnId, kind: TurnKind::Interview));
+
             try {
                 $response->each(function (mixed $event) use ($out, $turnId): void {
                     if ($event instanceof TextDelta && $event->delta !== '') {
@@ -82,56 +98,6 @@ trait StreamsTurns
             if ($written instanceof InterviewMessage && $written->speaker === Speaker::Tutor) {
                 $out->send(new TurnEnd($turnId, $written->id));
             }
-        });
-    }
-
-    /**
-     * The tutor's last word, when the question cap ended the interview
-     * (spec 4.3.1, 4.4.1).
-     *
-     * Pre:  the interview is already summarized -- the cap is enforced in
-     *       InterviewSession::answer(), which writes the document and moves
-     *       the course before this is reached, so a failure there is still an
-     *       HTTP status rather than a `stream.error`.
-     * Post: the line has gone out as one turn. No `turn.end`: it names a row,
-     *       and this line has none to name -- the transcript it would have
-     *       joined was discarded by the summarization it follows. The client's
-     *       reload is what carries the student on, exactly as it does when the
-     *       model ends an interview mid-stream.
-     */
-    protected function streamClosingLine(string $line): StreamedResponse
-    {
-        return $this->interviewTurn(function (EventStream $out, string $turnId) use ($line): void {
-            $out->send(new TurnDelta($turnId, $line));
-        });
-    }
-
-    /**
-     * One interview turn on the wire, whoever wrote it.
-     *
-     * @param  Closure(EventStream, string): void  $body  everything after `turn.start`
-     */
-    private function interviewTurn(Closure $body): StreamedResponse
-    {
-        return response()->stream(function () use ($body): void {
-            $out = new EventStream(function (string $frame): void {
-                echo $frame;
-
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
-
-                flush();
-            });
-
-            $turnId = (string) Str::uuid();
-
-            // Sent before the first token so a client can paint the tutor's
-            // empty turn immediately, which is 8.8.2's rule for a lesson and
-            // costs nothing to keep true here.
-            $out->send(new TurnStart(turnId: $turnId, kind: TurnKind::Interview));
-
-            $body($out, $turnId);
         }, headers: [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache, no-transform',

@@ -32,6 +32,9 @@ class InterviewScreenTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** What the scripted tutor says when the cap asks it to wrap up. */
+    private const CLOSING_WORD = 'That is enough to get started — let us move on.';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -157,17 +160,18 @@ class InterviewScreenTest extends TestCase
     }
 
     /**
-     * Spec 4.3.1 -- the student is told why the conversation stopped.
+     * Spec 4.3.1 on the wire: the capped answer is an ordinary streamed turn.
      *
-     * The cap ends the interview inside the POST, so what comes back is the
-     * tutor's closing line rather than a sixth question, and no `turn.end`:
-     * the transcript it would have named is already gone.
+     * The tutor's closing word reaches the student the same way every other
+     * turn does, and no `turn.end` follows it -- the row it would have named
+     * went with the transcript the summarization discarded, which is already
+     * how the screen handles an interview the model ends mid-stream.
      */
     #[Test]
-    public function the_capped_answer_streams_the_tutors_closing_line(): void
+    public function the_capped_answer_streams_the_tutors_closing_word(): void
     {
         $course = $this->course(CourseStatus::KnowledgeInterview);
-        $this->scriptTutor();
+        $this->scriptClosingTutor();
 
         $transcript = new Transcript($course, InterviewKind::Knowledge);
 
@@ -185,7 +189,7 @@ class InterviewScreenTest extends TestCase
             ->assertOk()
             ->streamedContent();
 
-        $this->assertStringContainsString(InterviewSession::CLOSING_LINE, $body);
+        $this->assertSame(self::CLOSING_WORD, $this->reassemble($body), 'The whole turn reaches the student.');
         $this->assertStringNotContainsString('turn.end', $body);
 
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
@@ -235,6 +239,29 @@ class InterviewScreenTest extends TestCase
         if ($course->status === CourseStatus::Created) {
             $course->forceFill(['status' => CourseStatus::KnowledgeInterview])->save();
         }
+    }
+
+    /**
+     * The tutor's turn, put back together from its `turn.delta` frames.
+     */
+    private function reassemble(string $body): string
+    {
+        preg_match_all('/"text":"((?:[^"\\\\]|\\\\.)*)"/', $body, $deltas);
+
+        return implode('', array_map(
+            fn (string $text): string => (string) json_decode('"'.$text.'"'),
+            $deltas[1],
+        ));
+    }
+
+    /**
+     * A tutor asked to wrap up, and a summarizer behind it.
+     */
+    private function scriptClosingTutor(): void
+    {
+        GatewayAgent::fake(fn (string $prompt): string => str_contains($prompt, 'working-knowledge document')
+            ? "## Solid\n\n- Orders a coffee.\n\n## Shaky\n\n- Everything else.\n\n## Gaps\n\n- The rest of the subtopic."
+            : self::CLOSING_WORD);
     }
 
     /**

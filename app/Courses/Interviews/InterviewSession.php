@@ -33,7 +33,7 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  *              or the one before it. post: the course stands at this
  *              interview's status and the tutor's first question is streaming.
  *   `answer()` pre: the interview is underway. post: both turns are in the
- *              transcript, unless the cap ended the interview -- see below.
+ *              transcript; if the cap was reached, the interview is over too.
  *   ends       post: the document exists in the memory tree, no transcript row
  *              survives, and the course stands at `next()`. Either all three
  *              or none: they commit together.
@@ -47,8 +47,11 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  *
  * The question cap (4.3.1, 4.4.1) is a third way to the same method and not a
  * third door: R3's doors are the model and the student, and the cap is
- * neither. It is this class declining to ask again, so it carries no
- * CompletionSignal -- there is no outside party whose reason wants recording.
+ * neither. It is this class deciding *when* the conversation ends while the
+ * tutor still ends it in its own words -- the last turn is asked for with
+ * WRAP_UP in the brief and summarized when its stream finishes, whether or not
+ * the model also called `signal_complete`. So the cap carries no
+ * CompletionSignal: there is no outside party whose reason wants recording.
  */
 final class InterviewSession implements CompletionListener
 {
@@ -73,15 +76,20 @@ final class InterviewSession implements CompletionListener
     public const MAX_ANSWER = 4000;
 
     /**
-     * What the tutor says when the question cap ends the interview (4.3.1).
-     *
-     * Fixed text rather than a generated turn, and not a transcript row: by
-     * the time it is written the summarization it follows has already
-     * discarded the transcript. It exists to tell the student why the
-     * conversation stopped and that they are being carried on, not to be
-     * summarized -- so the student sees it, and `wk.create` never does.
+     * What the brief's `pacing` variable says on an ordinary turn.
      */
-    public const CLOSING_LINE = "I think that's enough to get started. Let's carry on.";
+    private const KEEP_GOING = 'Ask your next question.';
+
+    /**
+     * What it says on the turn the question cap has made the last one.
+     *
+     * The cap decides *when* the interview ends; the tutor still says so in
+     * its own words, in the student's own terms, having read the conversation
+     * (Colin, 2026-09-08). The ending does not depend on the model obeying
+     * this -- `ask()` summarizes when this turn's stream finishes either way.
+     */
+    private const WRAP_UP = 'This is your last turn. Do not ask another question. '
+        .'Tell the student you have enough to get started and that you are moving them on to the next step.';
 
     private readonly Transcript $transcript;
 
@@ -91,6 +99,11 @@ final class InterviewSession implements CompletionListener
     private ?CompletionSignal $signal = null;
 
     private bool $streaming = false;
+
+    /**
+     * Whether the turn now streaming is the last one the cap allows.
+     */
+    private bool $closing = false;
 
     public function __construct(
         private readonly Gateway $gateway,
@@ -139,27 +152,23 @@ final class InterviewSession implements CompletionListener
     }
 
     /**
-     * Answer the tutor's last question and stream the next one.
+     * Answer the tutor's last question and stream the tutor's next turn.
      *
-     * Returns null when that answer was the last one the cap allows: the
-     * interview has ended here, the document is written and the course has
-     * moved, and CLOSING_LINE is what the student is told instead of a sixth
-     * question (spec 4.3.1, 4.4.1). The cap ends the interview one model call
-     * *earlier* than it would otherwise have ended, never one later.
+     * Pre:  the interview is underway.
+     * Post: both turns are in the transcript once the stream is consumed --
+     *       and if the tutor had already asked its last allowed question, that
+     *       turn was the tutor's closing word and the interview is over
+     *       (spec 4.3.1, 4.4.1).
      *
-     * @throws InterviewNotUnderway|CourseNotOpen|InterviewSummaryUnusable
+     * @throws InterviewNotUnderway|CourseNotOpen
      */
-    public function answer(string $text): ?StreamableAgentResponse
+    public function answer(string $text): StreamableAgentResponse
     {
         $this->assertUnderway();
 
         $this->transcript->append(Speaker::Student, $text);
 
-        if ($this->transcript->questionsAsked() >= $this->interview->questionCap()) {
-            $this->summarize();
-
-            return null;
-        }
+        $this->closing = $this->transcript->questionsAsked() >= $this->interview->questionCap();
 
         return $this->ask();
     }
@@ -229,7 +238,10 @@ final class InterviewSession implements CompletionListener
         $this->streaming = true;
 
         return $this->gateway
-            ->prompt($this->interview->briefKey(), $this->interview->briefVars($this->course))
+            ->prompt($this->interview->briefKey(), [
+                ...$this->interview->briefVars($this->course),
+                'pacing' => $this->closing ? self::WRAP_UP : self::KEEP_GOING,
+            ])
             ->feature($this->interview->feature())
             ->for($this->course->user_id)
             ->messages($history)
@@ -243,7 +255,7 @@ final class InterviewSession implements CompletionListener
                     $this->transcript->append(Speaker::Tutor, $response->text);
                 }
 
-                if ($this->signal instanceof CompletionSignal) {
+                if ($this->closing || $this->signal instanceof CompletionSignal) {
                     $this->summarize();
                 }
             });

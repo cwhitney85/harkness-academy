@@ -343,6 +343,7 @@ class GatewayTest extends TestCase
                 'module' => 'Maths',
                 'subtopic' => 'Algebra',
                 'skill_level' => '101',
+                'pacing' => 'Ask your next question.',
             ])
             ->feature('course.knowledge_interview')
             ->userTurn($text);

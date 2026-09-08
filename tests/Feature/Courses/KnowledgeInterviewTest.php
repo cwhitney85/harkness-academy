@@ -273,24 +273,80 @@ class KnowledgeInterviewTest extends TestCase
         $session = $this->interviews()->knowledge($course);
         $this->drain($session->open());
 
-        // Four answers get four more questions; the fifth gets no question at
-        // all, because there is no sixth to ask.
         foreach (range(1, 4) as $n) {
-            $reply = $session->answer("Answer {$n}.");
+            $this->drain($session->answer("Answer {$n}."));
 
-            $this->assertNotNull($reply, "Question {$n} was the cap, and it should not have been.");
-
-            $this->drain($reply);
+            $this->assertSame(
+                CourseStatus::KnowledgeInterview,
+                $course->fresh()?->status,
+                "Question {$n} was the cap, and it should not have been.",
+            );
         }
 
         $this->assertSame(5, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
 
-        $this->assertNull($session->answer('Answer 5.'), 'Spec 4.3.1: five questions and the interview closes itself.');
+        // The fifth answer gets a turn like any other -- it is the tutor's
+        // last word rather than a sixth question, and the interview is over
+        // once it has been said.
+        $this->drain($session->answer('Answer 5.'));
 
         $this->assertNotNull(
             (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
             'The cap ends the interview the same way Done does -- document written, course moved.',
         );
+        $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
+        $this->assertSame(0, InterviewMessage::query()->count());
+    }
+
+    /**
+     * Spec 4.3.1 -- the tutor closes in its own words, and is asked to.
+     *
+     * The cap decides when; the model still writes the line, having read the
+     * conversation (Colin, 2026-09-08).
+     */
+    #[Test]
+    public function the_last_turn_asks_the_tutor_to_wrap_up_rather_than_ask_again(): void
+    {
+        $this->scriptEndlessTutor();
+
+        $session = $this->interviews()->knowledge($this->course());
+        $this->drain($session->open());
+
+        foreach (range(1, 4) as $n) {
+            $this->drain($session->answer("Answer {$n}."));
+        }
+
+        GatewayAgent::assertNotPrompted($this->askedToWrapUp(...));
+
+        $this->drain($session->answer('Answer 5.'));
+
+        GatewayAgent::assertPrompted($this->askedToWrapUp(...));
+    }
+
+    /**
+     * Whether a call's brief carried the wrap-up instruction.
+     */
+    private function askedToWrapUp(mixed $call): bool
+    {
+        return str_contains($call->agent->instructions(), 'This is your last turn. Do not ask another question.');
+    }
+
+    /**
+     * And the ending does not depend on the model obeying that instruction.
+     */
+    #[Test]
+    public function the_interview_ends_even_if_the_tutor_asks_a_sixth_question(): void
+    {
+        $this->scriptEndlessTutor();
+        $course = $this->course();
+
+        $session = $this->interviews()->knowledge($course);
+        $this->drain($session->open());
+
+        foreach (range(1, 5) as $n) {
+            $this->drain($session->answer("Answer {$n}."));
+        }
+
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
         $this->assertSame(0, InterviewMessage::query()->count());
     }
@@ -310,10 +366,7 @@ class KnowledgeInterviewTest extends TestCase
         $this->drain($session->open());
         $this->drain($session->answer('Answer 1.'));
 
-        $reply = $session->answer('Honestly, I have had enough of this. Can we stop?');
-
-        $this->assertNotNull($reply, 'Only the cap and the two doors of R3 end an interview.');
-        $this->drain($reply);
+        $this->drain($session->answer('Honestly, I have had enough of this. Can we stop?'));
 
         $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
         $this->assertNull((new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'));
@@ -321,11 +374,11 @@ class KnowledgeInterviewTest extends TestCase
     }
 
     /**
-     * The cap costs a call less than the interview it ends, not one more: the
-     * fifth answer is summarized rather than answered.
+     * The whole run, on the meter: five questions, one closing turn, one
+     * summary, and nothing after it.
      */
     #[Test]
-    public function the_capped_turn_asks_the_model_nothing(): void
+    public function a_capped_interview_costs_seven_calls(): void
     {
         $this->scriptEndlessTutor();
 
@@ -336,12 +389,12 @@ class KnowledgeInterviewTest extends TestCase
             $this->drain($session->answer("Answer {$n}."));
         }
 
-        $session->answer('Answer 5.');
+        $this->drain($session->answer('Answer 5.'));
 
         $this->assertSame(
-            ['interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'wk.create'],
+            array_merge(array_fill(0, 6, 'interview.knowledge'), ['wk.create']),
             UsageEvent::query()->pluck('prompt_key')->all(),
-            'Five questions and the summary -- no sixth conversation turn.',
+            'Five questions, the tutor\'s closing turn, and the summary.',
         );
     }
 

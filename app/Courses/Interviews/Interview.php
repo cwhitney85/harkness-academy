@@ -17,8 +17,10 @@ use App\Models\Course;
  *   - `status()` is where the course stands while this interview runs, and
  *     `next()` is a declared successor of it (CourseStatus::successors).
  *   - `documentPath()` is a valid memory path (spec 3.2).
- *   - `briefVars()` and `summaryVars()` supply exactly the vars their prompts
- *     declare in the 2.3.2 inventory; anything else is a render failure.
+ *   - `briefVars()` and `summaryVars()` supply the vars their prompts declare
+ *     in the 2.3.2 inventory, except `pacing`, which InterviewSession fills
+ *     because only it knows how far through the cap the conversation is;
+ *     anything else, or anything missing, is a render failure.
  */
 interface Interview
 {
@@ -38,11 +40,12 @@ interface Interview
      * How many questions the tutor may ask before the interview closes itself
      * (spec 4.3.1, 4.4.1).
      *
-     * A cap, not a target, and deliberately not something the brief tells the
-     * model: InterviewSession counts the tutor's turns and stops asking. The
-     * number lives here because it is pedagogy -- how much of the student's
-     * patience this particular conversation is worth -- and pedagogy is what
-     * an Interview implementation owns.
+     * A cap, not a target: the number is never stated to the model, which is
+     * told only "ask your next question" or "this is your last turn" as
+     * InterviewSession counts the tutor's turns against it. It lives here
+     * because it is pedagogy -- how much of the student's patience this
+     * particular conversation is worth -- and pedagogy is what an Interview
+     * implementation owns.
      */
     public function questionCap(): int;
 

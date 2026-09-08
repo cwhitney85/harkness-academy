@@ -63,7 +63,7 @@
 | D34 | `final_exam_concepts` is emphasis, not scope, and keeps its name | current |
 | D35 | Client-side behaviour is proven in jsdom, not in a browser | current |
 | D36 | The interview opener is a wire artefact, not a turn | current |
-| D37 | The question cap is not a third termination door | current |
+| D37 | The question cap is not a third termination door | **amended 2026-09-08** — the cap picks the moment, the tutor still writes the words |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -692,14 +692,18 @@ jsdom proves exactly that claim and nothing around it. A test renders the screen
 
 Rejected: **keeping the row and filtering it out at each reader.** Three readers today (the screen payload, two summarizing prompts) and every future one, each carrying the same exception, to store one string nobody said.
 
-## D37. The question cap is not a third termination door (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1)
+## D37. The question cap is not a third termination door (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1; **amended the same day, after Colin ran it**)
 
-**Chosen: `InterviewSession::answer()` counts the tutor's turns and summarizes instead of asking again. No `CompletionSignal`, no new `CompletionSource`.**
+> **Amended.** The first build had the cap summarize *instead of* asking again and stream a fixed `CLOSING_LINE` in place of the sixth question. Running it, the conversation just stopped — "it works, but it's still missing a step" (Colin, 2026-09-08). **The cap now picks the moment and the tutor still says so itself**: the capped answer gets an ordinary turn, the brief's `pacing` variable carries a wrap-up instruction, and `ask()` summarizes when that stream finishes whether or not the model also called `signal_complete`. The two paragraphs on fixed text below are what that replaced; everything else in this entry still binds.
+>
+> **The cap stays hard, and does not rest on the model obeying.** A tutor that ignores the wrap-up and asks a sixth question ends the interview anyway — it just ends it rudely. That is the difference between instructing the model and being governed by it, and it is what makes the number in `questionCap()` a cap rather than a stronger hint. Cost is now one call more than the uncapped interview's ending, not one less; that call is the ending the student actually sees, which is what it buys.
+
+**Chosen: `InterviewSession::answer()` counts the tutor's turns and makes the capped turn the last one. No `CompletionSignal`, no new `CompletionSource`.**
 
 [R3](#r3-interview-termination--model-signals-via-signal_complete-tool--always-visible-done-button-either-path-fires-the-same-summarization-workflow) has two doors and both are *outside parties* saying the interview is over: the model, with a reason worth recording, and the student, pressing Done. `CompletionSignal` exists so those two arrive in one shape. The cap is neither — it is this class declining to ask a sixth question — so routing it through a signal would mean a third `CompletionSource` in package 2 recording a reason nothing reads, to describe a party that does not exist.
 
-**The cap ends the interview one model call earlier, never one later.** The capped answer is summarized rather than answered, so a five-question interview costs five conversation turns and a summary. That is also why the tutor's closing line is fixed text (`CLOSING_LINE`) rather than a generated turn: generating it would spend the call the cap just saved, and the spec fixes the words anyway.
+**~~The cap ends the interview one model call earlier, never one later.~~** *(Superseded by the amendment.)* The capped answer was summarized rather than answered, so a five-question interview cost five conversation turns and a summary — and the tutor's closing line was fixed text rather than a generated turn, because generating it would have spent the call the cap had just saved.
 
-**And the closing line is not a transcript row.** By the time it is written the summarization it follows has already discarded the transcript, so a row would be written to be deleted; it goes out as `turn.start` + `turn.delta` over the five-event vocabulary with no `turn.end`, which is exactly the shape the client already handles for an interview the model ends mid-stream. `wk.create` never sees it, which is correct — it is an explanation to the student, not something the student said.
+**~~And the closing line is not a transcript row.~~** *(Superseded.)* It went out as `turn.start` + `turn.delta` with no `turn.end`, since the summarization it followed had already discarded the transcript. The closing turn is now an ordinary tutor turn, which reaches the client the same way and — because the transcript goes with the summary — still carries no `turn.end`. That shape survived the amendment; only its author changed.
 
-Rejected: **stating the number in the prompt.** That is what `prompts/interview/knowledge.md` already did ("Eight to twelve exchanges is usually enough") and what the dogfood course proved worthless: a number in a prompt is guidance, and the interview ran until the student pressed Done. The prompts now say the interview is short and ends on its own, and name no number.
+Rejected: **stating the number in the prompt.** That is what `prompts/interview/knowledge.md` already did ("Eight to twelve exchanges is usually enough") and what the dogfood course proved worthless: a number in a prompt is guidance, and the interview ran until the student pressed Done. The prompts still name no number — `pacing` says "ask your next question" or "this is your last turn", never how many are left, so the model cannot pace itself towards an ending the cap has not reached.

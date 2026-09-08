@@ -180,28 +180,30 @@ class GoalsInterviewTest extends TestCase
     #[Test]
     public function the_interview_holds_exactly_four_tutor_questions(): void
     {
-        $this->scriptEndlessTutor();
+        $this->scriptTutorThatNeverSignals();
         $course = $this->course();
 
         $session = $this->interviews()->goals($course);
         $this->drain($session->open());
 
         foreach (range(1, 3) as $n) {
-            $reply = $session->answer("Answer {$n}.");
+            $this->drain($session->answer("Answer {$n}."));
 
-            $this->assertNotNull($reply, "Question {$n} was the cap, and it should not have been.");
-
-            $this->drain($reply);
+            $this->assertSame(
+                CourseStatus::GoalsInterview,
+                $course->fresh()?->status,
+                "Question {$n} was the cap, and it should not have been.",
+            );
         }
 
         $this->assertSame(4, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
 
-        $this->assertNull($session->answer('Answer 4.'), 'Spec 4.4.1: four questions and it stops.');
+        $this->drain($session->answer('Answer 4.'));
 
         $this->assertSame(
             4,
-            substr_count($this->summaryPrompt(), 'Tutor:'),
-            'The transcript `criteria.create` reads holds exactly the four questions.',
+            substr_count($this->summaryPrompt(), 'Question '),
+            'Spec 4.4.1: the transcript `criteria.create` reads holds exactly four questions.',
         );
 
         $this->assertSame(CourseStatus::SyllabusDraft, $course->fresh()?->status);
@@ -214,17 +216,15 @@ class GoalsInterviewTest extends TestCase
     #[Test]
     public function four_questions_still_produce_all_four_criteria_sections(): void
     {
-        $this->scriptEndlessTutor();
+        $this->scriptTutorThatNeverSignals();
         $course = $this->course();
 
         $session = $this->interviews()->goals($course);
         $this->drain($session->open());
 
-        foreach (range(1, 3) as $n) {
+        foreach (range(1, 4) as $n) {
             $this->drain($session->answer("Answer {$n}."));
         }
-
-        $session->answer('Answer 4.');
 
         $document = (string) (new MemoryTree)->get($course->student, self::CRITERIA_PATH);
 
@@ -250,9 +250,12 @@ class GoalsInterviewTest extends TestCase
     }
 
     /**
-     * A tutor that would happily interview forever. What the cap has to stop.
+     * A tutor that never calls `signal_complete`, so only the cap can end the
+     * interview -- and that wraps up when the cap's last turn asks it to,
+     * which is what a real one does. That the ending survives a tutor which
+     * does *not* is KnowledgeInterviewTest's business.
      */
-    private function scriptEndlessTutor(): void
+    private function scriptTutorThatNeverSignals(): void
     {
         $this->sent = [];
         $asked = 0;
@@ -266,7 +269,9 @@ class GoalsInterviewTest extends TestCase
 
             $asked++;
 
-            return 'Question '.$asked.'?';
+            return $asked > 4
+                ? 'That is everything I need — let us go and build your syllabus.'
+                : 'Question '.$asked.'?';
         });
     }
 

@@ -123,6 +123,7 @@ class InterviewCompletionTest extends TestCase
                 'module' => 'Spanish',
                 'subtopic' => 'Conversational Basics',
                 'skill_level' => '101',
+                'pacing' => 'Ask your next question.',
             ])
             ->feature('course.knowledge_interview')
             ->tools([new SignalComplete($listener)])
