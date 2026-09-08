@@ -52,7 +52,7 @@ final class KnowledgeInterview implements Interview
      * unaided, and few enough that they still have the patience for the goals
      * interview waiting behind it.
      */
-    public function questionCap(): int
+    public function questionBudget(): int
     {
         return 5;
     }

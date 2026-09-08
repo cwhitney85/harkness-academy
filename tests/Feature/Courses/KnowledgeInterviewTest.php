@@ -262,50 +262,14 @@ class KnowledgeInterviewTest extends TestCase
     }
 
     /**
-     * Spec 4.3.1 -- the cap, against a tutor that would never stop on its own.
-     */
-    #[Test]
-    public function the_interview_closes_itself_at_the_fifth_question(): void
-    {
-        $this->scriptEndlessTutor();
-        $course = $this->course();
-
-        $session = $this->interviews()->knowledge($course);
-        $this->drain($session->open());
-
-        foreach (range(1, 4) as $n) {
-            $this->drain($session->answer("Answer {$n}."));
-
-            $this->assertSame(
-                CourseStatus::KnowledgeInterview,
-                $course->fresh()?->status,
-                "Question {$n} was the cap, and it should not have been.",
-            );
-        }
-
-        $this->assertSame(5, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
-
-        // The fifth answer gets a turn like any other -- it is the tutor's
-        // last word rather than a sixth question, and the interview is over
-        // once it has been said.
-        $this->drain($session->answer('Answer 5.'));
-
-        $this->assertNotNull(
-            (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
-            'The cap ends the interview the same way Done does -- document written, course moved.',
-        );
-        $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
-        $this->assertSame(0, InterviewMessage::query()->count());
-    }
-
-    /**
-     * Spec 4.3.1 -- the tutor closes in its own words, and is asked to.
+     * Spec 4.3.1 -- the fifth question is where the tutor is asked to wrap up.
      *
-     * The cap decides when; the model still writes the line, having read the
-     * conversation (Colin, 2026-09-08).
+     * Not told, asked: the budget changes what the brief wants and nothing
+     * else, so the assertion is about the instruction rather than about the
+     * course having moved.
      */
     #[Test]
-    public function the_last_turn_asks_the_tutor_to_wrap_up_rather_than_ask_again(): void
+    public function spending_the_question_budget_asks_the_tutor_to_wrap_up(): void
     {
         $this->scriptEndlessTutor();
 
@@ -324,18 +288,15 @@ class KnowledgeInterviewTest extends TestCase
     }
 
     /**
-     * Whether a call's brief carried the wrap-up instruction.
-     */
-    private function askedToWrapUp(mixed $call): bool
-    {
-        return str_contains($call->agent->instructions(), 'This is your last turn. Do not ask another question.');
-    }
-
-    /**
-     * And the ending does not depend on the model obeying that instruction.
+     * Spec 4.3.1 -- and a tutor that carries on anyway is not cut off.
+     *
+     * The first build ended the interview here regardless, which showed the
+     * student a question and then a screen they had not asked for. Running
+     * long is the cost chosen over that interruption (Colin, 2026-09-08).
+     * The wrap-up keeps being asked for, and Done keeps working.
      */
     #[Test]
-    public function the_interview_ends_even_if_the_tutor_asks_a_sixth_question(): void
+    public function a_tutor_that_keeps_asking_is_not_cut_off_mid_interview(): void
     {
         $this->scriptEndlessTutor();
         $course = $this->course();
@@ -343,21 +304,59 @@ class KnowledgeInterviewTest extends TestCase
         $session = $this->interviews()->knowledge($course);
         $this->drain($session->open());
 
-        foreach (range(1, 5) as $n) {
+        foreach (range(1, 7) as $n) {
             $this->drain($session->answer("Answer {$n}."));
         }
 
+        $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
+        $this->assertSame(8, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
+        $this->assertNull((new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'));
+
+        // Every turn past the budget asks again, rather than asking once and
+        // letting the request sink under the transcript.
+        GatewayAgent::assertPromptedTimes(8);
+        $this->assertAskedToWrapUp(times: 3);
+
+        $session->doneButton()->press();
+
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
-        $this->assertSame(0, InterviewMessage::query()->count());
     }
 
     /**
-     * Spec 4.3.1 -- and the student saying so is not the cap. The Done button
-     * is the student's door (R3); the words are the model's business, and the
-     * conversation carries on.
+     * Whether a call's brief carried the wrap-up instruction.
+     */
+    private function askedToWrapUp(mixed $call): bool
+    {
+        return str_contains($call->agent->instructions(), 'You have asked enough questions. Wrap up now');
+    }
+
+    /**
+     * That at least this many conversation turns ran under it.
+     *
+     * The fake's `contains` stops at the first closure that answers true, so
+     * counting is done by not answering true until the count is reached.
+     */
+    private function assertAskedToWrapUp(int $times): void
+    {
+        $asked = 0;
+
+        GatewayAgent::assertPrompted(function (mixed $call) use (&$asked, $times): bool {
+            $asked += $this->askedToWrapUp($call) ? 1 : 0;
+
+            return $asked === $times;
+        });
+    }
+
+    /**
+     * Spec 4.3.1 -- saying "let's stop" does not stop it.
+     *
+     * The Done button is the student's door (R3) and the only one they have.
+     * What the tutor says back to those words is the brief's business -- it
+     * points at the button -- but no wording of an answer ends an interview,
+     * which is why this asserts on the course rather than on the reply.
      */
     #[Test]
-    public function a_student_asking_to_stop_at_question_three_is_told_to_continue(): void
+    public function a_student_asking_to_stop_does_not_end_the_interview_by_asking(): void
     {
         $this->scriptEndlessTutor();
         $course = $this->course();
@@ -371,31 +370,6 @@ class KnowledgeInterviewTest extends TestCase
         $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
         $this->assertNull((new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'));
         $this->assertSame(3, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
-    }
-
-    /**
-     * The whole run, on the meter: five questions, one closing turn, one
-     * summary, and nothing after it.
-     */
-    #[Test]
-    public function a_capped_interview_costs_seven_calls(): void
-    {
-        $this->scriptEndlessTutor();
-
-        $session = $this->interviews()->knowledge($this->course());
-        $this->drain($session->open());
-
-        foreach (range(1, 4) as $n) {
-            $this->drain($session->answer("Answer {$n}."));
-        }
-
-        $this->drain($session->answer('Answer 5.'));
-
-        $this->assertSame(
-            array_merge(array_fill(0, 6, 'interview.knowledge'), ['wk.create']),
-            UsageEvent::query()->pluck('prompt_key')->all(),
-            'Five questions, the tutor\'s closing turn, and the summary.',
-        );
     }
 
     /**

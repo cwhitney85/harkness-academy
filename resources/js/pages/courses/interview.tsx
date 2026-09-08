@@ -46,18 +46,29 @@ type Interview = {
     urls: { stream: string; answers: string; complete: string };
 };
 
+/**
+ * The student decides when the conversation has gone on long enough.
+ *
+ * Said in `stop` and drawn as a real button below, because nothing else
+ * bounds an interview: the tutor is asked to wrap up once it has asked its
+ * questions, but only R3's two doors end one (spec 4.3.1). A student who
+ * thinks the tutor is in charge of the length has no way out of a tutor that
+ * is not (Colin, 2026-09-08).
+ */
 const HEADINGS = {
     knowledge: {
         title: 'What you already know',
         lead: 'A short conversation about where you are starting from. Answer as roughly as you like — "I can order a coffee, I cannot hold a conversation" is more useful than a careful list.',
         done: 'Done — write it up',
         writing: 'Writing up what you know…',
+        stop: "You decide when it's enough. Press Done at any point and the tutor writes up what you have said so far.",
     },
     goals: {
         title: 'What you want out of this',
         lead: 'The same again, for where you want to end up. What you say here is what the course is built to get you to.',
         done: 'Done — build my syllabus',
         writing: 'Writing up what you want…',
+        stop: "You decide when it's enough. Press Done at any point and your syllabus is built from what you have said so far.",
     },
 } as const;
 
@@ -244,14 +255,14 @@ function Conversation({
                         </Button>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button
-                            type="button"
+                        <Button
+                            size="action"
+                            variant="outline"
                             disabled={writing}
                             onClick={finish}
-                            className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:cursor-default disabled:no-underline disabled:opacity-70"
                         >
                             {writing ? copy.writing : copy.done}
-                        </button>
+                        </Button>
                         <span className="grow" />
                         <span className="label">
                             {draft.length} / {limits.answer_characters}
@@ -267,10 +278,7 @@ function Conversation({
                     {copy.title}
                 </h1>
                 <p className="mt-4 mb-2">{copy.lead}</p>
-                <p className="label mb-9">
-                    Stop whenever you like — the Done button below is always
-                    there.
-                </p>
+                <p className="label mb-9">{copy.stop}</p>
 
                 <div className="flex flex-col gap-7">
                     {turns.map((turn) => (

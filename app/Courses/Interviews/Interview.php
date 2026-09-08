@@ -37,17 +37,18 @@ interface Interview
     public function next(): CourseStatus;
 
     /**
-     * How many questions the tutor may ask before the interview closes itself
-     * (spec 4.3.1, 4.4.1).
+     * How many questions this interview is worth before the tutor is told to
+     * wrap up (spec 4.3.1, 4.4.1).
      *
-     * A cap, not a target: the number is never stated to the model, which is
-     * told only "ask your next question" or "this is your last turn" as
-     * InterviewSession counts the tutor's turns against it. It lives here
-     * because it is pedagogy -- how much of the student's patience this
-     * particular conversation is worth -- and pedagogy is what an Interview
-     * implementation owns.
+     * A budget, not a cap: spending it changes what the brief asks for on
+     * every turn from then on, and nothing forces an ending. Only R3's two
+     * doors end an interview. The number is never stated to the model, which
+     * is told "ask your next question" or "wrap up now" and never how many are
+     * left. It lives here because it is pedagogy -- how much of the student's
+     * patience this particular conversation is worth -- and pedagogy is what
+     * an Interview implementation owns.
      */
-    public function questionCap(): int;
+    public function questionBudget(): int;
 
     /**
      * The `usage_events` label for both of this interview's calls (spec 2.2).

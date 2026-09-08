@@ -175,12 +175,15 @@ class GoalsInterviewTest extends TestCase
     }
 
     /**
-     * Spec 4.4.1 -- four questions and stop, against a tutor that would not.
+     * Spec 4.4.1 -- four questions, then the tutor is asked to wrap up.
+     *
+     * A budget, not a cap: what the fourth answer changes is the brief, and
+     * the tutor ends the interview itself on the turn after it.
      */
     #[Test]
-    public function the_interview_holds_exactly_four_tutor_questions(): void
+    public function the_interview_asks_four_questions_and_then_wraps_up(): void
     {
-        $this->scriptTutorThatNeverSignals();
+        $this->scriptTutorThatWrapsUpWhenAsked();
         $course = $this->course();
 
         $session = $this->interviews()->goals($course);
@@ -192,7 +195,7 @@ class GoalsInterviewTest extends TestCase
             $this->assertSame(
                 CourseStatus::GoalsInterview,
                 $course->fresh()?->status,
-                "Question {$n} was the cap, and it should not have been.",
+                "The budget was spent at question {$n}, and it should not have been.",
             );
         }
 
@@ -203,7 +206,7 @@ class GoalsInterviewTest extends TestCase
         $this->assertSame(
             4,
             substr_count($this->summaryPrompt(), 'Question '),
-            'Spec 4.4.1: the transcript `criteria.create` reads holds exactly four questions.',
+            'Spec 4.4.1: the transcript `criteria.create` reads holds four questions.',
         );
 
         $this->assertSame(CourseStatus::SyllabusDraft, $course->fresh()?->status);
@@ -216,7 +219,7 @@ class GoalsInterviewTest extends TestCase
     #[Test]
     public function four_questions_still_produce_all_four_criteria_sections(): void
     {
-        $this->scriptTutorThatNeverSignals();
+        $this->scriptTutorThatWrapsUpWhenAsked();
         $course = $this->course();
 
         $session = $this->interviews()->goals($course);
@@ -250,17 +253,16 @@ class GoalsInterviewTest extends TestCase
     }
 
     /**
-     * A tutor that never calls `signal_complete`, so only the cap can end the
-     * interview -- and that wraps up when the cap's last turn asks it to,
-     * which is what a real one does. That the ending survives a tutor which
-     * does *not* is KnowledgeInterviewTest's business.
+     * A tutor that asks its four and ends the interview when the spent budget
+     * asks it to, which is what a real one does. That an interview survives a
+     * tutor which ignores the request is KnowledgeInterviewTest's business.
      */
-    private function scriptTutorThatNeverSignals(): void
+    private function scriptTutorThatWrapsUpWhenAsked(): void
     {
         $this->sent = [];
         $asked = 0;
 
-        GatewayAgent::fake(function (string $prompt) use (&$asked): string {
+        GatewayAgent::fake(function (string $prompt) use (&$asked): ToolCall|string {
             $this->sent[] = $prompt;
 
             if (str_contains($prompt, 'criteria document')) {
@@ -270,7 +272,7 @@ class GoalsInterviewTest extends TestCase
             $asked++;
 
             return $asked > 4
-                ? 'That is everything I need — let us go and build your syllabus.'
+                ? new ToolCall('call-1', 'signal_complete', ['reason' => 'I have all four.'])
                 : 'Question '.$asked.'?';
         });
     }

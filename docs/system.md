@@ -13,7 +13,7 @@ A student picks a **subtopic** to learn at a **skill level** (101, 201, 301). Th
 Three vocabularies run through the whole system and are worth holding before reading on:
 
 - **The catalog** is `module → subtopic`. A module is a broad field (`language`); a subtopic is a thing you can take a course in (`spanish`). A student may have **one open course per subtopic**, at one level at a time.
-- **The memory tree** is a virtual filesystem in Postgres, keyed by path. `{module}/{subtopic}/WORKING_KNOWLEDGE.md` is the durable record of what a student knows, and it is scoped to the *subtopic* — a 201 course starts from what the 101 course taught. Under it sit per-level documents: `CRITERIA.md` (what this student wants), and one `GUIDANCE.md` per lesson (what the tutor is to teach). All of it is model-facing prose; nothing the app queries lives here.
+- **The memory tree** is a virtual filesystem in Postgres, keyed by path. `{module}/{subtopic}/WORKING_KNOWLEDGE.md` is the durable record of what a student knows, and it is scoped to the *subtopic* — a 201 course starts from what the 101 course taught. Under it sit per-level documents: `COURSE_CRITERIA.md` (what this student wants), and one `GUIDANCE.md` per lesson (what the tutor is to teach). All of it is model-facing prose; nothing the app queries lives here.
 - **Concept slugs** are the connective tissue. The syllabus declares them, checkpoints tag questions with them, lesson summaries report on them, and exams and refreshers draw on them. A slug that was never declared is refused wherever it appears.
 
 ## 2. The course lifecycle, end to end
@@ -22,9 +22,9 @@ A course moves through seven positions, and two endings that are dates rather th
 
 **1. Created.** The student names a subtopic — from the catalog or as free text — and a level. The course row exists and nothing else does.
 
-**2. Knowledge interview.** The tutor opens the conversation and asks about what the student already knows, capped at five questions. The student can end it early with a Done button that is always visible. On completion the transcript is summarized into that subtopic's `WORKING_KNOWLEDGE.md`, folding in whatever was already there rather than overwriting it.
+**2. Knowledge interview.** The tutor opens the conversation and asks about what the student already knows, budgeted at five questions — after the fifth the tutor is asked, on every turn, to wrap up and end the interview, but nothing forces it to. **The student is what bounds an interview**: a Done button is always visible and ends it at any point. On completion the transcript is summarized into that subtopic's `WORKING_KNOWLEDGE.md`, folding in whatever was already there rather than overwriting it.
 
-**3. Goals interview.** Four questions about what the student wants out of this — what they hope to gain, what drew them to the subject, what success would look like, how they like to be assessed. On completion the transcript becomes `CRITERIA.md` for this level.
+**3. Goals interview.** The same, budgeted at four questions — one for each section of the document they become: what they hope to gain, what drew them to the subject, what success would look like, how they like to be assessed. On completion the transcript becomes `COURSE_CRITERIA.md` for this level.
 
 **4. Syllabus draft.** The student asks for a syllabus and the app generates one from working knowledge, criteria, the level, and depth parameters. It is a structured document: a course title, an overview, five to ten lessons each with an objective, sections, declared concepts and a homework focus, plus the concepts the exam should weight. It is a **draft row**, pinned to the exact versions of the two memory documents it was written from.
 

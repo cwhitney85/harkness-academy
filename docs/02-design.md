@@ -63,7 +63,8 @@
 | D34 | `final_exam_concepts` is emphasis, not scope, and keeps its name | current |
 | D35 | Client-side behaviour is proven in jsdom, not in a browser | current |
 | D36 | The interview opener is a wire artefact, not a turn | current |
-| D37 | The question cap is not a third termination door | **amended 2026-09-08** — the cap picks the moment, the tutor still writes the words |
+| D37 | The question cap is not a third termination door | **superseded by D38** — a cap that ends the interview interrupts the student |
+| D38 | The question budget asks for an ending and never imposes one | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -692,7 +693,7 @@ jsdom proves exactly that claim and nothing around it. A test renders the screen
 
 Rejected: **keeping the row and filtering it out at each reader.** Three readers today (the screen payload, two summarizing prompts) and every future one, each carrying the same exception, to store one string nobody said.
 
-## D37. The question cap is not a third termination door (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1; **amended the same day, after Colin ran it**)
+## D37. The question cap is not a third termination door (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1; **superseded by [D38](#d38-the-question-budget-asks-for-an-ending-and-never-imposes-one-resolved-2026-09-08-package-4-items-431-and-441-colin)** — read D38 for the current rule)
 
 > **Amended.** The first build had the cap summarize *instead of* asking again and stream a fixed `CLOSING_LINE` in place of the sixth question. Running it, the conversation just stopped — "it works, but it's still missing a step" (Colin, 2026-09-08). **The cap now picks the moment and the tutor still says so itself**: the capped answer gets an ordinary turn, the brief's `pacing` variable carries a wrap-up instruction, and `ask()` summarizes when that stream finishes whether or not the model also called `signal_complete`. The two paragraphs on fixed text below are what that replaced; everything else in this entry still binds.
 >
@@ -707,3 +708,19 @@ Rejected: **keeping the row and filtering it out at each reader.** Three readers
 **~~And the closing line is not a transcript row.~~** *(Superseded.)* It went out as `turn.start` + `turn.delta` with no `turn.end`, since the summarization it followed had already discarded the transcript. The closing turn is now an ordinary tutor turn, which reaches the client the same way and — because the transcript goes with the summary — still carries no `turn.end`. That shape survived the amendment; only its author changed.
 
 Rejected: **stating the number in the prompt.** That is what `prompts/interview/knowledge.md` already did ("Eight to twelve exchanges is usually enough") and what the dogfood course proved worthless: a number in a prompt is guidance, and the interview ran until the student pressed Done. The prompts still name no number — `pacing` says "ask your next question" or "this is your last turn", never how many are left, so the model cannot pace itself towards an ending the cap has not reached.
+
+## D38. The question budget asks for an ending and never imposes one (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1, Colin)
+
+**Chosen: spending the budget swaps one line of the brief and does nothing else. R3's two doors remain the only ways an interview ends.**
+
+[D37](#d37-the-question-cap-is-not-a-third-termination-door-resolved-2026-09-08-package-4-items-431-and-441-superseded-by-d38--read-d38-for-the-current-rule) was built twice and both builds interrupted the student. The first stopped the conversation dead and streamed a fixed line. The second asked the model to wrap up and then summarized regardless — so a model that asked one more question showed the student a question and immediately took the screen away. **"I'd rather it drag on too long than rudely interrupt"** (Colin, 2026-09-08), and that ordering is the whole decision.
+
+**There is no way to make a model stop at an exact turn, so the code stops pretending to.** `Interview::questionBudget()` is now a budget: at five questions (knowledge) or four (goals), `InterviewSession` swaps `KEEP_GOING` for `WRAP_UP` in the brief's `pacing` variable and leaves the conversation alone. The tutor ends the interview by calling `signal_complete`, exactly as it always has.
+
+**What makes this stronger than a sentence in the prompt file — which is what 4.3.1 was written to replace — is that it repeats.** A static "keep it brief" is read once and then sits under a growing transcript getting less salient every turn. `WRAP_UP` appears on the turn the budget runs out and on every turn after it, so the pressure to end arrives exactly when it is wanted and does not decay. The number is still never stated to the model: it is told "ask your next question" or "wrap up now", never how many are left, so it cannot pace itself towards a finish line the budget has not reached.
+
+**The student is the real bound, so the screen now says so and shows it.** The Done button was a small underlined link in the footer; it is now `size="action" variant="outline"`, the same secondary action the syllabus and dashboard screens use, and the line above the conversation reads "You decide when it's enough" rather than describing the button's existence. An interview that is only bounded by the student must not make the student hunt for the exit (8.7.2, 8.12.3).
+
+**Accepted cost: an interview can run long, and nothing in the product stops it.** That is the trade taken deliberately. The reversed trade — a bounded interview that sometimes cuts a student off mid-thought — was built, run against a real course, and rejected on the evidence.
+
+Rejected: **removing the budget and keeping only prompt guidance**, which is what "tell the model to try to keep it limited" would have been. It gives up the escalation for nothing: the pacing variable is already there, and a fixed instruction cannot know when the interview has gone on long enough.

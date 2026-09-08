@@ -40,7 +40,7 @@ final class GoalsInterview implements Interview
     /**
      * Four (spec 4.4.1) -- one for each section `criteria.create` writes.
      */
-    public function questionCap(): int
+    public function questionBudget(): int
     {
         return 4;
     }
