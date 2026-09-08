@@ -110,3 +110,12 @@ All three jobs are idempotent, because a managed queue delivers at least once.
 ## 7. Cost
 
 Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID anywhere outside `config/ai.php` — call sites name a tier (`cheap`, `mid`, `top`) and the config decides what that is. The total cost of a course is therefore one SQL query.
+
+## 8. The working cycle, and that it has been run
+
+Everything above composes into one cycle, and the cycle is this document's reason to exist. It was v1's definition of done, and it **passed on 2026-09-07** (ledger [D29](02-design.md)):
+
+> One student completes one honest course cycle **in a browser, and again on a phone**: creates "Language / Conversational Spanish / Intro" → two interviews → approves a syllabus → completes every lesson with checkpoints → passes the final exam → takes a refresher quiz drawing on recorded working knowledge — with the total inference cost visible in `usage_events`.
+> If any step needs a developer touching the database, it has not passed.
+
+It is the whole-system test. Each package's spec carries its own acceptance test for the journey *its* items compose into; none of them repeats this one.

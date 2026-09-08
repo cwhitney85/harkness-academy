@@ -73,5 +73,17 @@ The repo has no disposable tier, which is why session narrative accreted into PL
 Settled 2026-09-07: an acceptance test is durable, so it lives in a spec, never in a plan file that is deleted on landing.
 
 - **9.9 MUST** — Each spec carries its own acceptance test: the cross-item journey its items compose into, stated as one user-visible cycle. It is distinct from the per-item done-conditions, which prove one item; the acceptance test proves they work together. *Done: every spec file has one, and it can be run against the app without reading any other spec.*
-- **9.9.1 MUST** — The v1 global acceptance test moves to `docs/system.md` as the working cycle that document describes, marked passed 2026-09-07. It is not restated in any spec. *Done: `docs/system.md` holds it once; PLAN.md holds it until 9.7.1 retires the file, and no spec repeats it.*
+- **9.9.1 MUST** — The v1 global acceptance test moves to `docs/system.md` as the working cycle that document describes, marked passed 2026-09-07. It is not restated in any spec. *Done: `docs/system.md` holds it once; PLAN.md holds it until 9.7.1 retires the file, and no spec repeats it.* *Read 2026-09-08 as: PLAN.md keeps a **pointer** to it, not a second copy. "Holds it once" and the one-owner rule (9.1.1) both refuse the copy, and 9.7's "reduced to the dependency graph, the global acceptance test and the retirement clause" is a list of what survives, not an instruction to duplicate.*
 - **9.9.2 WONT** — A plan file does not hold an acceptance test. It may hold the notes from running one. *Falsified if: deleting a landed plan file loses a test anyone would want to re-run.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+Run against the repo, by a session that has read only `CLAUDE.md`:
+
+1. Take a fact that does not exist yet — a decision with rejected candidates, a tooling trap, a change to what the app does, a rule the code must satisfy, a note about what this session tried. `CLAUDE.md`'s tier table names exactly one document for each, and no guessing is involved.
+2. Search the repo for that fact's subject afterwards. It is in one document. Every other document that mentions it points, or says nothing.
+3. Start a work unit with `/package` or `/unit`. It names the read path — this file, the spec, the ledger entries the spec's head points at — and names PLAN.md nowhere. From the ledger's index alone, identify which entries are needed without opening an entry body; a superseded entry says on its first line what replaced it.
+4. Land the unit. The plan file is triaged into the durable tier and deleted in the same commit, `docs/plans/` is empty again, and `git log docs/plans/<unit>.md` still recovers everything it said.
+5. Ask "where does the project stand": the answer comes from the specs' done-conditions, and no status table exists to disagree with them.

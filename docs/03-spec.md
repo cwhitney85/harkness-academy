@@ -1,6 +1,6 @@
 # OpenTutor — v1 Specification (index)
 
-*The spec was split along WBS package boundaries (design decision W2, 2026-08-21). Numbering is preserved — spec item 5.2.4 lives in `specs/05-lesson-engine.md` under 5.2.4. Package state lives in each spec's done-conditions; [/PLAN.md](../PLAN.md) holds the dependency graph and the global acceptance test until spec 9.7 retires it. **This index is historical** — it records the split, not the current state.*
+*The spec was split along WBS package boundaries (design decision W2, 2026-08-21). Numbering is preserved — spec item 5.2.4 lives in `specs/05-lesson-engine.md` under 5.2.4. Package state lives in each spec's done-conditions; [/PLAN.md](../PLAN.md) holds the dependency graph until spec 9.7.1 retires it; the v1 acceptance test is [docs/system.md §8](system.md). **This index is historical** — it records the split, not the current state.*
 
 | Package | File |
 |---|---|
