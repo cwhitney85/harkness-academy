@@ -190,6 +190,30 @@ export default function LessonScreenPage({
         teach(resume_at);
     }, [completed, resume_at, taught, teach]);
 
+    // Explain this has to be raised by a finger as well as by a mouse
+    // (8.8.9). iOS Safari fires no `mouseup` for a long-press selection — the
+    // callout takes the gesture over — but every browser fires
+    // `selectionchange`, so that is what offers the explanation.
+    //
+    // Only a selection is taken from it, never the loss of one: pressing
+    // "Explain this" collapses the selection before the click lands, and
+    // reading that collapse would pull the button out from under the press.
+    // The offer is withdrawn where it always was — on a mouse or a key coming
+    // up in the prose with nothing selected.
+    useEffect(() => {
+        function offer() {
+            const highlight = highlighted();
+
+            if (highlight !== null) {
+                setSelected(highlight);
+            }
+        }
+
+        document.addEventListener('selectionchange', offer);
+
+        return () => document.removeEventListener('selectionchange', offer);
+    }, []);
+
     /** Answer a checkpoint (5.2.4) — the one moment the key is disclosed. */
     async function answer(
         checkpointId: number,
