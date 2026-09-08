@@ -9,10 +9,14 @@
 | Tier | Loaded | Documents |
 |---|---|---|
 | **Unconditional** | every session | `CLAUDE.md` |
-| **Durable, addressable** | when targeted | `docs/system.md`, `docs/02-design.md`, `docs/specs/*.md`, `docs/lessons.md` |
+| **Durable, addressable** | when targeted | `docs/system.md`, `docs/02-design.md`, `docs/specs/*.md`, `docs/lessons.md`, `docs/deploy.md`, `docs/anthropic-specific.md` |
 | **Disposable** | during one work unit | `docs/plans/<unit>.md` |
 
-`README.md` is the human entry point and owns the roadmap. `PLAN.md` is retained under 9.7.1 and scheduled for retirement.
+Also durable, and outside the table because they are not read the way the three tiers are: `docs/design/canvas/` is the design source of record (spec 8.1), and `docs/00-frame.md`, `docs/01-research.md` and `docs/03-spec.md` are **historical** — they record how the shape was arrived at, and nothing new is written into them.
+
+`README.md` is the human entry point and owns the roadmap (9.8). `PLAN.md` is retained under 9.7.1 and scheduled for retirement.
+
+**This table is the rule; `CLAUDE.md`'s is what satisfies it (9.1).** They name the same set, and a document in one and not the other is a defect in whichever was edited last.
 
 ## 9.1 The tiers are declared
 
