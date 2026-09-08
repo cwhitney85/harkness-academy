@@ -47,6 +47,16 @@ final class KnowledgeInterview implements Interview
         return CourseStatus::GoalsInterview;
     }
 
+    /**
+     * Five (spec 4.3.1). Enough to find the edge of what the student can do
+     * unaided, and few enough that they still have the patience for the goals
+     * interview waiting behind it.
+     */
+    public function questionCap(): int
+    {
+        return 5;
+    }
+
     public function feature(): string
     {
         return 'course.knowledge_interview';

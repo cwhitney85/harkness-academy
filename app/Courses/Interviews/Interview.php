@@ -35,6 +35,18 @@ interface Interview
     public function next(): CourseStatus;
 
     /**
+     * How many questions the tutor may ask before the interview closes itself
+     * (spec 4.3.1, 4.4.1).
+     *
+     * A cap, not a target, and deliberately not something the brief tells the
+     * model: InterviewSession counts the tutor's turns and stops asking. The
+     * number lives here because it is pedagogy -- how much of the student's
+     * patience this particular conversation is worth -- and pedagogy is what
+     * an Interview implementation owns.
+     */
+    public function questionCap(): int;
+
+    /**
      * The `usage_events` label for both of this interview's calls (spec 2.2).
      */
     public function feature(): string;

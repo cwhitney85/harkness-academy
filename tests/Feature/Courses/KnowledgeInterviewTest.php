@@ -17,6 +17,7 @@ use App\Models\InterviewMessage;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 use PHPUnit\Framework\Attributes\Test;
@@ -62,10 +63,37 @@ class KnowledgeInterviewTest extends TestCase
 
         $turns = InterviewMessage::query()->orderBy('position')->get();
 
-        $this->assertCount(2, $turns);
-        $this->assertSame(Speaker::Student, $turns[0]->speaker);
+        $this->assertCount(1, $turns, 'Spec 4.6: the opener is on the wire, not in the transcript.');
+        $this->assertSame(Speaker::Tutor, $turns[0]->speaker);
         $this->assertSame(InterviewKind::Knowledge, $turns[0]->kind);
-        $this->assertSame(Speaker::Tutor, $turns[1]->speaker);
+    }
+
+    /**
+     * Spec 4.6. The provider will not take an assistant message first and the
+     * gateway will not take an empty user turn, so the opener has to exist --
+     * but nobody said it, so nobody is shown or told that they did.
+     */
+    #[Test]
+    public function the_opener_reaches_the_model_and_nothing_else(): void
+    {
+        $this->scriptTutor();
+        $course = $this->course();
+
+        $this->interview($course);
+
+        $this->assertStringNotContainsString(
+            'I am ready to start.',
+            $this->summaryPrompt(),
+            'The summarizer is handed a conversation, not a button press.',
+        );
+
+        GatewayAgent::assertPrompted(function ($call): bool {
+            $messages = $call->agent->messages();
+
+            return $messages !== []
+                && $messages[0] instanceof UserMessage
+                && (string) $messages[0]->content === 'I am ready to start.';
+        });
     }
 
     #[Test]
@@ -234,6 +262,90 @@ class KnowledgeInterviewTest extends TestCase
     }
 
     /**
+     * Spec 4.3.1 -- the cap, against a tutor that would never stop on its own.
+     */
+    #[Test]
+    public function the_interview_closes_itself_at_the_fifth_question(): void
+    {
+        $this->scriptEndlessTutor();
+        $course = $this->course();
+
+        $session = $this->interviews()->knowledge($course);
+        $this->drain($session->open());
+
+        // Four answers get four more questions; the fifth gets no question at
+        // all, because there is no sixth to ask.
+        foreach (range(1, 4) as $n) {
+            $reply = $session->answer("Answer {$n}.");
+
+            $this->assertNotNull($reply, "Question {$n} was the cap, and it should not have been.");
+
+            $this->drain($reply);
+        }
+
+        $this->assertSame(5, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
+
+        $this->assertNull($session->answer('Answer 5.'), 'Spec 4.3.1: five questions and the interview closes itself.');
+
+        $this->assertNotNull(
+            (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
+            'The cap ends the interview the same way Done does -- document written, course moved.',
+        );
+        $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
+        $this->assertSame(0, InterviewMessage::query()->count());
+    }
+
+    /**
+     * Spec 4.3.1 -- and the student saying so is not the cap. The Done button
+     * is the student's door (R3); the words are the model's business, and the
+     * conversation carries on.
+     */
+    #[Test]
+    public function a_student_asking_to_stop_at_question_three_is_told_to_continue(): void
+    {
+        $this->scriptEndlessTutor();
+        $course = $this->course();
+
+        $session = $this->interviews()->knowledge($course);
+        $this->drain($session->open());
+        $this->drain($session->answer('Answer 1.'));
+
+        $reply = $session->answer('Honestly, I have had enough of this. Can we stop?');
+
+        $this->assertNotNull($reply, 'Only the cap and the two doors of R3 end an interview.');
+        $this->drain($reply);
+
+        $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
+        $this->assertNull((new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'));
+        $this->assertSame(3, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
+    }
+
+    /**
+     * The cap costs a call less than the interview it ends, not one more: the
+     * fifth answer is summarized rather than answered.
+     */
+    #[Test]
+    public function the_capped_turn_asks_the_model_nothing(): void
+    {
+        $this->scriptEndlessTutor();
+
+        $session = $this->interviews()->knowledge($this->course());
+        $this->drain($session->open());
+
+        foreach (range(1, 4) as $n) {
+            $this->drain($session->answer("Answer {$n}."));
+        }
+
+        $session->answer('Answer 5.');
+
+        $this->assertSame(
+            ['interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'interview.knowledge', 'wk.create'],
+            UsageEvent::query()->pluck('prompt_key')->all(),
+            'Five questions and the summary -- no sixth conversation turn.',
+        );
+    }
+
+    /**
      * Run one full interview: open, one answer, the model ends it.
      */
     private function interview(Course $course): void
@@ -269,6 +381,31 @@ class KnowledgeInterviewTest extends TestCase
             return $signalled
                 ? 'Thanks -- that is everything I needed.'
                 : 'How would you undo a plus three?';
+        });
+    }
+
+    /**
+     * A tutor that would happily interview forever: it never calls
+     * `signal_complete` and answers "can we stop?" by asking again. What the
+     * cap has to stop is exactly this.
+     */
+    private function scriptEndlessTutor(): void
+    {
+        $this->sent = [];
+        $asked = 0;
+
+        GatewayAgent::fake(function (string $prompt) use (&$asked): string {
+            $this->sent[] = $prompt;
+
+            if (str_contains($prompt, 'working-knowledge document')) {
+                return "## Solid\n\n- Something.\n\n## Shaky\n\n- Something else.\n\n## Gaps\n\n- The rest.";
+            }
+
+            $asked++;
+
+            return str_contains($prompt, 'had enough')
+                ? 'There is very little left — question '.$asked.'?'
+                : 'Question '.$asked.'?';
         });
     }
 

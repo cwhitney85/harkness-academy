@@ -33,7 +33,7 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  *              or the one before it. post: the course stands at this
  *              interview's status and the tutor's first question is streaming.
  *   `answer()` pre: the interview is underway. post: both turns are in the
- *              transcript.
+ *              transcript, unless the cap ended the interview -- see below.
  *   ends       post: the document exists in the memory tree, no transcript row
  *              survives, and the course stands at `next()`. Either all three
  *              or none: they commit together.
@@ -44,18 +44,24 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  * while the model was still writing into it. The Done button arrives with no
  * stream in flight and summarizes immediately. Same method, same order of
  * effects.
+ *
+ * The question cap (4.3.1, 4.4.1) is a third way to the same method and not a
+ * third door: R3's doors are the model and the student, and the cap is
+ * neither. It is this class declining to ask again, so it carries no
+ * CompletionSignal -- there is no outside party whose reason wants recording.
  */
 final class InterviewSession implements CompletionListener
 {
     /**
-     * The turn that starts the conversation.
+     * The message a provider conversation has to open with (spec 4.6).
      *
-     * The tutor speaks first, but a provider conversation has to open with a
-     * user message, so pressing Start is written down as what it is. It is a
-     * real turn, not a placeholder: it is in the transcript the summarizer
-     * reads, and it is what the model is answering.
+     * The tutor speaks first, but the Messages API takes no assistant message
+     * ahead of a user one, and the gateway refuses a streamed call with an
+     * empty user turn. So this exists on the wire and nowhere else: it is
+     * never a transcript row, never a line the screen paints, and never a line
+     * the summarizer reads. Nobody said it, so nobody is shown saying it.
      */
-    public const OPENING_TURN = 'I am ready to start.';
+    private const OPENING_TURN = 'I am ready to start.';
 
     /**
      * The longest single answer a student may send (spec 8.7.2).
@@ -65,6 +71,17 @@ final class InterviewSession implements CompletionListener
      * number, owned by the class that enforces it.
      */
     public const MAX_ANSWER = 4000;
+
+    /**
+     * What the tutor says when the question cap ends the interview (4.3.1).
+     *
+     * Fixed text rather than a generated turn, and not a transcript row: by
+     * the time it is written the summarization it follows has already
+     * discarded the transcript. It exists to tell the student why the
+     * conversation stopped and that they are being carried on, not to be
+     * summarized -- so the student sees it, and `wk.create` never does.
+     */
+    public const CLOSING_LINE = "I think that's enough to get started. Let's carry on.";
 
     private readonly Transcript $transcript;
 
@@ -92,16 +109,13 @@ final class InterviewSession implements CompletionListener
      * the transition service refuses the move from anywhere illegal, so a
      * course cannot be interviewed out of order.
      *
-     * Opening discards whatever the transcript holds, which is safe in exactly
-     * one case: nothing but the opening turn is in it. That is the case this
-     * refuses to leave -- the tutor having spoken once is enough to make a
-     * re-open destroy a student's interview, and the flow map's client-side
-     * precondition is not somewhere a bug can be caught (spec 8.7.2).
-     *
-     * Re-opening a transcript that holds only `OPENING_TURN` *is* allowed, and
-     * is the recovery for a connection dropped during the tutor's very first
-     * question: nothing the student typed is discarded, because they have not
-     * typed anything (Colin, 2026-09-01, narrowing 8.6's wording).
+     * Opening discards whatever the transcript holds, and the tutor having
+     * spoken once is what makes that destructive -- so that is the case this
+     * refuses to leave, since the flow map's client-side precondition is not
+     * somewhere a bug can be caught (spec 8.7.2). Short of it there is nothing
+     * to lose: a student turn only ever follows a tutor turn, so a transcript
+     * with no tutor turn in it is empty, and re-opening is the recovery for a
+     * connection dropped during the tutor's very first question (spec 8.6).
      *
      * @throws CourseNotOpen|IllegalTransition|InterviewAlreadyUnderway
      */
@@ -120,7 +134,6 @@ final class InterviewSession implements CompletionListener
         }
 
         $this->transcript->discard();
-        $this->transcript->append(Speaker::Student, self::OPENING_TURN);
 
         return $this->ask();
     }
@@ -128,13 +141,25 @@ final class InterviewSession implements CompletionListener
     /**
      * Answer the tutor's last question and stream the next one.
      *
-     * @throws InterviewNotUnderway|CourseNotOpen
+     * Returns null when that answer was the last one the cap allows: the
+     * interview has ended here, the document is written and the course has
+     * moved, and CLOSING_LINE is what the student is told instead of a sixth
+     * question (spec 4.3.1, 4.4.1). The cap ends the interview one model call
+     * *earlier* than it would otherwise have ended, never one later.
+     *
+     * @throws InterviewNotUnderway|CourseNotOpen|InterviewSummaryUnusable
      */
-    public function answer(string $text): StreamableAgentResponse
+    public function answer(string $text): ?StreamableAgentResponse
     {
         $this->assertUnderway();
 
         $this->transcript->append(Speaker::Student, $text);
+
+        if ($this->transcript->questionsAsked() >= $this->interview->questionCap()) {
+            $this->summarize();
+
+            return null;
+        }
 
         return $this->ask();
     }
@@ -189,18 +214,17 @@ final class InterviewSession implements CompletionListener
     }
 
     /**
-     * Send the transcript's newest student turn and stream the reply.
+     * Send the newest student turn and stream the reply.
      *
-     * @throws InterviewNotUnderway
+     * The opener is prepended rather than stored (4.6), which is also what
+     * keeps the history the provider sees alternating: `array_pop` takes the
+     * turn being answered off the end, and what is left starts with a user
+     * message whether the tutor has spoken once or five times.
      */
     private function ask(): StreamableAgentResponse
     {
-        $history = $this->transcript->messages();
+        $history = [Speaker::Student->message(self::OPENING_TURN), ...$this->transcript->messages()];
         $turn = array_pop($history);
-
-        if ($turn === null) {
-            throw InterviewNotUnderway::for($this->course, $this->interview->kind()->value);
-        }
 
         $this->streaming = true;
 

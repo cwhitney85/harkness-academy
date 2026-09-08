@@ -79,23 +79,30 @@ final class Transcript
     }
 
     /**
+     * How many questions the tutor has asked.
+     *
+     * Where the cap of 4.3.1 and 4.4.1 is counted. The tutor's turns *are* the
+     * questions: it asks one at a time by instruction, and the one thing it
+     * says that is not a question -- the line it closes on at the cap -- is
+     * never written down (spec 4.3.1).
+     */
+    public function questionsAsked(): int
+    {
+        return $this->turns()->where('speaker', Speaker::Tutor->value)->count();
+    }
+
+    /**
      * Whether the tutor has actually asked something yet.
      *
-     * Not the same question as `isEmpty()`, and the difference is the whole
-     * of it: `InterviewSession::open()` writes the student's opening turn
-     * *before* the tutor's first question streams, so a connection dropped
-     * during that first question leaves a transcript that is not empty and
-     * holds nothing anyone said. Answering it and summarizing it are both
-     * meaningless, and summarizing it would overwrite what earlier courses in
-     * the subtopic recorded (ledger D7a) with a document made of one line the
-     * student never typed.
-     *
-     * So this, rather than emptiness, is what "underway" means, and what
-     * 8.6's re-open precondition is narrowed to (Colin, 2026-09-01).
+     * What "underway" means, and what 8.6's re-open precondition reads. A
+     * student turn only ever follows a tutor turn, so this is false exactly
+     * when the transcript is empty -- but the two are asking different
+     * questions, and answering or summarizing a conversation the tutor never
+     * spoke in is meaningless whichever way the rows happen to fall.
      */
     public function hasTutorTurn(): bool
     {
-        return $this->turns()->where('speaker', Speaker::Tutor->value)->exists();
+        return $this->questionsAsked() > 0;
     }
 
     /**

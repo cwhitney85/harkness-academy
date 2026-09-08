@@ -15,10 +15,10 @@ import type { TurnEvent } from '@/types';
  *
  * **A reload paints from `turns` and never re-opens the interview.** Opening
  * discards the transcript, so the stream URL is requested only when the server
- * says `may_open` — which is true when nothing has been said yet, and when a
- * dropped connection left the student's own "I am ready to start." with no
- * question after it. The engine refuses a destructive re-open as well; this is
- * the polite half of the same rule.
+ * says `may_open` — which is true until the tutor has asked something, and so
+ * covers both nothing having happened yet and a connection dropped during the
+ * tutor's very first question. The engine refuses a destructive re-open as
+ * well; this is the polite half of the same rule.
  *
  * The Done button is always visible (2.3.4, decision R3). It is in the footer
  * strip rather than in the flow of the conversation, so a long transcript

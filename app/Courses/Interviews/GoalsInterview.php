@@ -37,6 +37,14 @@ final class GoalsInterview implements Interview
         return CourseStatus::SyllabusDraft;
     }
 
+    /**
+     * Four (spec 4.4.1) -- one for each section `criteria.create` writes.
+     */
+    public function questionCap(): int
+    {
+        return 4;
+    }
+
     public function feature(): string
     {
         return 'course.goals_interview';

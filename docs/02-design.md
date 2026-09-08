@@ -62,6 +62,8 @@
 | D33 | The exam screen's three states are decided on the server | current |
 | D34 | `final_exam_concepts` is emphasis, not scope, and keeps its name | current |
 | D35 | Client-side behaviour is proven in jsdom, not in a browser | current |
+| D36 | The interview opener is a wire artefact, not a turn | current |
+| D37 | The question cap is not a third termination door | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -674,3 +676,30 @@ jsdom proves exactly that claim and nothing around it. A test renders the screen
 **Rejected — no automated test, amending 4.7 to a manual check.** The class has now produced four claimed instances and cost four sessions; the one thing that stops the fifth is a test that fails when the key comes off.
 
 **What this does not buy.** Nothing here exercises Inertia itself. That the redirect preserves state, and that a GET link does not, is read from `@inertiajs/*` and recorded in [D28](02-design.md) — it is not under test, and an Inertia upgrade that changed either would pass this suite.
+
+## D36. The interview opener is a wire artefact, not a turn (resolved 2026-09-08, package 4 item 4.6.1)
+
+**Chosen: `InterviewSession::OPENING_TURN` is assembled in `ask()` and never written to `interview_messages`.**
+
+4.6.1 asked the question in the right order — is the opener needed at all, before deciding how to store it — because removal is a smaller change than hiding. It is needed, for two independent reasons, either of which alone settles it:
+
+1. `PendingCall::assertCallable()` refuses a streamed call with an empty user turn ("there is nothing to answer"), and `open()` has nothing else to send.
+2. Anthropic's Messages API takes no assistant message ahead of a user one. `ask()` pops the newest student turn off the history and sends it as the turn, so for every turn after the first the remaining history begins at the tutor's opening question — an assistant message. The opener is what keeps that history legal.
+
+**So "the opener is not needed" was false, and "the opener is a student turn" was the actual defect.** It was written down as a row because a row was the nearest place to put it, and everything that reads rows then had to know about it: the screen painted "I am ready to start." as something the student typed, `wk.create` and `criteria.create` were handed it as the first line of the transcript, and 8.6's re-open precondition had to be narrowed around a transcript that was not empty and held nothing anyone said.
+
+**Unstoring it retires that narrowing rather than restating it.** A student turn only ever follows a tutor turn, so `hasTutorTurn()` and `isEmpty()` now agree; the predicate that survives is `hasTutorTurn()`, because it is the one that says what the rule protects — a conversation the tutor has spoken in — rather than how the rows happen to fall.
+
+Rejected: **keeping the row and filtering it out at each reader.** Three readers today (the screen payload, two summarizing prompts) and every future one, each carrying the same exception, to store one string nobody said.
+
+## D37. The question cap is not a third termination door (resolved 2026-09-08, package 4 items 4.3.1 and 4.4.1)
+
+**Chosen: `InterviewSession::answer()` counts the tutor's turns and summarizes instead of asking again. No `CompletionSignal`, no new `CompletionSource`.**
+
+[R3](#r3-interview-termination--model-signals-via-signal_complete-tool--always-visible-done-button-either-path-fires-the-same-summarization-workflow) has two doors and both are *outside parties* saying the interview is over: the model, with a reason worth recording, and the student, pressing Done. `CompletionSignal` exists so those two arrive in one shape. The cap is neither — it is this class declining to ask a sixth question — so routing it through a signal would mean a third `CompletionSource` in package 2 recording a reason nothing reads, to describe a party that does not exist.
+
+**The cap ends the interview one model call earlier, never one later.** The capped answer is summarized rather than answered, so a five-question interview costs five conversation turns and a summary. That is also why the tutor's closing line is fixed text (`CLOSING_LINE`) rather than a generated turn: generating it would spend the call the cap just saved, and the spec fixes the words anyway.
+
+**And the closing line is not a transcript row.** By the time it is written the summarization it follows has already discarded the transcript, so a row would be written to be deleted; it goes out as `turn.start` + `turn.delta` over the five-event vocabulary with no `turn.end`, which is exactly the shape the client already handles for an interview the model ends mid-stream. `wk.create` never sees it, which is correct — it is an explanation to the student, not something the student said.
+
+Rejected: **stating the number in the prompt.** That is what `prompts/interview/knowledge.md` already did ("Eight to twelve exchanges is usually enough") and what the dogfood course proved worthless: a number in a prompt is guidance, and the interview ran until the student pressed Done. The prompts now say the interview is short and ends on its own, and name no number.

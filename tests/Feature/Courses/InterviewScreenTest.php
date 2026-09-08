@@ -52,10 +52,9 @@ class InterviewScreenTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('courses/interview')
                 ->where('kind', 'knowledge')
-                ->has('turns', 3)
-                ->where('turns.0.content', InterviewSession::OPENING_TURN)
-                ->where('turns.1.speaker', 'tutor')
-                ->where('turns.2.content', 'I can order a coffee.')
+                ->has('turns', 2)
+                ->where('turns.0.speaker', 'tutor')
+                ->where('turns.1.content', 'I can order a coffee.')
                 ->where('may_open', false)
                 ->where('limits.answer_characters', InterviewSession::MAX_ANSWER),
             );
@@ -80,17 +79,14 @@ class InterviewScreenTest extends TestCase
     }
 
     /**
-     * The one case re-opening is safe, and the recovery it exists for: a
-     * connection dropped during the tutor's very first question leaves the
-     * student's own opening turn and nothing else (Colin, 2026-09-01).
+     * The recovery re-opening exists for: a connection dropped during the
+     * tutor's very first question. Nothing the student typed is at risk,
+     * because there is nothing there to be at risk (spec 4.6).
      */
     #[Test]
     public function an_interview_the_tutor_never_answered_may_be_opened_again(): void
     {
         $course = $this->course(CourseStatus::KnowledgeInterview);
-
-        (new Transcript($course, InterviewKind::Knowledge))
-            ->append(Speaker::Student, InterviewSession::OPENING_TURN);
 
         $this->actingAs($course->student)
             ->get(route('courses.knowledge-interview.show', $course))
@@ -98,17 +94,13 @@ class InterviewScreenTest extends TestCase
     }
 
     /**
-     * Done with nothing but the opening turn would summarize a conversation
-     * nobody had, over whatever earlier courses in the subtopic recorded
-     * (ledger D7a).
+     * Done on a conversation nobody had would summarize nothing over whatever
+     * earlier courses in the subtopic recorded (ledger D7a).
      */
     #[Test]
     public function done_refuses_a_transcript_the_tutor_never_spoke_in(): void
     {
         $course = $this->course(CourseStatus::KnowledgeInterview);
-
-        (new Transcript($course, InterviewKind::Knowledge))
-            ->append(Speaker::Student, InterviewSession::OPENING_TURN);
 
         $this->actingAs($course->student)
             ->post(route('courses.knowledge-interview.complete', $course))
@@ -150,7 +142,7 @@ class InterviewScreenTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('courses/interview')
                 ->where('kind', 'goals')
-                ->has('turns', 3)
+                ->has('turns', 2)
                 ->where('urls.complete', route('courses.goals-interview.complete', $course)),
             );
 
@@ -162,6 +154,42 @@ class InterviewScreenTest extends TestCase
             'Solid',
             (string) (new MemoryTree)->get($course->student, 'math/algebra/101/COURSE_CRITERIA.md'),
         );
+    }
+
+    /**
+     * Spec 4.3.1 -- the student is told why the conversation stopped.
+     *
+     * The cap ends the interview inside the POST, so what comes back is the
+     * tutor's closing line rather than a sixth question, and no `turn.end`:
+     * the transcript it would have named is already gone.
+     */
+    #[Test]
+    public function the_capped_answer_streams_the_tutors_closing_line(): void
+    {
+        $course = $this->course(CourseStatus::KnowledgeInterview);
+        $this->scriptTutor();
+
+        $transcript = new Transcript($course, InterviewKind::Knowledge);
+
+        foreach (range(1, 5) as $n) {
+            $transcript->append(Speaker::Tutor, "Question {$n}?");
+            $transcript->append(Speaker::Student, "Answer {$n}.");
+        }
+
+        // Five questions asked, four answered -- the fifth answer is the one
+        // the cap closes on.
+        $transcript->latestTurn()?->delete();
+
+        $body = $this->actingAs($course->student)
+            ->post(route('courses.knowledge-interview.answers.store', $course), ['text' => 'Answer 5.'])
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString(InterviewSession::CLOSING_LINE, $body);
+        $this->assertStringNotContainsString('turn.end', $body);
+
+        $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
+        $this->assertSame(0, InterviewMessage::query()->count());
     }
 
     /**
@@ -194,15 +222,13 @@ class InterviewScreenTest extends TestCase
     }
 
     /**
-     * A transcript that has actually been had: the opening turn, a question,
-     * and one answer.
+     * A transcript that has actually been had: a question and one answer.
      */
     private function converse(Course $course, InterviewKind $kind = InterviewKind::Knowledge): void
     {
         $this->scriptTutor();
 
         $transcript = new Transcript($course, $kind);
-        $transcript->append(Speaker::Student, InterviewSession::OPENING_TURN);
         $transcript->append(Speaker::Tutor, 'What can you do already?');
         $transcript->append(Speaker::Student, 'I can order a coffee.');
 

@@ -175,6 +175,102 @@ class GoalsInterviewTest extends TestCase
     }
 
     /**
+     * Spec 4.4.1 -- four questions and stop, against a tutor that would not.
+     */
+    #[Test]
+    public function the_interview_holds_exactly_four_tutor_questions(): void
+    {
+        $this->scriptEndlessTutor();
+        $course = $this->course();
+
+        $session = $this->interviews()->goals($course);
+        $this->drain($session->open());
+
+        foreach (range(1, 3) as $n) {
+            $reply = $session->answer("Answer {$n}.");
+
+            $this->assertNotNull($reply, "Question {$n} was the cap, and it should not have been.");
+
+            $this->drain($reply);
+        }
+
+        $this->assertSame(4, InterviewMessage::query()->where('speaker', Speaker::Tutor->value)->count());
+
+        $this->assertNull($session->answer('Answer 4.'), 'Spec 4.4.1: four questions and it stops.');
+
+        $this->assertSame(
+            4,
+            substr_count($this->summaryPrompt(), 'Tutor:'),
+            'The transcript `criteria.create` reads holds exactly the four questions.',
+        );
+
+        $this->assertSame(CourseStatus::SyllabusDraft, $course->fresh()?->status);
+    }
+
+    /**
+     * The other half of 4.4.1's done-condition: four questions still fill all
+     * four sections, because they are the four the criteria document wants.
+     */
+    #[Test]
+    public function four_questions_still_produce_all_four_criteria_sections(): void
+    {
+        $this->scriptEndlessTutor();
+        $course = $this->course();
+
+        $session = $this->interviews()->goals($course);
+        $this->drain($session->open());
+
+        foreach (range(1, 3) as $n) {
+            $this->drain($session->answer("Answer {$n}."));
+        }
+
+        $session->answer('Answer 4.');
+
+        $document = (string) (new MemoryTree)->get($course->student, self::CRITERIA_PATH);
+
+        foreach (['## Goals', '## Interests', '## Success', '## Evaluation style'] as $section) {
+            $this->assertStringContainsString($section, $document);
+        }
+    }
+
+    /**
+     * The first two are fixed by 4.4.1, and the brief is where that is said.
+     */
+    #[Test]
+    public function the_brief_fixes_the_first_two_questions(): void
+    {
+        $this->scriptTutor();
+
+        $this->interview($this->course());
+
+        $instructions = $this->instructions();
+
+        $this->assertStringContainsString('1. What they hope to gain', $instructions);
+        $this->assertStringContainsString('2. What drew them to the subject', $instructions);
+    }
+
+    /**
+     * A tutor that would happily interview forever. What the cap has to stop.
+     */
+    private function scriptEndlessTutor(): void
+    {
+        $this->sent = [];
+        $asked = 0;
+
+        GatewayAgent::fake(function (string $prompt) use (&$asked): string {
+            $this->sent[] = $prompt;
+
+            if (str_contains($prompt, 'criteria document')) {
+                return "## Goals\n\n- Order dinner unaided.\n\n## Interests\n\n- Food.\n\n## Success\n\n- The Madrid trip.\n\n## Evaluation style\n\n- Correct me as I go.";
+            }
+
+            $asked++;
+
+            return 'Question '.$asked.'?';
+        });
+    }
+
+    /**
      * The rendered `criteria.create` prompt from the run that just finished.
      */
     private function summaryPrompt(): string
