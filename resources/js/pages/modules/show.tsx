@@ -42,7 +42,15 @@ export default function ModuleRollup({
     subtopics: Subtopic[];
     urls: { dashboard: string; refresher: string };
 }) {
-    const [busy, setBusy] = useState(false);
+    /**
+     * Which door was pressed, not merely that one was (8.12.1).
+     *
+     * Every door on this screen is barred while any of them is out, so a
+     * boolean would have one subtopic's press announce itself on every other
+     * subtopic and on the module button as well. The URL is what distinguishes
+     * them, and it is already the argument each door carries.
+     */
+    const [writing, setWriting] = useState<string | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
 
     /**
@@ -51,13 +59,13 @@ export default function ModuleRollup({
      * already use for the other two grains.
      */
     function practise(url: string) {
-        setBusy(true);
+        setWriting(url);
         setFailure(null);
 
         postJson<{ url: string }>(url, {})
             .then((refresher) => router.visit(refresher.url))
             .catch((error: Error) => setFailure(error.message))
-            .finally(() => setBusy(false));
+            .finally(() => setWriting(null));
     }
 
     return (
@@ -94,7 +102,7 @@ export default function ModuleRollup({
                                         key={subtopic.title}
                                         subtopic={subtopic}
                                         dashboard={urls.dashboard}
-                                        busy={busy}
+                                        writing={writing}
                                         onPractise={practise}
                                     />
                                 ))}
@@ -104,10 +112,12 @@ export default function ModuleRollup({
                         <div className="mt-10 flex flex-wrap items-center gap-5 border-t border-hairline pt-6">
                             <Button
                                 size="action"
-                                disabled={busy}
+                                disabled={writing !== null}
                                 onClick={() => practise(urls.refresher)}
                             >
-                                {busy ? 'Writing…' : `Practise ${module.title}`}
+                                {writing === urls.refresher
+                                    ? 'Writing your refresher…'
+                                    : `Practise ${module.title}`}
                             </Button>
                             <span className="label">
                                 Questions drawn from every subtopic above
@@ -146,12 +156,13 @@ export default function ModuleRollup({
 function SubtopicPanel({
     subtopic,
     dashboard: dashboardUrl,
-    busy,
+    writing,
     onPractise,
 }: {
     subtopic: Subtopic;
     dashboard: string;
-    busy: boolean;
+    /** The door whose refresher is being written, if any (8.12.1). */
+    writing: string | null;
     onPractise: (url: string) => void;
 }) {
     return (
@@ -190,11 +201,13 @@ function SubtopicPanel({
             {subtopic.refresher_url && (
                 <button
                     type="button"
-                    disabled={busy}
+                    disabled={writing !== null}
                     onClick={() => onPractise(subtopic.refresher_url as string)}
-                    className="label mt-4 flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:opacity-60"
+                    className="label mt-4 flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:cursor-default disabled:no-underline disabled:opacity-60"
                 >
-                    Practise {subtopic.title}
+                    {writing === subtopic.refresher_url
+                        ? 'Writing your refresher…'
+                        : `Practise ${subtopic.title}`}
                 </button>
             )}
         </article>

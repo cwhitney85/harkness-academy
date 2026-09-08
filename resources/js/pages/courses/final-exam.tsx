@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { postJson } from '@/lib/api';
 import type { FinalExamScreen, QuizAnswers, SittingResult } from '@/types';
 
+/** Which of the screen's three POSTs is out, if any (8.12.1). */
+type Working = 'opening' | 'handing-in' | 'practising' | null;
+
 /**
  * Screens S9 and S10 — the final exam, and the gate it holds (8.9.2, 8.9.3).
  *
@@ -35,8 +38,19 @@ export default function FinalExamPage({
 }: FinalExamScreen) {
     const [answers, setAnswers] = useState<QuizAnswers>(sheet);
     const [held, setHeld] = useState<QuizAnswers>(sheet);
-    const [busy, setBusy] = useState(false);
+    /**
+     * Which of this screen's three POSTs is out, not merely that one is
+     * (8.12.1).
+     *
+     * The gate draws "Sit it again" and "Practise this subtopic" side by side
+     * and both are barred while either is out, so a single boolean made each
+     * button say what the *other* one was doing. Naming the request is what
+     * lets each control indicate its own work and stay silent about work it
+     * did not start.
+     */
+    const [working, setWorking] = useState<Working>(null);
     const [refusal, setRefusal] = useState<string | null>(null);
+    const busy = working !== null;
 
     /**
      * The book the server is holding for this sitting (6.3.4).
@@ -92,13 +106,13 @@ export default function FinalExamPage({
     /** Open the book, or open it again for a re-sit — the same exam either
      *  way, adopted rather than generated a second time (6.3). */
     function open() {
-        setBusy(true);
+        setWorking('opening');
         setRefusal(null);
 
         postJson(urls.open, {})
             .then(refresh)
             .catch((error: Error) => setRefusal(error.message))
-            .finally(() => setBusy(false));
+            .finally(() => setWorking(null));
     }
 
     /**
@@ -139,7 +153,7 @@ export default function FinalExamPage({
     }
 
     function handIn() {
-        setBusy(true);
+        setWorking('handing-in');
         setRefusal(null);
 
         postJson(urls.sittings, { answers })
@@ -148,17 +162,17 @@ export default function FinalExamPage({
             // remembering it.
             .then(refresh)
             .catch((error: Error) => setRefusal(error.message))
-            .finally(() => setBusy(false));
+            .finally(() => setWorking(null));
     }
 
     function practise() {
-        setBusy(true);
+        setWorking('practising');
         setRefusal(null);
 
         postJson<{ url: string }>(urls.refresher, {})
             .then((refresher) => router.visit(refresher.url))
             .catch((error: Error) => setRefusal(error.message))
-            .finally(() => setBusy(false));
+            .finally(() => setWorking(null));
     }
 
     return (
@@ -176,7 +190,7 @@ export default function FinalExamPage({
                     course={course.title}
                     sitting={sitting}
                     percent={percent}
-                    busy={busy}
+                    working={working}
                     failure={failure}
                     onResit={open}
                     onPractise={practise}
@@ -217,7 +231,9 @@ export default function FinalExamPage({
                             onClick={handIn}
                             disabled={busy || Object.keys(answers).length === 0}
                         >
-                            {busy ? 'Handing in…' : 'Hand in the book'}
+                            {working === 'handing-in'
+                                ? 'Handing in…'
+                                : 'Hand in the book'}
                         </Button>
                         <span className="label">
                             {Object.keys(answers).length} of {questions.length}{' '}
@@ -255,7 +271,7 @@ function Result({
     course,
     sitting,
     percent,
-    busy,
+    working,
     failure,
     onResit,
     onPractise,
@@ -264,7 +280,7 @@ function Result({
     course: string;
     sitting: SittingResult;
     percent: number;
-    busy: boolean;
+    working: Working;
     failure: string | null;
     onResit: () => void;
     onPractise: () => void;
@@ -312,18 +328,26 @@ function Result({
                             <Link href={dashboard}>Back to your courses</Link>
                         </Button>
                     ) : (
-                        <Button size="action" onClick={onResit} disabled={busy}>
-                            {busy ? 'Opening…' : 'Sit it again'}
+                        <Button
+                            size="action"
+                            onClick={onResit}
+                            disabled={working !== null}
+                        >
+                            {working === 'opening'
+                                ? 'Setting the exam…'
+                                : 'Sit it again'}
                         </Button>
                     )}
 
                     <button
                         type="button"
                         onClick={onPractise}
-                        disabled={busy}
-                        className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:opacity-60"
+                        disabled={working !== null}
+                        className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:cursor-default disabled:no-underline disabled:opacity-60"
                     >
-                        Practise this subtopic
+                        {working === 'practising'
+                            ? 'Writing your refresher…'
+                            : 'Practise this subtopic'}
                     </button>
                 </div>
 

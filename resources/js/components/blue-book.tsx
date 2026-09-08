@@ -59,8 +59,10 @@ export default function BlueBook({
     failure?: string | null;
     /** Whether this is a second or later sitting (spec 8.4.4). */
     resit?: boolean;
-    /** The exam is being written — opening spends the costliest call we make,
-     *  so the button says so rather than appearing to do nothing. */
+    /** The exam is being written (8.12.1). Opening spends the costliest call
+     *  we make and it runs on the queue, so the shut book has to say what is
+     *  being made for as long as it takes rather than appearing to do nothing
+     *  — it is the only thing on screen while the job runs. */
     pending?: boolean;
     onOpen: () => void;
     /** What sits below the book: handing in, and how far the student has got. */
@@ -164,10 +166,22 @@ function ClosedBook({
                     type="button"
                     onClick={onOpen}
                     disabled={pending}
-                    className="mt-1.5 min-h-[44px] cursor-pointer bg-wine px-[38px] py-3.5 text-[15px] tracking-[0.13em] text-surface uppercase disabled:opacity-70"
+                    className="mt-1.5 min-h-[44px] cursor-pointer bg-wine px-[38px] py-3.5 text-[15px] tracking-[0.13em] text-surface uppercase disabled:cursor-default disabled:opacity-70"
                 >
-                    {pending ? 'Opening…' : 'Open the book'}
+                    {pending ? 'Setting the exam…' : 'Open the book'}
                 </button>
+                {pending && (
+                    <>
+                        <p className="label text-wine">
+                            Your examination is being written
+                        </p>
+                        <p className="text-[15px] text-muted-ink">
+                            It is set across every lesson in one pass. This page
+                            will show it as soon as it is ready — you can leave
+                            and come back.
+                        </p>
+                    </>
+                )}
                 {failure && (
                     <p className="label text-wine" role="alert">
                         {failure}

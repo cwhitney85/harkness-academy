@@ -679,6 +679,11 @@ function Ask({
  * answering the same question is how they come to disagree.
  *
  * Homework and the exam are Inertia links: 8.9 made both URLs pages.
+ *
+ * `busy` on this screen is only ever the refresher (8.12.1): the Q&A footer is
+ * not rendered once the lesson is complete and neither is the teaching column,
+ * so the practise door is the one request S7 can have out, and it may say so
+ * in its own name.
  */
 function Complete({
     lesson,
@@ -733,9 +738,9 @@ function Complete({
                     type="button"
                     onClick={onPractise}
                     disabled={busy}
-                    className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:opacity-60"
+                    className="label flex min-h-11 cursor-pointer items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass disabled:cursor-default disabled:no-underline disabled:opacity-60"
                 >
-                    Practise this lesson
+                    {busy ? 'Writing your refresher…' : 'Practise this lesson'}
                 </button>
             </div>
         </div>
