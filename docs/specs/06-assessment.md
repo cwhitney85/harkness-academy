@@ -12,3 +12,8 @@
   - **6.3.5 MUST** — A regression guard at realistic size. Every existing fixture declares three exam concepts, which is the only reason 6.3's coverage rule ever passed; spec 8.2.9 predicted this class of miss in writing. *Done: a test builds a syllabus of at least 8 lessons and 40+ declared concepts and asserts an exam generates; deleting 6.3.1's per-lesson rule makes a test fail rather than only production.*
 - **6.4 MUST** — Refresher quizzes, subtopic + lesson grain, from WK + SUMMARY docs. *Done: lesson refresher questions traceable to its summary.*
 - **6.5 SHOULD** — Module-grain quiz via 3.3 pointer-walk. *Done: 2-subtopic module quiz draws from both WKs.*
+
+## Dogfood repair (2026-09-07)
+
+- **6.6 MUST** — The correct option's position is distributed, not left to the model. No shuffle exists anywhere in `app/` or `resources/js/`: options render in the order the model emitted them and the model chooses `correct_option_id`, and observed checkpoints cluster on A and B. *Done: across 40 generated questions no option position holds the correct answer more than 40% of the time; a test asserts the distribution over a fixed set.*
+  - **6.6.1 SHOULD** — Four options become the norm rather than the ceiling. `QuestionSchema::MIN_OPTIONS` is 3, so many questions have no D to choose. *Done: the constants express the intended shape; a D position exists to be chosen.*

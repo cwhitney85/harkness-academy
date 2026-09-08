@@ -12,6 +12,7 @@
 | 6 Assessment | [specs/06-assessment.md](specs/06-assessment.md) |
 | 7 PWA Shell | [specs/07-pwa.md](specs/07-pwa.md) |
 | 8 Interface (incl. 8.2 fixtures, 8.3 design language, 8.4 material system) | [specs/08-interface.md](specs/08-interface.md) |
+| 9 Documentation System (tiers, ledger index, disposable plans) | [specs/09-documentation.md](specs/09-documentation.md) |
 
 Cross-package rules that live in the packages but bind globally:
 - **Fail-open rule** (4.5.1): fail open only when failing closed would destroy student progress.

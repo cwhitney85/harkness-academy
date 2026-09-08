@@ -497,3 +497,44 @@ Rejected: **browser-only persistence**. Same amount of design thinking, survives
 Rejected: **saving ungraded rows into `quiz_attempts`**. It needs `correct` to become nullable, which weakens an invariant every reader of that table relies on, to store something that is not an attempt.
 
 Weight: this is spec 6.3.4 and it is a **SHOULD** — the exam is sittable without it, and it is the one item in the 2026-09-04 repair that can be ejected without leaving a course broken.
+
+## D27. Documents are tiered by lifetime, and PLAN.md is scheduled for retirement (resolved 2026-09-07, planning session, Colin)
+
+**Chosen: tiered files, minimal move (A1), with an explicit retirement path to A2.**
+
+Every document is one of three tiers. **Unconditional** — loaded every session, small, stable, current-only: `CLAUDE.md`. **Durable, addressable** — loaded when targeted, length is fine so long as the unit of retrieval is smaller than the file: `docs/system.md`, `docs/02-design.md`, `docs/specs/*.md`, `docs/lessons.md`. **Disposable** — one work unit, deleted on landing: `docs/plans/<unit>.md`. `README.md` is the human entry point and owns the roadmap.
+
+The repo had no disposable tier, and that is what produced the bloat. Session narrative had nowhere to be retired to, so it accreted into PLAN.md permanently: the Status section was 45,419 of the file's 55,289 bytes, 58.7% of it a chronological work journal stored in table cells, against 2.9% that was actual tracker state. The package-8 cell alone was 25,598 bytes.
+
+**PLAN.md is reduced rather than deleted, and retires once `docs/plans/` has carried three work units start to finish** (the documentation migration is the first). Deleting the tracker and authoring its replacement in one pass is the step here that can lose continuity, and 1.7KB costs almost nothing to keep while the disposable tier proves itself. On retirement the dependency graph moves to `docs/system.md`.
+
+**Rejected — A2, spec-anchored with no central plan.** It is the end state, and 9.7.1 is the path to it; taken immediately it removes the one document that answers "where are we" before its replacement has been used.
+
+**Rejected — A3, one file per decision (ADR style).** It gives the best retrieval granularity, but pays the largest migration cost for a gain the TOC in 9.3.1 mostly delivers, and it fragments `git log docs/02-design.md`, which today shows every decision and every supersession in one history.
+
+**Rejected — A4, an index layer with no restructure.** It reduces nothing: unconditional load stays at 59KB and the journal keeps accreting. Kept only as the cost baseline the others were measured against.
+
+## D28. The mounted-component defect is a class, and is fixed at the boundary (resolved 2026-09-07, planning session, Colin)
+
+**An Inertia visit between two URLs that render the same component leaves that component mounted, so `useState` and `useRef` do not re-initialize.** Any state that describes *this* URL must be keyed or reset on navigation.
+
+Four instances are known, and the first two were each repaired at the call site without the class being named:
+
+1. **8.9.5** — the exam screen read `useState<string | null>(reported)`, capturing its `failure` prop at mount, so a failure arriving during the five-second poll was never shown.
+2. **The re-sit ticks** — a re-sit reopened with the previous sitting's selections still on the page.
+3. **4.7** — both interviews render `courses/interview`, and the open is guarded by `opened = useRef(false)`; the knowledge → goals visit leaves the ref true, so the goals stream is never requested. The student sees an error that only a full page refresh clears.
+4. **8.8.10** — `selected` and `explaining` live in `lessons/show.tsx`, which every lesson URL renders, so the explainer survives a move to the next lesson.
+
+**Two local fixes and no rule is what produced the third and fourth instances**, so the rule lands in `CLAUDE.md` as a standing convention rather than in four call sites. 4.7 and 8.8.10 are scheduled as one cross-cutting work unit, ahead of the package units that would otherwise fix the same bug twice.
+
+## D29. An acceptance test lives in a spec, one per package (resolved 2026-09-07, planning session, Colin)
+
+**Chosen: per-spec acceptance tests; the v1 global test moves to `docs/system.md`.**
+
+A spec's per-item done-conditions prove one item. An acceptance test proves the items compose into a journey a student can take, which is a different claim and needs its own home.
+
+**It goes in the spec rather than the work unit's plan file** because a plan file is deleted when the unit lands (D27). A test kept there cannot be re-run against a later change, which is most of what an acceptance test is for. A plan file may hold the notes from running one.
+
+**The v1 global test — one honest course cycle in a browser and again on a phone, no developer touching the DB — is spent.** It passed 2026-09-07. The cycle it describes is what `docs/system.md` exists to document, so it lands there as the working cycle rather than being restated in nine specs or deleted.
+
+**Rejected — keeping one global test at the repo root.** It would be the last reason for PLAN.md to exist, and it describes v1 rather than any package, so it fits neither the tracker being retired nor a spec.

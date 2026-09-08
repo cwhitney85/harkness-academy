@@ -25,6 +25,11 @@ Branching (ledger W4): serial solo work commits directly to `master` at done-con
 
 ## Status
 
+> **v1 is done (2026-09-07).** Both clauses of the global acceptance test passed — one honest course cycle in a browser and again on a phone, with no developer touching the DB. Every remaining ⚠️ below was confirmed on screen by Colin and is superseded by that result; the marks in the table have not been rewritten because this section is being retired under [spec 9.7](docs/specs/09-documentation.md).
+>
+> **This file is scheduled for retirement.** [D27](docs/02-design.md) tiers the repo's documents by lifetime and reduces PLAN.md to the dependency graph and the acceptance test; it retires once `docs/plans/` has carried three work units start to finish. The 2026-09-07 dogfood repair is the first.
+
+
 | Package | Spec | Depends on | Status | Notes |
 |---|---|---|---|---|
 | 1 Foundation | [docs/specs/01-foundation.md](docs/specs/01-foundation.md) | — | done-conditions passing | 1.1 ✅ 1.2 ✅ 1.3 ✅ ([runbook](docs/deploy.md)) 1.4 ✅ · live at `opentutor-production-ffbp8z.laravel.cloud` · merge-*blocking* for 1.4 deferred to week 3 (2026-08-22, Colin) — rulesets need a paid plan · **`TestCase::setUp` calls `withoutVite()`** (2026-09-01, found in the 8.8 session) — an Inertia screen test resolves `@vite` against `public/build/manifest.json`, so every screen test 500s the moment that manifest is older than the page under test, which it is for the whole of any session that adds a screen. The error names a Vite manifest and looks nothing like the stale build it is. CI was never affected (`composer setup` builds before `composer ci:check`); this was a local-only trap, and no test in the suite renders a built asset. Verified with `public/build` deleted outright · **the deploy runbook gained a required queue step and `ANTHROPIC_API_KEY` 2026-09-02** ([D25](docs/02-design.md)) — production had neither. The key is injected by nothing, so the app deployed clean and died at the first interview; and the runbook told you to add no worker "until there is work for them", when `CompletionPipeline` has dispatched `ShouldQueue` jobs since package 5 — an environment without one completes lessons and silently never writes their homework. Managed queue, Flex class, on every plan including Starter |
