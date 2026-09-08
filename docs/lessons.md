@@ -69,3 +69,15 @@ The lesson is the second one. A "not needed yet" note in a runbook has no expiry
 1. **A rule whose satisfiability depends on the ratio of two independent numbers needs a test at realistic values of both.** Every fixture in the suite sat on the safe side of the ratio.
 2. **A failure surface that is never exercised is not a failure surface.** The message existed, was written, was passed to the screen, and was invisible.
 3. **Cost makes a silent failure expensive.** Two `top`-tier attempts per press, and a student presses again because nothing told them not to.
+
+## T6. Laravel Dusk cannot be installed — it pins guzzle 7
+
+*Found 2026-09-08, in the mounted-component unit.*
+
+`composer require --dev laravel/dusk` does not resolve. Every release through **v8.6.0 requires `guzzlehttp/guzzle ^7.5`**, and this project is on **guzzle 8.0.2** — which is what `laravel/framework` and `aws/aws-sdk-php` both prefer (`^7.8.2 || ^8.0`). Composer's message names carbon and PHP versions from Dusk v1–v6 and buries the one constraint that actually matters.
+
+With `-W` it *does* resolve, by **downgrading guzzle to 7.15.5** and dragging ~20 other packages with it, `laravel/framework` included. Downgrading the HTTP client the AI gateway streams over, to add a test runner, is not a trade to make in passing.
+
+**So client-side behaviour is proven by `vitest` + `jsdom` + `@testing-library/react`** (`npm test`, wired into `composer ci:check`). No browser, no served app, no fake gateway in another process. Revisit Dusk if it ever accepts guzzle 8 — and note that it would then also need the AI faked *inside* `php artisan serve`, since `GatewayAgent::fake()` swaps a container singleton and cannot reach another process.
+
+One jsdom gap to know when writing such a test: `use-mobile` calls `matchMedia` at **module scope**, so a stub installed in `beforeAll` is already too late. Hoist it — `vi.hoisted()` runs before the imports.

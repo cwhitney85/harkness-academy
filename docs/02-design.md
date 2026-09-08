@@ -54,13 +54,14 @@
 | D25 | A `top`-tier generation is queued work, not request work | current |
 | D26 | A half-finished exam is a saved answer sheet | current |
 | D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
-| D28 | The mounted-component defect is a class, and is fixed at the boundary | current |
+| D28 | The mounted-component defect is a class, and is fixed at the boundary | **amended 2026-09-08** — the class is narrower than stated, and its fourth instance is not one |
 | D29 | An acceptance test lives in a spec, one per package | current |
 | D30 | Three shells, not one, and the two things all of them share | current |
 | D31 | The resume table is code — `NextAction` — and a refusal speaks twice | current |
 | D32 | The worksheet has one disclosure path, and choosing an option is the hand-in | current |
 | D33 | The exam screen's three states are decided on the server | current |
 | D34 | `final_exam_concepts` is emphasis, not scope, and keeps its name | current |
+| D35 | Client-side behaviour is proven in jsdom, not in a browser | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -582,7 +583,9 @@ The repo had no disposable tier, and that is what produced the bloat. Session na
 
 **Rejected — A4, an index layer with no restructure.** It reduces nothing: unconditional load stays at 59KB and the journal keeps accreting. Kept only as the cost baseline the others were measured against.
 
-## D28. The mounted-component defect is a class, and is fixed at the boundary (resolved 2026-09-07, planning session, Colin)
+## D28. The mounted-component defect is a class, and is fixed at the boundary (resolved 2026-09-07, planning session, Colin; **amended 2026-09-08, the mounted-component unit**)
+
+> **Amended — the class is narrower, and instance 4 is not one.** Inertia keys the page component on every swap (`key: preserveState ? current.key : Date.now()`), so a visit that does *not* preserve state remounts the screen already. What leaves a component mounted is a **state-preserving** visit: `router.reload()`, which forces it, and `router.post/put/patch/delete`, which default to it. A GET — a plain `<Link>` or `router.visit(url)` — does not. Instances 1–3 stand. Instance 4 does not: both routes to the next lesson are GET links, the lesson screen remounts, and the explainer is already gone with it. The rule the class earned still holds, and is now a standing convention in `CLAUDE.md`.
 
 **An Inertia visit between two URLs that render the same component leaves that component mounted, so `useState` and `useRef` do not re-initialize.** Any state that describes *this* URL must be keyed or reset on navigation.
 
@@ -655,3 +658,19 @@ Since 6.3.1 the exam is written across every lesson whatever this list says, so 
 **`concept_tag` stays a single value.** "Prefer questions that combine two concepts" remains advice in the prompt; the schema is shared with checkpoints, homework and refreshers, and widening it there to serve the exam alone would change four consumers for one.
 
 No separate table or model for final exams — see D26.
+
+## D35. Client-side behaviour is proven in jsdom, not in a browser (resolved 2026-09-08, the mounted-component unit, spec item 4.7, Colin)
+
+**Chosen: `vitest` + `jsdom` + `@testing-library/react`, run by `npm test` and gated in `composer ci:check`.**
+
+4.7 is the first done-condition in the repo that no PHP test can reach. It is a claim about what React does when Inertia hands a mounted component a new URL's props, and the whole of it happens after the last HTTP response the server test suite can see.
+
+jsdom proves exactly that claim and nothing around it. A test renders the screen at one `kind`, re-renders at the other — which is the props change a state-preserving visit delivers — and asserts the second stream was requested. Remove the `key` and it fails; that is the regression, stated directly.
+
+**Rejected — Laravel Dusk, which was the first choice.** It cannot be installed: it pins `guzzlehttp/guzzle ^7.5` against this project's guzzle 8, and resolving it means downgrading the HTTP client the AI gateway streams over. Trap [T6](lessons.md). It would also have needed the gateway faked *inside* `php artisan serve`, because the reproduction only appears when the knowledge stream opened in the same mount — so a real end-to-end run is not available at any price today.
+
+**Rejected — Playwright.** A real browser and the real redirect, with no composer churn, but it carries the same served-process fake problem as Dusk plus a browser download in CI, to prove a proposition that is entirely about React's reconciler.
+
+**Rejected — no automated test, amending 4.7 to a manual check.** The class has now produced four claimed instances and cost four sessions; the one thing that stops the fifth is a test that fails when the key comes off.
+
+**What this does not buy.** Nothing here exercises Inertia itself. That the redirect preserves state, and that a GET link does not, is read from `@inertiajs/*` and recorded in [D28](02-design.md) — it is not under test, and an Inertia upgrade that changed either would pass this suite.
