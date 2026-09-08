@@ -1,6 +1,8 @@
 # Spec 2 — AI Service Layer
 
-*Provides: the gateway (2.1), usage log (2.2), prompt system (2.3) consumed by packages 4–6. Consumes: 1. See PLAN.md for status.*
+*Provides: the gateway (2.1), usage log (2.2), prompt system (2.3) consumed by packages 4–6. Consumes: 1.*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D1](../02-design.md) Anthropic-direct behind a provider abstraction · [D4](../02-design.md) one real agent, everything else scripted · [D14](../02-design.md) a Q&A turn gets its own inventory row · [D19](../02-design.md) `homework_results` on `wk.update` · [D25](../02-design.md) `top`-tier calls run on the queue. Anthropic-isms: [docs/anthropic-specific.md](../anthropic-specific.md).
 
 - **2.1 MUST** — Provider gateway: all calls through one service wrapping laravel/ai; call sites name a capability tier. *Done: grep finds zero model IDs outside config.*
   - **2.1.1 MUST** — Tier→model map in `config/ai.php` (`tiers.{tier}.model`): `cheap`=claude-haiku-4-5, `mid`=claude-sonnet-5, `top`=claude-opus-5 (v1 defaults). Plan-based routing and provider migration are edits to this block only. *Done: three tiers resolve to three distinct models in a config test; changing `tiers.mid.model` alters the lesson fixture's model with no other diff.*

@@ -1,6 +1,8 @@
 # Spec 3 — Memory Subsystem
 
-*Provides: the path API (3.2) — the only door to memory — consumed by packages 4–6. Consumes: 1. See PLAN.md for status.*
+*Provides: the path API (3.2) — the only door to memory — consumed by packages 4–6. Consumes: 1.*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D3a](../02-design.md) a virtual file tree in Postgres · [D3b](../02-design.md) workflow-initiated writes only · [D7](../02-design.md) the data model · [D7a](../02-design.md) memory is not deleted with the course · [D8](../02-design.md) WORKING_KNOWLEDGE is subtopic-scoped · [D10.1](../02-design.md) `document()` returns content and version together.
 
 Design ground rules (ledger D3a/D3b/D7): virtual file tree in Postgres; workflow-initiated writes only; model-facing documents live in the tree, app-queried state lives in relational rows.
 

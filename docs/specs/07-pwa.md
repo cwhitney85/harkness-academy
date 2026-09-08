@@ -1,6 +1,8 @@
 # Spec 7 — PWA Shell
 
-*Provides: an installable home-screen app. Consumes: 1 and **8** — the design language, crest and responsive behaviour are package 8's, so this package cannot land before it. See PLAN.md for status.*
+*Provides: an installable home-screen app. Consumes: 1 and **8** — the design language, crest and responsive behaviour are package 8's, so this package cannot land before it.*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [R2](../02-design.md) minimal PWA scope, no offline · [D17](../02-design.md) package 7 owns perceived speed and the phone check · [D21](../02-design.md) the palette and the crest the icons derive from.
 
 - **7.1 MUST** — Web app manifest carrying `name`, `short_name`, `icons` (192px, 512px, and one maskable, all from 8.3.5's crest), `start_url`, `display: standalone`, and `theme_color` / `background_color` matching 8.3.1's tokens. Plus an iOS install-instructions page, since iOS offers no install prompt. *Done: add-to-home-screen verified on one real iPhone and one real Android, and the launched app shows no browser chrome.*
 - **7.2 WONT** — Offline mode (v1.2 candidate).

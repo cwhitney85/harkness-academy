@@ -1,6 +1,8 @@
 # Spec 5 — Lesson Engine (the bet itself)
 
-*Provides: the core product loop; SUMMARY docs + WK updates consumed by 6. Consumes: 2, 3, 4 (GUIDANCE, state machine). See PLAN.md for status.*
+*Provides: the core product loop; SUMMARY docs + WK updates consumed by 6. Consumes: 2, 3, 4 (GUIDANCE, state machine).*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D5](../02-design.md) code-paced sections · [D9](../02-design.md) where a transcript lives · [D12](../02-design.md) the quiz tables land here · [D13](../02-design.md) the erosion guard reports and does not block · [D14](../02-design.md) a Q&A turn gets its own inventory row · [D15](../02-design.md) the two transcripts share a rule, not a base class · [D16](../02-design.md) the explainer's context is server state · [D17](../02-design.md) 5.6 splits at the first frame.
 
 Design ground rules (ledger D4/D5): the lesson session is the one real agent; code-paced sections; checkpoint grading is code; context assembly order = cache order.
 

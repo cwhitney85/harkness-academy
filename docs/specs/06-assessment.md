@@ -1,6 +1,8 @@
 # Spec 6 — Assessment
 
-*Provides: quiz service (6.1) — the fixed contract parallel lanes build against. Consumes: 2, 3, 4 (syllabus concepts), 5 (SUMMARY docs, completion pipeline). See PLAN.md for status.*
+*Provides: quiz service (6.1) — the fixed contract parallel lanes build against. Consumes: 2, 3, 4 (syllabus concepts), 5 (SUMMARY docs, completion pipeline).*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D12](../02-design.md) 6.1 owns the service, package 5 landed the tables · [D18](../02-design.md) what the quiz service owns at each grain · [D19](../02-design.md) homework reaches WK as its own prompt variable · [D20](../02-design.md) an exam measures, it does not teach · [D25](../02-design.md) opening an exam is queued work · [D26](../02-design.md) a half-finished exam is a saved answer sheet · [D32](../02-design.md) a worksheet discloses as it goes; the exam does not · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) `final_exam_concepts` is emphasis, not scope. Postmortem: [T5](../lessons.md).
 
 - **6.1 MUST** — Polymorphic `quizzes` + `quiz_attempts` serving all four types (checkpoint / homework / final / refresher) through one service. *Done: four types create rows via one service.*
 - **6.2 MUST** — Homework: quiz + suggested reading on lesson completion (rides 5.4.1); result feeds next WK update. *Done: homework attempt visible in WK diff.*

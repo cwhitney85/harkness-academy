@@ -1,6 +1,8 @@
 # Spec 8 — Interface
 
-*Provides: every screen the engines feed, package 4's missing HTTP layer, and the design language. Consumes: 1–6. See PLAN.md for status.*
+*Provides: every screen the engines feed, package 4's missing HTTP layer, and the design language. Consumes: 1–6.*
+
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D21](../02-design.md) the visual direction · [D22](../02-design.md) material carries meaning · [D23](../02-design.md) the checkpoint is a margin question · [D24](../02-design.md) Radix and the copied shadcn primitives stay · [D25](../02-design.md) queued generations need a waiting state · [D26](../02-design.md) the answer sheet · [D28](../02-design.md) the mounted-component class (8.8.10) · [D30](../02-design.md) three shells, and what they share · [D31](../02-design.md) `NextAction` and `ResumeRefusal` · [D32](../02-design.md) the worksheet's one disclosure path · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) what the syllabus panel may claim about the exam.
 
 *The design is settled. `docs/design/canvas/` is its source of record; the published canvas is where it is read. Direction, palette, material system and the checkpoint choice are ledger entries D21–D24 in [docs/02-design.md](../02-design.md) — don't re-litigate them.*
 
@@ -319,7 +321,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 - **8.8.7 MUST** — Emphasis pairs correctly, including across a marked phrase and during streaming. `inline()` splits a paragraph around the explainer's marked phrase and calls `emphasise()` on each side separately, so an emphasis span straddling the mark becomes two unpaired halves; a paragraph still arriving holds an unclosed `*`. *Done: a paragraph whose emphasis span contains the marked phrase renders one `<em>` and one `<mark>`, not two broken halves; a partially-arrived paragraph renders no stray asterisk.*
 - **8.8.8 SHOULD** — The Continue button after a checkpoint aligns on desktop as it does on phone. At 390px it sits under the last question's Answer button; at 1440px it sits left of it. **Cause not diagnosed.** *Done: the button sits under the Answer button at both widths.*
 - **8.8.9 MUST** — Explain This works on a touch device. The selection handler is `onMouseUp` only, and iOS Safari fires no `mouseup` for a long-press selection, so the affordance never appears on a phone. *Done: a long-press selection on iOS Safari raises the explain affordance; the desktop path is unchanged.*
-- **8.8.10 MUST** — The explainer closes when the student moves to the next lesson, and stays open across every other interaction in the current lesson. `selected` and `explaining` are `useState` in `lessons/show.tsx`, which every lesson URL renders, so the panel survives the visit. Belongs to the mounted-component unit — see [D27](../02-design.md). *Done: open the explainer, complete a checkpoint, continue — it is open; move to the next lesson — it is closed; close it by hand — it stays closed.*
+- **8.8.10 MUST** — The explainer closes when the student moves to the next lesson, and stays open across every other interaction in the current lesson. `selected` and `explaining` are `useState` in `lessons/show.tsx`, which every lesson URL renders, so the panel survives the visit. Belongs to the mounted-component unit — see [D28](../02-design.md). *Done: open the explainer, complete a checkpoint, continue — it is open; move to the next lesson — it is closed; close it by hand — it stays closed.*
 
 ### 8.12 Work in progress is visible
 

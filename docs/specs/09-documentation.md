@@ -2,6 +2,8 @@
 
 *Provides: the tier discipline every later session reads under. Consumes: nothing. Settled in the 2026-09-07 planning session (Colin); candidates and rationale in [D27](../02-design.md).*
 
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D27](../02-design.md) documents are tiered by lifetime · [D29](../02-design.md) an acceptance test lives in a spec · [W1](../02-design.md) planning docs are in-repo · [W2](../02-design.md) per-package specs, amended by D27 · [W5](../02-design.md) the `/package` command.
+
 **The three tiers.** Every document in this repo is one of them, and a fact has exactly one owner.
 
 | Tier | Loaded | Documents |
