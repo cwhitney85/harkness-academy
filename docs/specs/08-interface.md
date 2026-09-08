@@ -36,7 +36,7 @@
 - **8.3.2 MUST** — Type: Newsreader body 17px/1.62, Instrument Serif display, Caveat for the tutor's hand, each with a fallback stack. *Done: a font-blocked page still renders legible prose.*
 - **8.3.3 MUST** — Measure capped at **72 characters of prose** on desktop, narrowing with the viewport to ~50 at 390px, with no font-size reduction rule. *Amended 2026-08-31 (Colin): the numbers were written as CSS `ch`, which is the width of the digit `0`. Newsreader's digits run 0.566em against an average character of 0.407em, so `max-width: 72ch` sets a 693px line of ~100 characters, and `44ch` at 390px is 424px — wider than the phone, so unreachable at any gutter. The measure is therefore stated in characters, which is what the convention and D21's three cited products mean by it; the phone number becomes what a conventional 20px gutter yields.* *Done: measured 72 ±2 characters at 1440px and ~50 at 390px, with the same rule at both.*
 - **8.3.4 SHOULD** — Wine is the only action colour; brass and gold are labels, rules and marks. *Done: no `<button>` carries a brass or gold background.*
-- **8.3.5 MUST** — A `<Crest/>` component: one SVG source serving the rail, the exam cover, completion states, the favicon, and package 7's icons. *Done: one source, five call sites; 7.1 imports no separate artwork.*
+- **8.3.5 MUST** — A `<Crest/>` component: one SVG source serving the rail, the exam cover, completion states, the favicon, and package 7's icons. *Done: one source, five call sites; 7.1 imports no separate artwork.* *Clarified 2026-09-07 (Colin): **`public/favicon.ico` stays the starter kit's Laravel mark.** The crest ships as `favicon.svg`, which every browser that understands it prefers; the `.ico` is the fallback for the ones that do not, and replacing it is not worth a session. Say the word and it goes with the same artwork.*
 - **8.3.6 MUST** — Radix and the copied `components/ui` primitives stay (D24). *Falsified if:* any settled screen requires replacing a primitive's anatomy rather than restyling it.
 - **8.3.7 WONT** — Storybook, component API docs, a versioned library. Tokens plus ~8 composites, then stop.
 
@@ -310,10 +310,10 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 
 - **8.11.1 MUST** — Spec 7 shrinks to its literal text; its done-condition drops "Lighthouse installable" and names the manifest fields plus a real-device add-to-home-screen check. *Done: 7.1 names no check that no longer exists.*
 - **8.11.2 MUST** — Spec 7 records browser-menu install only, and WONTs both the in-page install button and the service worker. *Done: 7.1 names one install path.*
-- **8.11.3 MUST** — PLAN.md's global acceptance test becomes "in a browser, and again on a phone"; package 8 gains a status row; the dependency graph gains its node. *Done: all three edits present.*
+- **8.11.3 MUST** — PLAN.md's global acceptance test becomes "in a browser, and again on a phone"; package 8 gains a status row; the dependency graph gains its node. *Done: all three edits present.* *Superseded 2026-09-08 by [9.7](09-documentation.md): the status table and the acceptance test have left PLAN.md — the test is [docs/system.md §8](../system.md), where "and again on a phone" is the clause this item added, and package state is each spec's done-conditions. The graph node stands.*
 - **8.11.4 MUST** — The design phase's "real generated course as mockup content" condition is dropped, recorded as met-by-substitute: mockup content is schema-faithful, not engine-produced. *Falsification moves to the dogfood cycle: if real output breaks a layout the mockups predicted would hold, the substitution was wrong.*
 - **8.11.5 MUST** — PLAN.md's dependency graph moves package 7 to depend on 1 **and** 8, and drops it from the parallel-lane candidates. *Done: no path in the graph opens 7 before 8 lands.*
-- **8.11.6 MUST** — PLAN.md's ejection order gains package 7, because the amended acceptance test is satisfied by a phone browser and needs no install. *Done: the ejection list is non-empty again.*
+- **8.11.6 MUST** — PLAN.md's ejection order gains package 7, because the amended acceptance test is satisfied by a phone browser and needs no install. *Done: the ejection list is non-empty again.* *Spent 2026-09-08: v1 landed with package 7 built, so nothing was ejected, and [9.7](09-documentation.md) removed the list with the rest of the tracker.*
 
 ## Dogfood repair (2026-09-07)
 
@@ -331,3 +331,16 @@ A student cannot tell a queued generation from a dead one. `syllabus.tsx` carrie
 - **8.12.2 SHOULD** — The indicator names a generic phase tied to the artifact being made — writing the syllabus, setting the exam — rather than spinning anonymously. It reports no step the job does not already emit; real step-by-step progress reporting is on the roadmap. *Done: each of the five indicators names what is being made.*
 - **8.12.3 MUST** — "Done — write it up" is a button, disabled once pressed, carrying 8.12.1's indicator. It is a copy string rendered as a link today. *Done: pressing it once leaves it disabled and indicating until the next screen paints; a second press is impossible.*
 - **8.12.4 WONT** — No indicator claims a time or a percentage. Queued generations have no reliable duration. *Falsified if: any indicator shows either.*
+
+## Acceptance test
+
+*The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
+
+Signed in as a student with one active course, at 1440px and then again at 390px, without a developer touching the database:
+
+1. Walk every screen: dashboard → create a course → knowledge interview → goals interview → syllabus → a lesson with its checkpoint and its explainer → lesson complete → homework → the final exam closed, open and marked → a refresher at each grain → the module rollup.
+2. At every one of them, the crest goes home. No screen scrolls sideways at 390px; every touch target clears 44px; body prose measures about 72 characters at 1440px and about 50 at 390px with no change of type size.
+3. Materials hold: reading is on the paper column, homework and all three refresher grains are on the photocopy sheet, the exam is in the blue book with its interior type sitting on the rules. Wine is the only colour a button ever carries. The checkpoint reads as a margin question on the desktop and as a lead-in line with a brass rule on the phone. Nothing offers dark mode.
+4. Press each of the five model-backed generations — syllabus, homework, exam, refresher, and the write-up between interviews. Each leaves its control disabled and says what is being made until the result arrives; none claims a time or a percentage. Force the exam generation to fail and the screen says why within one poll interval, with the button pressable again.
+5. Set the course aside from its card. It leaves the in-progress list and is listed apart; taking it back up returns it to the position it left, and creating that subtopic again asks whether to carry on or start over rather than silently making a second course.
+6. Every route in `routes/` is an edge on 8.6's flow map, and the test that holds the two together passes.

@@ -208,6 +208,8 @@ Rationale: specs/ledgers are the contract code is built against (ADR/docs-as-cod
 
 ## W2. Build workflow — **per-package specs + PLAN.md; worktree parallelism selectively, late**
 
+> **Amended by D27.** Points 2 and 4 below describe a PLAN.md that no longer exists: the tracker half is gone, package state lives in each spec's done-conditions, and the end-of-session ritual triages a plan file instead. Points 1, 3, 5 and 6 still bind.
+
 Rejected: monolithic spec (whole spec loads into every session — context waste), full parallel-from-day-one (weeks 1–2 are strictly serial: 1→2→3 are each other's substrate; solo dev becomes integration manager too early).
 Chosen workflow:
 1. Spec split along WBS package boundaries into `docs/specs/`; numbering preserved (5.2.4 stays 5.2.4) — spec numbers remain the shared vocabulary.
