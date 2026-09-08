@@ -368,9 +368,8 @@ function Drawing({ revising }: { revising: boolean }) {
                 Your syllabus is being drawn up
             </h1>
             <p className="mt-5 text-muted-ink">
-                It is written from both interviews in one pass, which takes a
-                minute or two. This page will show it as soon as it is ready —
-                you can leave and come back.
+                It is written from both interviews in one pass. This page will
+                show it as soon as it is ready — you can leave and come back.
             </p>
             {revising && (
                 <p className="mt-4 text-muted-ink">
