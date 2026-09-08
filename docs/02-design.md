@@ -2,6 +2,66 @@
 
 *Recorded 2026-08-21. Each decision: chosen candidate, rejected candidates, deciding rationale.*
 
+## Index
+
+*Every entry, its subject, and whether it still binds. A superseded entry stays below at full length with a marker on its first line; a reader who wants only the current rule reads the entry named in the Status column.*
+
+| # | Subject | Status |
+|---|---|---|
+| D1 | Model sourcing — Anthropic-direct behind a provider abstraction | current |
+| D2 | Frontend — Inertia + React | current |
+| D3a | Memory storage — a virtual file tree in Postgres | current |
+| D3b | Memory writes — workflow-initiated only | current |
+| D4 | Agent topology — one real agent, everything else scripted | current |
+| D5 | Lesson lifecycle — code-paced sections | current |
+| D6 | The v1 cut — what ships and what waits | current |
+| D7 | Data model — the approved tables | current |
+| D7a | Course exclusivity and exit — one open course per subtopic; exit deletes the row | **superseded by D7d** (exit-deletes first amended by D7b) |
+| D7b | Withdrawal replaces deletion; attempts replace lockout | **superseded by D7d** |
+| D7c | Both endings are dates, not statuses | **superseded by D7d** |
+| D7d | One status vocabulary; `withdrawn` and `completed` are derived | current |
+| D8 | WORKING_KNOWLEDGE scope — subtopic, not level | current |
+| D9 | How a conversation runs, and where its transcript lives | current |
+| R1 | Personas — repo prompt files, `courses.style` holds the key | current |
+| R2 | PWA scope — manifest, icons, install page; no offline | current |
+| R3 | Interview termination — `signal_complete` tool plus an always-visible Done | current |
+| R4 | Hosting — Laravel Cloud; the host must not buffer SSE | current |
+| W1 | Planning docs live in-repo under `docs/`, committed | current |
+| W2 | Build workflow — per-package specs, worktree lanes late | **amended by D27** — PLAN.md is no longer the tracker half |
+| W3 | Default branch — `master` | current |
+| W4 | Branching — hybrid trunk-based | current |
+| W5 | Session start — the `/package <n>` command | **amended by spec 9.6.2** — `/unit` is its companion for cross-cutting work |
+| D10 | The syllabus is rows, and four smaller things 4.5 forced | current |
+| D10.1 | Syllabus drafts are their own table, pinned to the inputs they saw | current |
+| D10.2 | Concept slugs stay in the JSON; there is no concepts table | current |
+| D10.3 | GUIDANCE.md renders from a PHP class, not a Blade template | current |
+| D10.4 | A failed generation writes nothing and moves nothing | current |
+| D10.5 | `lessons` carries exactly what D7 listed | current |
+| D11 | Plan is a string on `users`; the plans table is deferred | current |
+| D12 | The quiz tables land in package 5; 6.1 lands the service over them | current |
+| D13 | `wk.update`'s erosion guard reports and does not block | current |
+| D14 | A Q&A turn gets its own inventory row | current |
+| D15 | The two transcripts share a rule, not a base class | current |
+| D16 | The explainer's context is server state; the client sends the highlight | current |
+| D17 | 5.6 is not strictly front-end; it splits at the first frame | current |
+| D18 | What the quiz service owns, and what `quizzable` holds at each grain | current |
+| D19 | Homework reaches working knowledge as its own prompt variable | current |
+| D20 | An exam measures; it does not teach | current |
+| D21 | The visual direction — New England prep school, light-first | current |
+| D22 | Material carries meaning; assessment is not more lesson | current |
+| D23 | The in-lesson checkpoint is a margin question | current |
+| D24 | Radix and the copied shadcn primitives stay | current |
+| D25 | A `top`-tier generation is queued work, not request work | current |
+| D26 | A half-finished exam is a saved answer sheet | current |
+| D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
+| D28 | The mounted-component defect is a class, and is fixed at the boundary | current |
+| D29 | An acceptance test lives in a spec, one per package | current |
+| D30 | Three shells, not one, and the two things all of them share | current |
+| D31 | The resume table is code — `NextAction` — and a refusal speaks twice | current |
+| D32 | The worksheet has one disclosure path, and choosing an option is the hand-in | current |
+| D33 | The exam screen's three states are decided on the server | current |
+| D34 | `final_exam_concepts` is emphasis, not scope, and keeps its name | current |
+
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
 Rejected: A (direct, no discipline — lock-in by accretion), B (OpenRouter — +5.5% fee, extra debug hop, beta features unreachable, buys flexibility with no v1 use).
@@ -52,6 +112,8 @@ Contested cells: transcripts as **messages rows** (not JSON blob — resume, que
 
 ## D7a. Course exclusivity and exit — **one open course per subtopic; exit deletes the row** (resolved 2026-08-23, package 3 session; **exit-deletes amended by D7b**)
 
+> **Superseded — the current rule is D7d.** Exit-deletes went first (D7b), then the terminal status (D7c), then the vocabulary itself (D7d). What survives unamended is the exclusivity invariant and the riders below; read D7d for the standing rule and come here only for why exit ever deleted a row.
+
 Invariant: for each (user, subtopic) at most one course is *open*, where open = any state short of `completed`. Enforced by a partial unique index, not by the 4.2 transition service alone, so concurrent creation cannot slip past it. A completed 101 alongside an open 201 stays legal — only one course writes.
 Exit deletes the course row and its lessons and quiz attempts, behind a confirmation ("exiting deletes all progress; you start again from the beginning"). `completed` stays the machine's only terminal state.
 Rejected: an `abandoned` status — D7's unique (user, subtopic, skill_level) would keep the tombstone forever, so exiting a level once locks the student out of it for good.
@@ -61,6 +123,8 @@ Riders:
 - **4.3 feeds the existing WK in.** `wk.create` overwrites the subtopic document blind today (2.3.2 inputs: transcript/subtopic/skill_level), which under D8 erases accumulated knowledge whenever a *second* course starts in a subtopic — after an exit, and on every 101 → 201 progression. Settled: the prompt gains `prior_wk_doc`, always supplied — the accumulated document, or an explicit "none yet" for the first course in the subtopic. One inventory row rather than a second near-identical prompt, and 2.3.1 has no optional vars, so an explicit empty value is the shape that fits. Landing it updates the 2.3.2 inputs cell, so it lands with 4.3, not before. 5.4.4's erosion guard does not cover this path — it guards `wk.update` — so 4.3 carries its own regression test.
 
 ## D7b. Withdrawal replaces deletion; attempts replace lockout — **amends D7a** (resolved 2026-08-24, package 4 session, Colin; **terminal status superseded by D7c**)
+
+> **Superseded — the current rule is D7d.** Withdrawal-not-deletion and the attempt counter still stand; how the two endings are *stored* was rewritten by D7c and then by D7d.
 
 D7a's exit-deletes-the-row is withdrawn. Quitting a course now stamps `courses.withdrawn_at` and keeps the row; `courses.attempt` (scoped to user × subtopic × skill_level) lets a level be taken again.
 
@@ -82,6 +146,8 @@ Riders:
 - Confirmation copy is no longer a deletion warning. On return: "Looks like you tried this once already — pick up where you left off, or start from scratch?"
 
 ## D7c. Both endings are dates, not statuses — **amends D7b** (resolved 2026-08-24, package 4 session, Colin)
+
+> **Superseded — the current rule is D7d.** The two dates are still the storage; D7d is what decides the vocabulary read back over them.
 
 `completed` leaves `CourseStatus`. A course that passed the final exam keeps `final_exam` as the furthest point it reached and carries `completed_at`; the pipeline has no end state. `CourseTransitions::complete()` stamps it, gated on standing at `final_exam` (6.3). A CHECK forbids `withdrawn_at` and `completed_at` both being set.
 
@@ -538,3 +604,52 @@ A spec's per-item done-conditions prove one item. An acceptance test proves the 
 **The v1 global test — one honest course cycle in a browser and again on a phone, no developer touching the DB — is spent.** It passed 2026-09-07. The cycle it describes is what `docs/system.md` exists to document, so it lands there as the working cycle rather than being restated in nine specs or deleted.
 
 **Rejected — keeping one global test at the repo root.** It would be the last reason for PLAN.md to exist, and it describes v1 rather than any package, so it fits neither the tracker being retired nor a spec.
+
+## D30. Three shells, not one, and the two things all of them share (resolved 2026-09-01, package 8 sessions 8.5/8.7/8.9/8.10, Colin)
+
+**A shell is named for what it frames, and there are three of them.** `StudyShell` frames being taught (8.5.1). `PipelineShell` frames a course being set up — it is `StudyShell`'s rail reduced to the bar it already becomes at ≤767px, because a course with no approved syllabus has no lessons to list (8.7). `AssessmentShell` frames being measured: a rail of ✓ rows and a wine band, no column header — the sheet and the book print their own — and no explainer (8.9).
+
+**`AssessmentShell` is the third shell, and deliberately a third rather than a generalisation of the other two.** The obvious move on reaching the third case is to lift the common parts into one configurable shell; that is the reading this entry exists to refuse. What the assessment artboards draw is neither of the other two, and a shell that takes enough props to be all three stops being named for anything.
+
+**Two things are shared, and they are shared as code, not as a base class.** `components/rail.tsx` holds the crest-and-wordmark head and its hit box, which all three draw. `App\Courses\LessonRail` is the rail's lesson list written once, because the exam rail draws it too — a failed sitting's whole recovery is going back to a lesson, so the exam screen needs the same list the lesson screen has.
+
+**The starter kit's `AppLayout` frames what is not a course.** The dashboard and the module rollup are set in it rather than in a fourth shell (8.10): it is already rail green, it carries the crest and the user menu the flow map reaches settings through, and neither screen's rail holds a progress list for a shell to draw. `app.tsx`'s layout switch returns `null` for `courses/`, `lessons/` and `refreshers/` — those pages are the whole viewport — and `AppLayout` for everything else.
+
+Rejected: **one shell with a `variant` prop.** It puts three unrelated framings behind one name and makes every later change to one of them a change to all three.
+
+## D31. The resume table is code — `NextAction` — and a refusal speaks twice (resolved 2026-09-01, package 8 session 8.7, Colin)
+
+**8.6's "where a resume lands" table is written once, as `App\Courses\NextAction`.** Three callers want to decide where a course picks up: the dashboard card (8.10.1), a resume from the set-aside list (8.7.6), and every pipeline screen's redirect when it finds the course has moved past it. Three implementations of one table is how the table drifts, and the map states plainly that nothing else may decide it.
+
+Its `completed` row lands on the dashboard until 8.10.2 builds `modules.show`, and `NextActionTest` asserts that route's *absence*, so the day it appears the test fails loudly instead of the row staying wrong quietly.
+
+**`ResumeRefusal` splits `CourseNotResumable`'s message in two — the developer's reason and the student's.** The flow map requires a refused resume to say *which* of the three checks failed, and the sentence that tells a developer which invariant held is not the sentence a student should read. One exception carrying one string cannot do both, so the refusal is its own value object with both.
+
+Rejected: **deciding the next action in the React card.** It is the same rule in TypeScript, at the one layer that cannot be tested against the state machine that owns it.
+
+## D32. The worksheet has one disclosure path, and choosing an option is the hand-in (resolved 2026-09-01, package 8 session 8.9, Colin)
+
+**`Worksheet` holds what happens *on* the photocopy sheet** — the answer, the reveal, the count, the onward move — so homework and all three refresher grains share one disclosure path rather than two that can drift. `QuizSheet` is the paper; `Worksheet` is the behaviour on it.
+
+**The artboard's "Hand it in" button is not built** (8.9.1). `POST …/answers` takes one question at a time and discloses that question's key in its reply (6.2, 6.4), so a batching button would either record nothing until the last question — throwing away every answer a student made along the way — or be a no-op over answers already recorded. The rail's own words on the same artboard are "Answers are kept as you go", which is the truth of the endpoint. Choosing an option *is* the hand-in, and the footer carries the count and the onward move in the button's place.
+
+This is the opposite of the final exam, and deliberately: the exam is sat as a whole and discloses nothing until hand-in (D20), because it is a gate. A worksheet is practice, and practice that withholds the answer teaches nothing.
+
+## D33. The exam screen's three states are decided on the server (resolved 2026-09-01, package 8 session 8.9, Colin)
+
+S9 and S10 are one URL (8.6), so the exam screen has three states — closed, open, and result — and **the server picks which one renders**, from `courses.status` and the last sitting. Deciding it in the browser would put the rule in two places, and the browser's copy is the one no test of the state machine reaches.
+
+**`FinalExam::lastSitting()` exists for this**, over `QuizGrader::lastSitting()`, which keeps *attempt-is-the-sitting-number* in the class that writes the attempt row. A pass or a fail has to survive a reload rather than living only in the reply to the POST that produced it, because S10 is a state of S9 and the student can arrive at it by typing the URL.
+
+## D34. `final_exam_concepts` is emphasis, not scope, and keeps its name (resolved 2026-09-06, packages 6 and 8, items 6.3.3 and 8.7.7, Colin)
+
+Since 6.3.1 the exam is written across every lesson whatever this list says, so the field no longer states the exam's scope. It states where the exam puts its **weight**. The claim was corrected in both places it was made:
+
+- **On the screen** (8.7.7). The syllabus panel read "The final exam draws on" over the list, so a student revising the four slugs shown was revising for a fraction of what the exam asks.
+- **In the schema** (rider, same session). `SyllabusSchema`'s field description read "Slugs the final exam draws on", and `prompts/syllabus/generate.md` never names the field — so that one string was the *only* instruction the generator got about it. A list described as a scope is how the first real course declared 44 slugs against a 12-question exam and made the old coverage rule unsatisfiable. It now says where the weight falls, that the exam is written across every lesson whatever the list holds, and that a longer list buys no coverage.
+
+**The field keeps its name.** Renaming it to `course_concepts` "so refreshers can use it" was considered and dropped: all three refresher grains already build their vocabulary from the lessons themselves, so the rename buys no caller and costs a migration plus every stored syllabus document.
+
+**`concept_tag` stays a single value.** "Prefer questions that combine two concepts" remains advice in the prompt; the schema is shared with checkpoints, homework and refreshers, and widening it there to serve the exam alone would change four consumers for one.
+
+No separate table or model for final exams — see D26.
