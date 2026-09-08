@@ -1,6 +1,6 @@
 # OpenTutor — Build Plan
 
-*The overarching tracker. Each package has a detailed spec in `docs/specs/`; spec item numbers (e.g. 2.4, 5.2.2) are the shared vocabulary across sessions. Update the status table at the end of every session.*
+*Scheduled for retirement (ledger D27, spec 9.7). What survives here is the dependency graph and the global acceptance test. **Do not write session status into this file** — package state lives in its spec's done-conditions, and where a fact belongs is [CLAUDE.md](CLAUDE.md)'s tier table.*
 
 ## Global acceptance test (definition of done for v1)
 

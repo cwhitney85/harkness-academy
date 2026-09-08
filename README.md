@@ -26,7 +26,8 @@ composer ci:check  # the above plus eslint, prettier, tsc
 
 ## Where things are decided
 
-- [PLAN.md](PLAN.md) — status table, dependency graph, acceptance test.
+- [docs/system.md](docs/system.md) — what the app does, end to end.
 - [docs/specs/](docs/specs/) — per-package specs; item numbers are the shared vocabulary.
-- [docs/02-design.md](docs/02-design.md) — decision ledger.
-- [CLAUDE.md](CLAUDE.md) — conventions for build sessions.
+- [docs/02-design.md](docs/02-design.md) — decision ledger, indexed at its head.
+- [docs/lessons.md](docs/lessons.md) — tooling traps and incident postmortems.
+- [CLAUDE.md](CLAUDE.md) — the document tiers, and the conventions for build sessions.

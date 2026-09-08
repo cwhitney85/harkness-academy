@@ -73,7 +73,7 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 
 **[`routes/lessons.php`](../routes/lessons.php)** — the teaching loop. The lesson screen; a stream per section; a question; a highlight explanation; a checkpoint answer; completion.
 
-**[`routes/assessment.php`](../routes/assessment.php)** — everything graded outside a lesson. Homework and its answers; the final exam, opening it, saving the answer sheet, and handing in a sitting; the three doors that create a refresher (lesson, subtopic, module) and the refresher screen and its answers.
+**[`routes/assessment.php`](../routes/assessment.php)** — everything graded outside a lesson. Homework and its answers; the final exam, opening it, saving a sitting in progress, and handing one in; the three doors that create a refresher (lesson, subtopic, module) and the refresher screen and its answers.
 
 **[`routes/web.php`](../routes/web.php)** — the entry redirect, the dashboard, the module rollup, the terms page and the install-instructions page. It requires the other three files, plus **[`routes/settings.php`](../routes/settings.php)**, which holds profile, password, security and the passkey endpoint password managers read. **[`routes/console.php`](../routes/console.php)** defines no routes.
 
@@ -90,7 +90,7 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 | `lesson_messages` | the lesson transcript, including checkpoint turns |
 | `lesson_pipeline_steps` | which post-completion steps have run for a lesson |
 | `quizzes`, `quiz_attempts` | all four kinds — checkpoint, homework, final, refresher — through one service |
-| `exam_answer_sheets` | one row per (exam, student, sitting): selections only, never verdicts; deleted at hand-in |
+| `exam_answer_sheets` | a sitting in progress ([6.3.4](specs/06-assessment.md)) |
 | `generation_requests` | one row per (course, kind) — the wait for a queued generation |
 | `memories`, `memory_versions` | the memory tree and a version on every write |
 | `usage_events` | one row per AI call: feature, tier, model, tokens in/cached/out, latency, cost |

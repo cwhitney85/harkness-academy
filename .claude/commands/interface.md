@@ -14,9 +14,9 @@ If the browser tools are unavailable, say so and work from `docs/design/canvas/*
 
 ## 2. Then read, in this order
 
-1. `PLAN.md` — package 8's status row.
-2. `docs/specs/08-interface.md` — this section, and 8.3 (the language) whichever section you are on.
-3. `docs/02-design.md` **D21–D24** — direction, materials, checkpoint, Radix. These are settled; don't re-litigate them.
+1. `docs/specs/08-interface.md` — this section, its decisions block at the head, and 8.3 (the language) whichever section you are on.
+2. `docs/02-design.md` **D21–D24** — direction, materials, checkpoint, Radix. These are settled; don't re-litigate them. **D30–D33** are the shells and the screens' contracts with the engines.
+3. `docs/system.md` if you need to know what the app currently does.
 4. The artboard source for your section, for exact values.
 
 ## 3. Which artboards belong to which section
@@ -49,9 +49,9 @@ The artboards are fixed-width mockups built to be looked at. They are not a comp
 
 ## 5. Verify against the done-conditions, not against the picture
 
-**Check what is in the database before you assume it needs seeding.** Since 2026-09-02 Colin has been taking a real course on the development database, and `InterfaceFixtureSeeder` deletes every course belonging to `colin@opentutor.test` — his own — before writing its six states. It is out of `DatabaseSeeder` for that reason and never runs as a side effect of `--seed`.
+**Check what is in the database before you assume it needs seeding.** The development database holds a real course — CLAUDE.md's first standing convention says what that forbids, and it is not optional here.
 
-A real course exercises these screens better than the fixture did, so work against it. If a done-condition genuinely needs one of the six states that is not there — a set-aside course, an unsat exam, a completed module — ask Colin before running `php artisan db:seed --class=InterfaceFixtureSeeder`, take a restore point first (`php artisan db:backup`), and never run `migrate:fresh`.
+A real course exercises these screens better than the fixture did, so work against it. If a done-condition genuinely needs one of the six states that is not there — a set-aside course, an unsat exam, a completed module — ask Colin first.
 
 Each spec item states what demonstrates it is done. Those are the acceptance tests — several are mechanically checkable (`no oklch(… 0 0)` remains; the pre-answer DOM contains no `correct_option_id`; no horizontal scroll at 390px). Run them.
 
@@ -64,4 +64,4 @@ Check every screen at 1440px **and** 390px before calling an item done. Browser-
 - **If the visual language itself changes, `docs/design/canvas/` and `resources/css/app.css` change in the same commit** (8.1.3). Re-seed the canvas from the committed source and republish to the URL above; never extract the published page.
 - Commit at done-condition granularity, spec item number in the message (e.g. `8.8.3: the checkpoint asks from the margin`). No signing, co-author trailers, or attribution lines.
 
-End of session: update PLAN.md's package 8 row with which done-conditions now pass.
+End of session: report which done-conditions now pass. Package state lives in the spec's done-conditions, not in a status table.
