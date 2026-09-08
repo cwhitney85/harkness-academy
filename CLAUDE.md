@@ -22,6 +22,8 @@ Every document in this repo is one of three tiers, and **every fact has exactly 
 - **What this session tried, broke, or abandoned** → the unit's plan file, and nowhere else.
 - **The roadmap** → [README.md](README.md), which is the human entry point.
 
+The 2026-08-21 planning documents — [docs/00-frame.md](docs/00-frame.md), [docs/01-research.md](docs/01-research.md), [docs/03-spec.md](docs/03-spec.md) — are durable but **historical**: they record how the shape was arrived at, and nothing new is written into them. [`docs/design/canvas/`](docs/design/canvas/) is durable and is the design source of record (below).
+
 [PLAN.md](PLAN.md) holds the dependency graph and is scheduled for retirement (ledger D27, spec 9.7). Don't read it to find out where the work stands and don't write status into it — package state lives in its spec's done-conditions.
 
 ## Before writing any code
