@@ -5,6 +5,19 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type { GradedAnswer, QuizQuestion } from '@/types';
 
 /**
+ * How far the questions sit from the prose's own left edge on desktop: the
+ * hand's 132px margin and the 18px gutter beside it. Anything that has to line
+ * up with the questions rather than with the prose — the screen's Continue
+ * button, which follows the last Answer (8.8.8) — clears the same width, so
+ * the two numbers below are the only place it is stated.
+ *
+ * A margin, not padding: `measure` already spends its padding on the gutter
+ * that keeps prose off the edge of a phone, and overriding that would land the
+ * button 20px short of the questions rather than under them.
+ */
+export const questionsInset = 'md:ml-[150px]';
+
+/**
  * The in-lesson checkpoint — spec 8.8.3, direction D23, artboard
  * `CheckpointOptions` treatment C.
  *

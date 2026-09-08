@@ -1,7 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import CheckpointQuestion from '@/components/checkpoint-question';
+import CheckpointQuestion, {
+    questionsInset,
+} from '@/components/checkpoint-question';
 import LessonSection from '@/components/lesson-section';
 import StudyShell from '@/components/study-shell';
 import { Button } from '@/components/ui/button';
@@ -385,7 +387,15 @@ export default function LessonScreenPage({
                             <Button
                                 size="action"
                                 disabled={busy}
-                                className="w-full md:w-auto"
+                                className={[
+                                    'w-full md:w-auto',
+                                    // Under the Answer button, not under the
+                                    // margin note beside it (8.8.8). With no
+                                    // checkpoint on screen there is nothing
+                                    // to follow, and the button keeps the
+                                    // prose's own left edge.
+                                    checkpoint ? questionsInset : '',
+                                ].join(' ')}
                                 onClick={() => {
                                     if (next > total) {
                                         complete();
