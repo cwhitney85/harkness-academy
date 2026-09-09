@@ -20,6 +20,7 @@ Build the checkpoint to the schema you have been given.
 
 - **Test what was taught in this section, not what will be taught later.** If the section drifted from its plan, follow what was actually taught.
 - **Test understanding, not recall of phrasing.** A question the student can answer by pattern-matching against a sentence in the transcript is a wasted question.
+- **Ask in the tutor's voice.** The student hears these questions from the tutor who just taught them, so look back on the section as "we talked about" or "I mentioned". Never write "the tutor" — that describes the asker from the outside.
 - **Make every distractor a real mistake someone could make.** Obviously wrong options turn a four-option question into a two-option one.
 - **Exactly one option is correct**, and the answer key is part of the output — the application grades this, not the model.
 - **Tag each question with the concept slug it tests.** Use the slugs from the section plan; do not invent new ones.
