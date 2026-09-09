@@ -69,6 +69,26 @@ class SyllabusGenerationTest extends TestCase
     }
 
     #[Test]
+    public function prose_the_model_escaped_one_level_too_many_is_stored_as_prose(): void
+    {
+        $syllabus = CourseSyllabusFactory::exampleSyllabus();
+        $syllabus['overview'] = 'Two paragraphs.\n\nAnd the second.';
+        $syllabus['lessons'][0]['objective'] = 'Place the period on a timeline (c. 476\u20131500).';
+        $syllabus['lessons'][0]['title'] = 'Escaping with \d in regular expressions';
+
+        $this->scriptModel([$syllabus]);
+
+        $stored = $this->generator()->first($this->course())->syllabus_json;
+
+        $this->assertSame("Two paragraphs.\n\nAnd the second.", $stored['overview']);
+        $this->assertSame('Place the period on a timeline (c. 476–1500).', $stored['lessons'][0]['objective']);
+
+        // Conservative by design: a string that is not a whole JSON string
+        // body is left exactly as the model wrote it (spec 4.8).
+        $this->assertSame('Escaping with \d in regular expressions', $stored['lessons'][0]['title']);
+    }
+
+    #[Test]
     public function the_prompt_carries_the_documents_and_the_depth(): void
     {
         $this->scriptModel([CourseSyllabusFactory::exampleSyllabus()]);

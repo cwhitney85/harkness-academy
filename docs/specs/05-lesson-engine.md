@@ -32,7 +32,6 @@ Design ground rules (ledger D4/D5): the lesson session is the one real agent; co
 ## Dogfood repair (2026-09-07)
 
 - **5.7 MUST** — A checkpoint question speaks as the tutor, not about the tutor. Generated questions refer to "the tutor" in the third person while the tutor is the one asking them. *Done: `prompts/checkpoint/generate.md` states the voice rule; generated questions say "we talked about" or "I mentioned", never "the tutor".*
-- **5.8 MUST** — Escape sequences do not reach the screen as literal text. The literal text `\u2014` has been seen on screen where an em dash belongs. `Prose` in `lesson-section.tsx` passes text through unchanged, so the escape is already in stored content; **where it is introduced is unlocated**. *Done: `\u2014` never reaches the screen as literal text; the unit's plan file records where the escape entered. The item moves to package 8 if the cause proves to be in rendering.*
 
 ## Acceptance test
 
@@ -43,6 +42,6 @@ On the first lesson of an active course:
 1. Open it. The section title and "N of M" are painted before the first token of prose arrives, and the first token arrives in under three seconds.
 2. Read the section. Ask a question in line and get an answer. Highlight a phrase and ask for it explained — the explanation appears beside the prose and the lesson transcript holds the section and the question and **not** the explanation, byte for byte what it held before.
 3. Between sections, answer the checkpoint. It speaks as the tutor rather than about one, its options carry no answer key before the answer is sent, and the verdict and explanation come back from the server. Getting it wrong does not stop Continue.
-4. Kill the browser mid-section and reopen the lesson. The transcript and the section index are where they were, with exactly one message row per completed turn and no duplicated section. No escape sequence has reached the screen as literal text.
+4. Kill the browser mid-section and reopen the lesson. The transcript and the section index are where they were, with exactly one message row per completed turn and no duplicated section.
 5. Finish the lesson. The completion screen renders immediately and the status is irrevocable. Within the queue's own time: the lesson summary exists, reports only concepts the lesson declared, and is rendered into the memory tree; working knowledge has a new version in which every previously known concept still appears or is explicitly demoted; homework exists; the next lesson is unlocked.
 6. Kill the worker mid-chain instead, and repeat step 5. The student still sees completion; `artisan lessons:retry-pipeline` finishes the chain, and re-running it duplicates nothing.

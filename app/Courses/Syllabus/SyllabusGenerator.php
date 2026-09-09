@@ -198,7 +198,45 @@ final class SyllabusGenerator
             throw new SyllabusUnusable('The model returned no structured syllabus.');
         }
 
+        $syllabus = self::asProse($syllabus);
+
         self::assertCoherent($syllabus);
+
+        return $syllabus;
+    }
+
+    /**
+     * Undo a model that escaped its own prose one level too many (spec 4.8).
+     *
+     * A generation on 2026-09-02 returned objectives reading `c. 476\u20131500`
+     * and an overview with `\n\n` where a paragraph break belonged. Every
+     * consumer takes these strings as display text -- the syllabus screen, the
+     * lesson completion screen, and the GUIDANCE document the tutor reads back
+     * as context -- and none can tell the difference, so the repair belongs
+     * here, at the one place a syllabus is accepted.
+     *
+     * A string is repaired only if the whole of it reads as a valid JSON
+     * string body; anything else is left exactly as it came. That keeps the
+     * decode conservative -- a stray backslash repairs nothing rather than
+     * something -- at the cost of taking a deliberate `\n` at its word, which
+     * no syllabus has yet wanted to write.
+     *
+     * @param  array<string, mixed>  $syllabus
+     * @return array<string, mixed>
+     */
+    private static function asProse(array $syllabus): array
+    {
+        array_walk_recursive($syllabus, static function (mixed &$value): void {
+            if (! is_string($value)) {
+                return;
+            }
+
+            $decoded = json_decode('"'.str_replace('"', '\\"', $value).'"');
+
+            if (is_string($decoded)) {
+                $value = $decoded;
+            }
+        });
 
         return $syllabus;
     }

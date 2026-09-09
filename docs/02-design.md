@@ -65,6 +65,7 @@
 | D36 | The interview opener is a wire artefact, not a turn | current |
 | D37 | The question cap is not a third termination door | **superseded by D38** — a cap that ends the interview interrupts the student |
 | D38 | The question budget asks for an ending and never imposes one | current |
+| D39 | Over-escaped model prose is decoded where the syllabus is accepted | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -724,3 +725,19 @@ Rejected: **stating the number in the prompt.** That is what `prompts/interview/
 **Accepted cost: an interview can run long, and nothing in the product stops it.** That is the trade taken deliberately. The reversed trade — a bounded interview that sometimes cuts a student off mid-thought — was built, run against a real course, and rejected on the evidence.
 
 Rejected: **removing the budget and keeping only prompt guidance**, which is what "tell the model to try to keep it limited" would have been. It gives up the escalation for nothing: the pacing variable is already there, and a fixed instruction cannot know when the interview has gone on long enough.
+
+## D39. Over-escaped model prose is decoded where the syllabus is accepted (resolved 2026-09-08, package 5 item 5.8 → package 4 item 4.8, Colin)
+
+**Chosen: `SyllabusGenerator` decodes a string whose whole body reads as JSON, once, on the way in.**
+
+The bug was a literal `\u2014` on the lesson completion screen. The renderer was the first suspect and the wrong one: `Prose` passes text through unchanged, and no `lesson_messages` row has ever held the sequence. One `syllabus.generate` call on 2026-09-02 escaped its own prose a second time — eight fields with `\u2014`, `\u2013` or `\n\n` where an em dash, an en dash or a paragraph break belonged — and every consumer downstream printed what it was given. The other three syllabi in the database are clean, so this is a model that misbehaved once, not a code path that always does.
+
+**The repair belongs where the syllabus is accepted because that is the last place anything knows the difference.** Past that point the string is display text to the syllabus screen, to the lesson completion screen, and to the GUIDANCE document the tutor reads back as its own context — three consumers, one of which is a prompt, none of which can tell a dash from an escape of one.
+
+**The decode is conservative, and that is a deliberate limit.** A string is repaired only if the whole of it parses as a JSON string body; a stray backslash repairs nothing rather than something. The cost is that a syllabus which genuinely wanted to write `\n` would have it taken at its word. No syllabus has wanted to, and a course that teaches escape sequences would name them in a lesson section, not in a course objective.
+
+**Repair rather than reject.** 4.5.1 fails closed, so a rejection here would cost a `top`-tier retry and then refuse the student a course over a dash. The defect is cosmetic and the fix is lossless in every case the guard fires on.
+
+Rejected: **normalizing in the gateway (2.1) for every structured response.** It is the widest coverage and the wrong altitude — no spec item asks for it, and it would silently rewrite model text for a tutor that may one day teach JSON. The syllabus is the only place the defect has been seen and the only place all three consumers meet.
+
+Rejected: **repairing the data and adding no guard.** One generation in four is not a rate worth ignoring, and the next occurrence would cost the same investigation from scratch.

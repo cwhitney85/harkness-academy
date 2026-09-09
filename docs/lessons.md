@@ -95,3 +95,16 @@ One jsdom gap to know when writing such a test: `use-mobile` calls `matchMedia` 
 3. **Streaming is a partial-input problem.** A paragraph mid-arrival always holds an unclosed opener. Treating it as emphasis that has not finished yet is right and needs no special case; printing it is a stray asterisk on every section the tutor teaches.
 
 It was visible on screen for as long as the course had run. Nobody looked at the prose with an eye for *this*, and no test rendered anything but well-formed input.
+
+## T8. A literal `\u2014` on screen was three hops upstream of the renderer
+
+*Found 2026-09-08 on the first real course, repaired as spec item 4.8 ([D39](02-design.md)).*
+
+The symptom was an em dash printed as `\u2014` on a lesson screen, and the obvious suspect was the thing that had just been fixed for [T7](#t7-the-model-writes-bold-and-the-student-read-the-asterisks) — the prose renderer. It was innocent. `Prose` passes text through unchanged, and **no `lesson_messages` row has ever contained the sequence**; the string was not lesson prose at all but `lesson.objective`, printed by the lesson completion screen out of a syllabus generated six days earlier.
+
+**Grep the data before reading the renderer.** One walk of every text column in the development database found the eight affected fields, the one `course_syllabi` row they belonged to, and the three clean rows that proved it was a single bad generation rather than a code path — in less time than reading one component took. A rendering defect and a storage defect look identical on screen and are not adjacent in the code.
+
+**The same generation also wrote `\n\n` for a paragraph break, which nobody had noticed.** Whatever made the model escape its output twice did it to every string in the document, so the search is for the class of defect and not for the character that was reported.
+
+Model-facing documents carry it too: `GUIDANCE.md` renders from the same JSON, so the tutor had been reading the escapes back as its own context for six days. Repairing stored prose means re-rendering everything derived from it.
+
