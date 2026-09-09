@@ -67,6 +67,7 @@
 | D38 | The question budget asks for an ending and never imposes one | current |
 | D39 | Over-escaped model prose is decoded where the syllabus is accepted | current |
 | D40 | Where the correct option sits is the writer's, and it is dealt out rather than shuffled | current |
+| D41 | A validation error names every rule the field broke, and the joining is Inertia's boundary | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -758,3 +759,17 @@ Rejected: **rotating the key through the positions**. Perfectly even and perfect
 Rejected: **shuffling in the client at render**. It is one line in the component and it moves options under the student on every re-render, and the saved answer sheet (D26) records an option id against a paper whose order the server does not know.
 
 Rider: **exactly four options, not three to four** (6.6.1). `MIN_OPTIONS` was 3, so a large share of questions had no D for the dealer to choose, and a three-option question is a third of a coin flip more guessable than a four. The four prompts that write questions now say four, and say why the options must stand alone — the application decides where each one appears, so "all of the above" is wrong by the time the student reads it.
+
+## D41. A validation error names every rule the field broke, and the joining is Inertia's boundary (resolved 2026-09-08, package 1 item 1.5, dogfood repair)
+
+The password rules reached the register, reset and settings-security screens only as the WebKit `passwordrules` attribute, which renders no visible text. A student therefore learned the rules one failed submission at a time — and could not learn them faster than that, because Inertia's `resolveValidationErrors` keeps `errors.field` a string by dropping all but the first message a field failed on. Two rules broken, one rule named, one more round trip.
+
+**The lines are derived from `Password::defaults()`, not written out.** `App\Auth\PasswordRequirements::inWords()` reads `appliedRules()` — public on the rule — and returns one readable line per condition. The rule differs by environment (`min(8)` locally, `min(12)` plus four character classes and the breach check in production), so a hand-written list would be wrong in one of the two, and wrong silently.
+
+**The joining happens in `HandleInertiaRequests`, once, for every field.** Inertia already carries `$withAllErrors`; turning it on and joining each field's messages back into one string means `errors.password` names all of them while staying the type every `<InputError message=>` in the app reads.
+
+Rejected: **`$withAllErrors = true` alone**, leaving `errors.field` a `string[]`. Two lines of middleware, and then every screen, every `InputError` and every prop type in the app changes shape to serve one field on three screens.
+
+Rejected: **joining only the password field**, at the three call sites. Cheaper to write and it makes the same defect a standing one: the next field with two rules on it is silently back to naming one.
+
+Rejected: **marking the failed lines in the visible list** instead of naming them in the error. It needs the failures matched back to the lines that produced them — a second mapping to keep true — and the error text would then be the only thing on screen that did not say what was wrong.

@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +12,15 @@ type Props = {
     token: string;
     email: string;
     passwordRules: string;
+    passwordRequirements: string[];
 };
 
-export default function ResetPassword({ token, email, passwordRules }: Props) {
+export default function ResetPassword({
+    token,
+    email,
+    passwordRules,
+    passwordRequirements,
+}: Props) {
     return (
         <>
             <Head title="Reset password" />
@@ -52,6 +59,11 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 autoFocus
                                 placeholder="Password"
                                 passwordrules={passwordRules}
+                                aria-describedby="password-requirements"
+                            />
+                            <PasswordRequirements
+                                id="password-requirements"
+                                requirements={passwordRequirements}
                             />
                             <InputError message={errors.password} />
                         </div>

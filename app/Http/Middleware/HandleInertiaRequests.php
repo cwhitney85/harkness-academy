@@ -17,6 +17,13 @@ class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     /**
+     * Hand every message a field failed on to the parent, not just the first.
+     *
+     * @var bool
+     */
+    protected $withAllErrors = true;
+
+    /**
      * Determines the current asset version.
      *
      * @see https://inertiajs.com/asset-versioning
@@ -24,6 +31,35 @@ class HandleInertiaRequests extends Middleware
     public function version(Request $request): ?string
     {
         return parent::version($request);
+    }
+
+    /**
+     * Report every message a field failed on, as one string.
+     *
+     * Inertia keeps `errors.field` a string by dropping all but the first
+     * message, so a password that breaks two rules names one of them and the
+     * student learns the rest one submission at a time (spec 1.5). Joining
+     * them here names them all without changing the shape a screen reads.
+     *
+     * Post: every field is a single string, as Inertia's default promises.
+     */
+    public function resolveValidationErrors(Request $request): object
+    {
+        return $this->joinMessages(parent::resolveValidationErrors($request));
+    }
+
+    /**
+     * Pre:  each value is a list of messages, or -- under a named error bag --
+     *       an object of fields holding those lists.
+     */
+    private function joinMessages(object $errors): object
+    {
+        return (object) array_map(
+            fn (array|object $messages): string|object => is_array($messages)
+                ? implode(' ', $messages)
+                : $this->joinMessages($messages),
+            get_object_vars($errors),
+        );
     }
 
     /**

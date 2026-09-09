@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Auth\PasswordRequirements;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
@@ -42,6 +43,7 @@ class SecurityController extends Controller
                 : [],
             /* @end-chisel-passkeys */
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'passwordRequirements' => PasswordRequirements::inWords(),
         ];
 
         /* @chisel-2fa */

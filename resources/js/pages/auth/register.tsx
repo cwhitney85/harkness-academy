@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,9 +13,13 @@ import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
+    passwordRequirements: string[];
 };
 
-export default function Register({ passwordRules }: Props) {
+export default function Register({
+    passwordRules,
+    passwordRequirements,
+}: Props) {
     return (
         <>
             <Head title="Register" />
@@ -69,6 +74,11 @@ export default function Register({ passwordRules }: Props) {
                                     name="password"
                                     placeholder="Password"
                                     passwordrules={passwordRules}
+                                    aria-describedby="password-requirements"
+                                />
+                                <PasswordRequirements
+                                    id="password-requirements"
+                                    requirements={passwordRequirements}
                                 />
                                 <InputError message={errors.password} />
                             </div>

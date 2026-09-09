@@ -4,6 +4,7 @@ import SecurityController from '@/actions/App/Http/Controllers/Settings/Security
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
@@ -18,6 +19,7 @@ import ManageTwoFactor from '@/components/manage-two-factor';
 
 type Props = {
     passwordRules: string;
+    passwordRequirements: string[];
 } /* @chisel-passkeys */ & ManagePasskeysProps /* @end-chisel-passkeys */ /* @chisel-2fa */ &
     ManageTwoFactorProps /* @end-chisel-2fa */;
 
@@ -90,6 +92,12 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder="New password"
                                     passwordrules={props.passwordRules}
+                                    aria-describedby="password-requirements"
+                                />
+
+                                <PasswordRequirements
+                                    id="password-requirements"
+                                    requirements={props.passwordRequirements}
                                 />
 
                                 <InputError message={errors.password} />
