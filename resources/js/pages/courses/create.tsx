@@ -3,6 +3,11 @@ import { useState } from 'react';
 
 import PipelineShell from '@/components/pipeline-shell';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import InputError from '@/components/input-error';
 
 /**
@@ -251,8 +256,9 @@ export default function CreateCourse({
                             </ul>
 
                             <label className="mt-5 block">
-                                <span className="label">
+                                <span className="label flex items-center gap-1.5">
                                     Or name it yourself
+                                    <FreeTextHint module={module.title} />
                                 </span>
                                 <input
                                     type="text"
@@ -268,14 +274,6 @@ export default function CreateCourse({
                                     }
                                     className="mt-2 h-11 w-full border border-hairline bg-surface px-3.5 text-[17px] placeholder:text-muted-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brass"
                                 />
-                                <span className="mt-2 block text-[15px] leading-snug text-muted-ink">
-                                    It doesn't have to be on the list — anything
-                                    that belongs under {module.title} works. A
-                                    name that turns out to belong to another
-                                    subject is turned away, and the further a
-                                    topic sits from the subject, the odder the
-                                    course it makes.
-                                </span>
                                 <InputError message={form.errors.name} />
                             </label>
                         </Field>
@@ -333,6 +331,50 @@ export default function CreateCourse({
                 </div>
             </div>
         </PipelineShell>
+    );
+}
+
+/**
+ * What the scope check will do with what is typed here (spec 4.9).
+ *
+ * The check is invisible until it refuses, and a student who has just been
+ * turned away should have been told beforehand that they could be. It hangs
+ * off the label rather than sitting under the field because the catalog above
+ * is what most students want, and a paragraph of caveat under the input reads
+ * as a warning about the whole screen.
+ *
+ * Opens on click as well as on hover and focus: hover is not a thing on a
+ * phone, and this is a PWA.
+ */
+function FreeTextHint({ module }: { module: string }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Tooltip open={open} onOpenChange={setOpen}>
+            <TooltipTrigger
+                type="button"
+                aria-label="About naming your own topic"
+                onClick={(event) => {
+                    // The trigger sits inside the field's own <label>, so
+                    // without this a tap lands on the input and raises the
+                    // keyboard over the thing it just opened.
+                    event.preventDefault();
+                    setOpen((shown) => !shown);
+                }}
+                className="flex size-[18px] items-center justify-center rounded-full border border-hairline text-[11px] text-muted-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+            >
+                ?
+            </TooltipTrigger>
+            <TooltipContent
+                side="top"
+                className="max-w-xs rounded-none px-3 py-2 text-[13px] leading-snug"
+            >
+                Pick any topic under {module} you don't see listed here. A topic
+                that turns out to belong to another subject or is not covered by
+                OpenTutor is turned away. This is experimental and could produce
+                odd results if it does not adhere to the subject.
+            </TooltipContent>
+        </Tooltip>
     );
 }
 
