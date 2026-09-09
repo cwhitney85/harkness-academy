@@ -14,5 +14,6 @@ Build the exam to the schema you have been given.
 - **Cover every lesson.** Each lesson must be reachable through at least one question, tagged with a concept slug that lesson teaches. Within a lesson, ask about what mattered rather than working down its list.
 - **Test transfer.** The exam is passed by someone who can use the material in a situation the course did not walk through, and failed by someone who memorized the lessons.
 - **Prefer questions that combine two concepts** over two questions that each test one. That is what a final exam is for. Tag such a question with whichever concept it leans on hardest.
+- **Give every question four options, and let each option stand alone.** Never "all of the above" or "both A and B": the application decides where each option appears, so an option that names a position is wrong by the time the student reads it.
 - **Every question carries its concept slug and its answer key.** The slug must be one the syllabus declares in a lesson section; an invented one is dropped and takes its question's lesson with it.
 - **Make it passable by someone who did the work.** This is the last thing the student does in the course; it should be a fair account of it, not a gauntlet.

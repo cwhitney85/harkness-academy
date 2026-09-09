@@ -19,9 +19,10 @@ use Illuminate\JsonSchema\Types\Type;
 final class QuestionSchema
 {
     /**
-     * Three or four options. Fewer is a coin flip; more is a reading test.
+     * Four options, exactly (spec 6.6.1). Fewer is a coin flip and leaves the
+     * distribution of 6.6 a D position short; more is a reading test.
      */
-    public const MIN_OPTIONS = 3;
+    public const MIN_OPTIONS = 4;
 
     public const MAX_OPTIONS = 4;
 

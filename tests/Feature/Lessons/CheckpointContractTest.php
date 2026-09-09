@@ -55,7 +55,8 @@ class CheckpointContractTest extends TestCase
 
         $this->assertSame(1, CheckpointSchema::MIN_QUESTIONS);
         $this->assertSame(3, CheckpointSchema::MAX_QUESTIONS);
-        $this->assertSame(3, QuestionSchema::MIN_OPTIONS);
+        // Four, exactly: 6.6's distribution has no D to choose otherwise.
+        $this->assertSame(4, QuestionSchema::MIN_OPTIONS);
         $this->assertSame(4, QuestionSchema::MAX_OPTIONS);
     }
 

@@ -333,6 +333,8 @@ class AssessmentScreenTest extends TestCase
                         'options' => [
                             ['id' => 'a', 'text' => '«e», every time'],
                             ['id' => 'b', 'text' => 'None of them; all five are pure'],
+                            ['id' => 'c', 'text' => '«o», before another vowel'],
+                            ['id' => 'd', 'text' => '«i», at the end of a word'],
                         ],
                         'correct_option_id' => 'b',
                         'explanation' => 'All five Spanish vowels are pure.',

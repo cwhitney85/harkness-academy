@@ -2,7 +2,7 @@
 
 *Provides: quiz service (6.1) — the fixed contract parallel lanes build against. Consumes: 2, 3, 4 (syllabus concepts), 5 (SUMMARY docs, completion pipeline).*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D12](../02-design.md) 6.1 owns the service, package 5 landed the tables · [D18](../02-design.md) what the quiz service owns at each grain · [D19](../02-design.md) homework reaches WK as its own prompt variable · [D20](../02-design.md) an exam measures, it does not teach · [D25](../02-design.md) opening an exam is queued work · [D26](../02-design.md) a half-finished exam is a saved answer sheet · [D32](../02-design.md) a worksheet discloses as it goes; the exam does not · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) `final_exam_concepts` is emphasis, not scope. Postmortem: [T5](../lessons.md).
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D12](../02-design.md) 6.1 owns the service, package 5 landed the tables · [D18](../02-design.md) what the quiz service owns at each grain · [D19](../02-design.md) homework reaches WK as its own prompt variable · [D20](../02-design.md) an exam measures, it does not teach · [D25](../02-design.md) opening an exam is queued work · [D26](../02-design.md) a half-finished exam is a saved answer sheet · [D32](../02-design.md) a worksheet discloses as it goes; the exam does not · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) `final_exam_concepts` is emphasis, not scope · [D40](../02-design.md) the writer deals the key a position, and there are four options to deal. Postmortem: [T5](../lessons.md).
 
 - **6.1 MUST** — Polymorphic `quizzes` + `quiz_attempts` serving all four types (checkpoint / homework / final / refresher) through one service. *Done: four types create rows via one service.*
 - **6.2 MUST** — Homework: quiz + suggested reading on lesson completion (rides 5.4.1); result feeds next WK update. *Done: homework attempt visible in WK diff.*
@@ -17,8 +17,8 @@
 
 ## Dogfood repair (2026-09-07)
 
-- **6.6 MUST** — The correct option's position is distributed, not left to the model. No shuffle exists anywhere in `app/` or `resources/js/`: options render in the order the model emitted them and the model chooses `correct_option_id`, and observed checkpoints cluster on A and B. *Done: across 40 generated questions no option position holds the correct answer more than 40% of the time; a test asserts the distribution over a fixed set.*
-  - **6.6.1 SHOULD** — Four options become the norm rather than the ceiling. `QuestionSchema::MIN_OPTIONS` is 3, so many questions have no D to choose. *Done: the constants express the intended shape; a D position exists to be chosen.*
+- **6.6 MUST** — The correct option's position is distributed, not left to the model. `Quizzes::create()` deals each question's key a position as the quiz is written — least-used-first within the document, ties broken at random, only the key moving ([D40](../02-design.md)) — because it is the single writer all four kinds reach. Before it did, options rendered in the order the model emitted them and observed checkpoints clustered on A and B. *Done: across 40 generated questions no option position holds the correct answer more than 40% of the time; a test asserts the distribution over a fixed set.*
+  - **6.6.1 SHOULD** — Four options, not three or four. `MIN_OPTIONS` and `MAX_OPTIONS` are both 4, so 6.6 always has a D to deal; the four prompts that write questions say four, and say that an option must stand alone — the application decides where each appears, so "all of the above" is wrong by the time the student reads it. *Done: the constants express the intended shape; a D position exists to be chosen.*
 
 ## Acceptance test
 

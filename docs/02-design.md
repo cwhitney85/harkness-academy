@@ -66,6 +66,7 @@
 | D37 | The question cap is not a third termination door | **superseded by D38** — a cap that ends the interview interrupts the student |
 | D38 | The question budget asks for an ending and never imposes one | current |
 | D39 | Over-escaped model prose is decoded where the syllabus is accepted | current |
+| D40 | Where the correct option sits is the writer's, and it is dealt out rather than shuffled | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -741,3 +742,19 @@ The bug was a literal `\u2014` on the lesson completion screen. The renderer was
 Rejected: **normalizing in the gateway (2.1) for every structured response.** It is the widest coverage and the wrong altitude — no spec item asks for it, and it would silently rewrite model text for a tutor that may one day teach JSON. The syllabus is the only place the defect has been seen and the only place all three consumers meet.
 
 Rejected: **repairing the data and adding no guard.** One generation in four is not a rate worth ignoring, and the next occurrence would cost the same investigation from scratch.
+
+## D40. Where the correct option sits is the writer's, and it is dealt out rather than shuffled (resolved 2026-09-08, package 6 items 6.6/6.6.1, dogfood repair)
+
+Nothing reordered a question's options: they reached the student in the order the model emitted them, with the model also naming the key. A model asked for one right answer among four writes it first or second far more often than chance, and the checkpoints Colin met in his own course clustered on A and B. A student who notices that stops reading the options, which is the whole question gone.
+
+**`Quizzes::create()` places the key, because it is the single writer (D18).** Four kinds are generated in four classes and all four arrive here; a rule applied at the four generation sites is a rule the fifth kind forgets. The mechanics live on `QuizDocument` as `withDistributedAnswers()`, next to the other two writes a document accepts.
+
+**Positions are dealt least-used-first within the document, ties broken at random, and only the key moves.** The distractors keep the order they were written in, so an option that reads as a closing alternative still closes; the key is lifted out and put back at the position it was dealt.
+
+Rejected: **shuffling each question's options independently**. One call, and the obvious answer. It is uniform only in expectation, so a ten-question quiz can still hand a student four answers on B, and the done-condition — no position over 40% across forty questions — is then a claim about a random variable rather than about the code. Dealing makes the spread a fact about every quiz and lets the test assert it without seeding a generator.
+
+Rejected: **rotating the key through the positions**. Perfectly even and perfectly learnable: the second question's answer is always B.
+
+Rejected: **shuffling in the client at render**. It is one line in the component and it moves options under the student on every re-render, and the saved answer sheet (D26) records an option id against a paper whose order the server does not know.
+
+Rider: **exactly four options, not three to four** (6.6.1). `MIN_OPTIONS` was 3, so a large share of questions had no D for the dealer to choose, and a three-option question is a third of a coin flip more guessable than a four. The four prompts that write questions now say four, and say why the options must stand alone — the application decides where each one appears, so "all of the above" is wrong by the time the student reads it.

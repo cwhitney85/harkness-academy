@@ -95,6 +95,8 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 | `memories`, `memory_versions` | the memory tree and a version on every write |
 | `usage_events` | one row per AI call: feature, tier, model, tokens in/cached/out, latency, cost |
 
+Every question a student meets offers four options, and where the correct one sits is decided as the quiz is written rather than by the model, which keys A or B far more often than chance ([6.6](specs/06-assessment.md)). The order is stored, so a reload does not move an option out from under an answer.
+
 The two vocabularies worth knowing: a course's **position** stores only the seven pipeline states — `withdrawn` and `completed` are read back from the two dates ([D7d](02-design.md)) — and a quiz's **kind** is what decides its length, its disclosure rule and whether it gates anything.
 
 ## 6. What runs on the queue

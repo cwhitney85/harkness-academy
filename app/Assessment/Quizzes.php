@@ -24,7 +24,8 @@ use InvalidArgumentException;
  * Invariant: `section_index` is set if and only if the kind is section-scoped,
  * and `user_id`/`course_id` are taken from the anchoring course rather than
  * from the caller -- a quiz filed against someone else's course is not a state
- * this service can be talked into.
+ * this service can be talked into. The position of a question's correct
+ * option is likewise ours and not the model's (spec 6.6).
  */
 final class Quizzes
 {
@@ -65,6 +66,12 @@ final class Quizzes
         if ($course instanceof Course && $course->user_id !== $student->id) {
             throw new InvalidArgumentException("Course [{$course->id}] does not belong to this student.");
         }
+
+        // Where the correct answer sits is this service's to decide, not the
+        // model's (spec 6.6). It belongs to the single writer for the reason
+        // the create-or-adopt race does: four kinds reach this method, and a
+        // rule applied at four call sites is a rule the fifth kind forgets.
+        $payload = QuizDocument::in($payload, $kind)->withDistributedAnswers()->payload();
 
         $attributes = [
             'user_id' => $student->id,

@@ -269,6 +269,96 @@ final readonly class QuizDocument
     }
 
     /**
+     * The same document with each question's correct option moved to a
+     * position this code chose rather than the model (spec 6.6).
+     *
+     * A model asked for one correct option among four puts it first or second
+     * far more often than chance, and a student who notices stops reading the
+     * options. The key is moved and nothing else is: the distractors keep the
+     * order they were written in, so an option that reads as a closing
+     * alternative still closes.
+     *
+     * Positions are handed out by least-used-first within the document, ties
+     * broken at random, rather than by shuffling each question independently.
+     * A per-question shuffle is uniform only in expectation, which is a
+     * property no test can assert and no student can rely on; least-used-first
+     * makes an even spread a fact about every quiz, and the random tie-break
+     * is what stops the spread being a pattern -- a rotation would teach the
+     * student that question two's answer is B.
+     *
+     * Post: every question offers the same options with the same ids and the
+     *       same `correct_option_id`; only their order has changed.
+     */
+    public function withDistributedAnswers(): self
+    {
+        /** @var array<int, int> $used */
+        $used = [];
+        $document = $this->document;
+        $questions = [];
+
+        foreach ($this->questions() as $question) {
+            $options = array_values($question['options'] ?? []);
+            $key = (string) ($question['correct_option_id'] ?? '');
+
+            $from = null;
+
+            foreach ($options as $index => $option) {
+                if ((string) $option['id'] === $key) {
+                    $from = $index;
+                }
+            }
+
+            // A question whose key names no option of its own is a defect
+            // `defects()` reports and every caller refuses on; there is
+            // nothing here to move, and inventing a position would hide it.
+            if ($from === null) {
+                $questions[] = $question;
+
+                continue;
+            }
+
+            $to = $this->leastUsedPosition(count($options), $used);
+            $used[$to] = ($used[$to] ?? 0) + 1;
+
+            [$correct] = array_splice($options, $from, 1);
+            array_splice($options, $to, 0, [$correct]);
+
+            $question['options'] = $options;
+            $questions[] = $question;
+        }
+
+        $document[$this->envelope]['questions'] = $questions;
+
+        return new self($document, $this->envelope);
+    }
+
+    /**
+     * The position this question should key, among the ones it offers.
+     *
+     * @param  array<int, int>  $used  how many questions have keyed each position so far
+     */
+    private function leastUsedPosition(int $options, array $used): int
+    {
+        $candidates = [];
+        $fewest = null;
+
+        for ($position = 0; $position < $options; $position++) {
+            $count = $used[$position] ?? 0;
+
+            if ($fewest === null || $count < $fewest) {
+                $fewest = $count;
+                $candidates = [];
+            }
+
+            if ($count === $fewest) {
+                $candidates[] = $position;
+            }
+        }
+
+        return $candidates[array_rand($candidates)];
+    }
+
+    /**
      * The same document with one field set on its body.
      *
      * The one write a reader is allowed: a checkpoint's `section_index` is

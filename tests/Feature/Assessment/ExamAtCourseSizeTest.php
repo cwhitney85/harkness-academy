@@ -203,6 +203,7 @@ class ExamAtCourseSizeTest extends AssessmentTestCase
                         ['id' => 'a', 'text' => 'The right answer'],
                         ['id' => 'b', 'text' => 'A plausible mistake'],
                         ['id' => 'c', 'text' => 'Another plausible mistake'],
+                        ['id' => 'd', 'text' => 'A third plausible mistake'],
                     ],
                     'correct_option_id' => 'a',
                     'explanation' => "Because of {$slug}.",

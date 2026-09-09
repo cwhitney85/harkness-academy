@@ -36,12 +36,16 @@ class CheckpointTest extends SectionStreamTestCase
         $this->assertSame($this->lesson->course_id, $quiz->course_id);
 
         // 5.2.2's lossless round-trip: the key is in the row, and reading the
-        // row back gives the same document the model produced.
+        // row back gives the same document that was written -- options and
+        // all, in the order 6.6 put them in.
         $stored = Checkpoint::of($quiz->fresh());
+        $question = $stored->question('q1');
 
-        $this->assertSame('a', $stored->question('q1')['correct_option_id']);
+        $written = $this->checkpointResponse()['checkpoint']['questions'][0];
+
         $this->assertSame(1, $stored->sectionIndex());
-        $this->assertEquals($this->checkpointResponse(), $stored->payload());
+        $this->assertEquals(array_diff_key($written, ['options' => null]), array_diff_key($question, ['options' => null]));
+        $this->assertEqualsCanonicalizing($written['options'], $question['options']);
     }
 
     #[Test]
@@ -63,7 +67,7 @@ class CheckpointTest extends SectionStreamTestCase
         $question = $this->eventNamed($frames, 'checkpoint.ready')['checkpoint']['questions'][0];
 
         $this->assertSame('q1', $question['id']);
-        $this->assertCount(3, $question['options'], 'The options themselves still go out.');
+        $this->assertCount(4, $question['options'], 'The options themselves still go out.');
         $this->assertArrayNotHasKey('correct_option_id', $question);
         $this->assertArrayNotHasKey('explanation', $question);
     }
