@@ -268,6 +268,14 @@ export default function CreateCourse({
                                     }
                                     className="mt-2 h-11 w-full border border-hairline bg-surface px-3.5 text-[17px] placeholder:text-muted-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brass"
                                 />
+                                <span className="mt-2 block text-[15px] leading-snug text-muted-ink">
+                                    It doesn't have to be on the list — anything
+                                    that belongs under {module.title} works. A
+                                    name that turns out to belong to another
+                                    subject is turned away, and the further a
+                                    topic sits from the subject, the odder the
+                                    course it makes.
+                                </span>
                                 <InputError message={form.errors.name} />
                             </label>
                         </Field>
