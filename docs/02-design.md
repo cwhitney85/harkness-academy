@@ -68,6 +68,7 @@
 | D39 | Over-escaped model prose is decoded where the syllabus is accepted | current |
 | D40 | Where the correct option sits is the writer's, and it is dealt out rather than shuffled | current |
 | D41 | A validation error names every rule the field broke, and the joining is Inertia's boundary | current |
+| D42 | A free-text subtopic is checked against its module before a course exists | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -773,3 +774,27 @@ Rejected: **`$withAllErrors = true` alone**, leaving `errors.field` a `string[]`
 Rejected: **joining only the password field**, at the three call sites. Cheaper to write and it makes the same defect a standing one: the next field with two rules on it is silently back to naming one.
 
 Rejected: **marking the failed lines in the visible list** instead of naming them in the error. It needs the failures matched back to the lines that produced them — a second mapping to keep true — and the error text would then be the only thing on screen that did not say what was wrong.
+
+## D42. A free-text subtopic is checked against its module before a course exists (resolved 2026-09-09, package 4 item 4.9, dogfood repair)
+
+**Chosen: one `cheap`-tier check on submit, refusing before any row is written.**
+
+"algebra" typed under Language started a Language course about algebra. So did "medieval history", and so did "physics" — three tries, three courses, no flag (Colin, 2026-09-09). 4.1 said mismatch was handled at 4.5.7, and 4.5.7 handles a different mismatch: `subtopic_mismatch` is *goals against subtopic*, raised by `syllabus.generate` after two interviews and a `top`-tier call. Nothing had ever asked whether the subtopic belonged to the module.
+
+**Mismatch is a flag at syllabus time and a blocker at creation time, and the difference is what it would cost to be wrong.** `prompts/syllabus/generate.md` still says to note a mismatch rather than refuse, because by then the student has answered nine questions and a refusal throws them away. At submit nothing exists yet, so a refusal costs a sentence.
+
+**The catalog is not an ownership table, and the model has to be told so twice.** A first prompt carrying the six modules and their subtopics refused `logic` under Math (Philosophy lists it), `game theory` under Math (Econ lists it), `history of science` under Science and `statistics` under Econ — stably, with reasons that named the mechanism outright: *"listed as a core topic under Math, not Economics."* A paragraph stating that placement is not exclusive fixed the topics absent from the catalog — business writing, rhetoric, quantum computing, Python — and moved none of the four that are in it. A sentence rendered only on a verbatim slug collision, saying the match does not settle the question, fixed all four, 3/3 each, and did not loosen a single misfile: `algebra`/Language, `Spanish`/History, `chemistry`/Math and `microeconomics`/Math still redirect. Three probes, 228 live calls, $0.36; 37 of 42 pairs stable and defensible.
+
+**The student reads our words.** The same probes had the model call business writing an Economics subject, three times out of three, in a fluent sentence a student would believe. The `reason` string is generated and stored and never rendered.
+
+**A collision is detectable mechanically and not resolvable mechanically.** `logic` under Math wants acceptance and `algebra` under Language wants redirection; both are slug matches against another module's catalog. A lookup cannot tell them apart, which is why the collision is a hint to the model rather than a verdict of its own.
+
+Rejected: **widening 4.5.7 to cover module mismatch.** Cheapest to build, and it reaches the student after two interviews and the most expensive call in the app.
+
+Rejected: **refusing flatly and pointing at support.** Colin's first framing. No support channel exists anywhere in the app, and all three reported cases are topics OpenTutor teaches one module over — the student would be sent to a human to be told what a button could tell them. The redirect costs nothing structurally: `SubtopicName` slugs free text and catalog entries identically, so "algebra" under Math *is* the catalog's Algebra, same slug, same working-knowledge document.
+
+Rejected: **an override button — "keep it under Language".** It makes every wrong verdict a one-tap annoyance instead of a dead end, and it makes the refusal advisory, which is the non-blocking flag already rejected one screen earlier. The cost is carried instead: `epistemology` under Science is refused to Philosophy, 3/3, and that student has only a retry that will not flip.
+
+Rejected: **failing open when the provider is unreachable.** Chosen in framing and reversed by Colin during design: *"I don't think the course should start if it's a broken call."* Failing closed is 4.5.1 as written — nothing downstream exists to protect — so this needs no exception, and the catalog path still starts any preset subtopic during an outage.
+
+Rejected: **dropping the `reason` field once the copy became ours.** It is generated after the verdict and reading it costs nothing, and it is the only record of why a student was turned away. It is stored against the refusal for an admin UI to read back (Colin, 2026-09-09).

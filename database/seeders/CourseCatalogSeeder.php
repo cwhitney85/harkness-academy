@@ -12,8 +12,12 @@ use Illuminate\Database\Seeder;
  * (an explicit v1 WONT in PLAN.md), so until then changing the catalog means
  * re-running this seeder. Re-running is safe -- entries are matched by slug.
  *
- * A student is never limited to this list. Free text creates any subtopic
- * under any module; these are the starting points the picker offers.
+ * A student is never limited to this list: free text creates a subtopic these
+ * rows do not name, and these are the starting points the picker offers. It is
+ * a limit in one direction only -- a typed subtopic is checked against the
+ * module it was typed under before any course exists (spec 4.9), so free text
+ * puts anything under a module it belongs to and nothing under one it does
+ * not. The rows below are what that check reads the catalog from.
  */
 class CourseCatalogSeeder extends Seeder
 {

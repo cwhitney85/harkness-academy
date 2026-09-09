@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Courses;
 use App\Courses\CourseTransitions;
 use App\Courses\CreateCourse;
 use App\Courses\Exceptions\SubtopicAlreadyOpen;
+use App\Courses\Exceptions\SubtopicBelongsElsewhere;
+use App\Courses\Exceptions\SubtopicCheckUnavailable;
+use App\Courses\Exceptions\SubtopicOutOfScope;
 use App\Courses\Exceptions\UnusableSubtopicName;
 use App\Courses\NextAction;
 use App\Courses\SkillLevel;
 use App\Courses\SubtopicName;
+use App\Courses\SubtopicScopeCheck;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
@@ -28,7 +32,7 @@ use Inertia\Response;
  * a screen that treated them as two features would be describing a difference
  * the engine does not have.
  *
- * Two refusals are ordinary outcomes rather than errors, and both send the
+ * Four refusals are ordinary outcomes rather than errors, and each sends the
  * student back here with something to decide:
  *
  *   - a **withdrawn attempt** at the same subtopic and level asks D7b's
@@ -36,7 +40,16 @@ use Inertia\Response;
  *     run and orphaning the first;
  *   - a **course already open** in the subtopic offers the way back into it.
  *     The question above should have caught this; what reaches it is the
- *     double tap and the second tab (8.6).
+ *     double tap and the second tab (8.6);
+ *   - a typed subtopic that **belongs under another module** offers to start
+ *     it there, and a typed subtopic **nothing here teaches** is declined
+ *     outright (4.9, ledger D42);
+ *   - a scope check that **could not be run** declines too, because failing
+ *     closed at creation time costs a sentence (4.9.5).
+ *
+ * The last three are the only refusals the student reads in words the app
+ * generates rather than words a model wrote: the check's own `reason` is
+ * stored and never rendered (4.9.6).
  */
 class CourseController extends Controller
 {
@@ -50,6 +63,7 @@ class CourseController extends Controller
             // link, so a reload of this URL is always the plain picker.
             'resumable' => $request->session()->get('resumable'),
             'occupied' => $request->session()->get('occupied'),
+            'refused' => $request->session()->get('refused'),
         ]);
     }
 
@@ -60,8 +74,12 @@ class CourseController extends Controller
      *       interview -- or nothing was created and they are back here with
      *       the question that stopped it.
      */
-    public function store(Request $request, CreateCourse $creator, CourseTransitions $transitions): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        CreateCourse $creator,
+        CourseTransitions $transitions,
+        SubtopicScopeCheck $scope,
+    ): RedirectResponse {
         // The three fields below are `nullable` because the form always sends
         // both halves of the either/or and one of them is empty -- and
         // `ConvertEmptyStringsToNull` makes that null before validation sees
@@ -101,6 +119,19 @@ class CourseController extends Controller
             throw ValidationException::withMessages(['name' => $e->getMessage()]);
         }
 
+        // 4.9.4. Before D7b's question, so a misfiled name never raises a
+        // resume prompt about a course that should not exist -- and before
+        // anything is written, which is what makes a refusal cost a sentence
+        // rather than two interviews. The catalog path skips it: a preset
+        // subtopic belongs to its module by construction.
+        if (! $fromCatalog) {
+            try {
+                $scope->check($student, $module, $name);
+            } catch (SubtopicBelongsElsewhere|SubtopicOutOfScope|SubtopicCheckUnavailable $e) {
+                return back()->with('refused', $this->refusal($e, (string) $validated['name']));
+            }
+        }
+
         // 8.7.6. Asked before anything is written, because the alternative is
         // a second attempt the student did not ask for and cannot merge back.
         if (! ($validated['start_over'] ?? false)) {
@@ -120,6 +151,51 @@ class CourseController extends Controller
         }
 
         return redirect()->route('courses.knowledge-interview.show', $course);
+    }
+
+    /**
+     * A scope refusal, in our words and never the model's (spec 4.9.6).
+     *
+     * `typed` is echoed back exactly as it was submitted, not as it was
+     * normalised: the screen keeps the notice up only while the field still
+     * holds the name it is about, so editing the field puts it away.
+     *
+     * @return array<string, mixed>
+     */
+    private function refusal(
+        SubtopicBelongsElsewhere|SubtopicOutOfScope|SubtopicCheckUnavailable $refusal,
+        string $typed,
+    ): array {
+        $headline = match (true) {
+            $refusal instanceof SubtopicBelongsElsewhere => 'Taught under another subject',
+            $refusal instanceof SubtopicOutOfScope => 'Outside what we teach',
+            default => 'Not checked just now',
+        };
+
+        $message = match (true) {
+            $refusal instanceof SubtopicBelongsElsewhere => "«{$refusal->name->title}» isn't a {$refusal->chosen->title} "
+                ."topic. It's one we teach under {$refusal->suggested->title}.",
+            $refusal instanceof SubtopicOutOfScope => "We can't build a course around «{$refusal->name->title}.»",
+            default => 'We couldn\'t check that topic just now.',
+        };
+
+        return [
+            'typed' => $typed,
+            'title' => $refusal->name->title,
+            'headline' => $headline,
+            'message' => $message,
+            // The outage message already says to try again; the other two do
+            // not, and a refusal the student believes is wrong has to leave
+            // them somewhere other than a wall. There is no override: the
+            // refusal means something or it means nothing (D42).
+            'note' => $refusal instanceof SubtopicCheckUnavailable
+                ? null
+                : 'If you believe this is a mistake, please try again.',
+            'start_under' => $refusal instanceof SubtopicBelongsElsewhere ? [
+                'module_slug' => $refusal->suggested->slug,
+                'module_title' => $refusal->suggested->title,
+            ] : null,
+        ];
     }
 
     /**

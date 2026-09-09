@@ -18,6 +18,7 @@
 | Key | Tier | Inputs | Output | Consumer |
 |---|---|---|---|---|
 | `persona.default` | — | student_name, subtopic, skill_level | fragment, composes into `lesson.system` only | 2.3.3 |
+| `subtopic.check` | cheap | catalog, module, name, collision | `json/subtopic-scope.v1` | 4.9.2 |
 | `interview.knowledge` | mid | module, subtopic, skill_level, pacing | streamed conv + `signal_complete` tool | 4.3 |
 | `interview.goals` | mid | subtopic, skill_level, wk_doc, pacing | same shape | 4.4 |
 | `wk.create` | mid | interview_transcript, subtopic, skill_level, prior_wk_doc | markdown (solid/shaky/gaps) | 4.3 |

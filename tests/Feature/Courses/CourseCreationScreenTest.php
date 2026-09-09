@@ -31,6 +31,17 @@ class CourseCreationScreenTest extends TestCase
         parent::setUp();
 
         $this->seed(CourseCatalogSeeder::class);
+
+        // Free text is checked against its module before a course exists
+        // (4.9), and every free-text post below is about something other than
+        // that check. Faked once, in scope, so those tests keep asserting what
+        // they were written to assert -- and so none of them reaches a
+        // provider, which `preventStrayPrompts` is what stops.
+        $this->fakeModel(fn (): array => [
+            'verdict' => 'in_scope',
+            'module' => null,
+            'reason' => 'In scope for the purposes of this test.',
+        ]);
     }
 
     #[Test]
