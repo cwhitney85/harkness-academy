@@ -113,7 +113,7 @@ export default function Register({
                                         htmlFor="tos_accepted"
                                         className="text-sm leading-snug font-normal"
                                     >
-                                        I am 18 or older and I accept the{' '}
+                                        I accept the{' '}
                                         <TextLink href={terms()} tabIndex={6}>
                                             Terms of Service
                                         </TextLink>

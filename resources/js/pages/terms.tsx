@@ -11,7 +11,6 @@ export default function Terms() {
                 <section className="flex flex-col gap-2">
                     <h2 className="text-base font-medium">Age requirement</h2>
                     <p>
-                        OpenTutor is available only to people aged 18 or older.
                         By creating an account you attest that you are 18 or
                         older. Accounts found to belong to someone under 18 will
                         be closed.
