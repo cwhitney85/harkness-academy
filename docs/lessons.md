@@ -82,6 +82,8 @@ With `-W` it *does* resolve, by **downgrading guzzle to 7.15.5** and dragging ~2
 
 One jsdom gap to know when writing such a test: `use-mobile` calls `matchMedia` at **module scope**, so a stub installed in `beforeAll` is already too late. Hoist it — `vi.hoisted()` runs before the imports.
 
+And one vitest gap: `vi.mock('@inertiajs/react', ...)` replaces the **whole** module, so an export the screen reaches for and the factory omits throws at module scope and fails every test in the file. `8.5.7` put a `<Link>` in the shell's crest and broke `interview.test.tsx` that way, on a screen the crest is not the subject of. A component added to a mocked module's surface is a change to every mock of it.
+
 ## T7. The model writes `**bold**`, and the student read the asterisks
 
 *Found 2026-09-08 on the first real course, repaired as spec item 8.8.7.*

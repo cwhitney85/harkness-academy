@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
+import type { ReactNode } from 'react';
 
 import InterviewScreen from '@/pages/courses/interview';
 
@@ -30,8 +31,24 @@ vi.mock('@/lib/turn-stream', () => ({
 
 const post = vi.fn();
 
+// `Link` is here because the shell's crest is one (8.5.7), not because this
+// file tests it: an export the screen reaches for and the mock omits is a
+// module-level throw, not a failed assertion. It resolves a wayfinder route
+// definition the way Inertia's own Link does, so the anchor carries a URL.
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
+    Link: ({
+        href,
+        children,
+        ...rest
+    }: {
+        href: string | { url: string };
+        children?: ReactNode;
+    }) => (
+        <a href={typeof href === 'string' ? href : href.url} {...rest}>
+            {children}
+        </a>
+    ),
     router: { reload: vi.fn(), post: (...args: unknown[]) => post(...args) },
 }));
 
