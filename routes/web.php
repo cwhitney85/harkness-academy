@@ -2,18 +2,22 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ModuleController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::inertia('terms', 'terms')->name('terms');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    // The entry URL, and the edge 8.6's map has always drawn for it:
-    // `home | entry --> S1`. It sits inside the auth group so the decision is
-    // made once at the boundary -- a student lands on their dashboard, a guest
-    // is sent to sign in by the middleware, and neither is asked to click
-    // through a page in between.
-    Route::redirect('/', '/dashboard')->name('home');
+// Screen S0 (spec 8.13), and the edge 8.6's map draws for the entry URL:
+// signed in --> S1, otherwise the landing page. It sits outside the auth group
+// because the middleware would send every visitor to sign in and there would
+// be no front door left to reach (8.13.2); the decision it used to make is now
+// the one condition in the route.
+Route::get('/', fn () => Auth::check()
+    ? redirect()->route('dashboard')
+    : Inertia::render('landing'))->name('home');
 
+Route::middleware(['auth', 'verified'])->group(function () {
     // Screen S1 (spec 8.10.1). No longer `Route::inertia`: the dashboard is
     // the student's courses and the next move in each, which needs a query.
     Route::get('dashboard', DashboardController::class)->name('dashboard');

@@ -24,6 +24,11 @@ createInertiaApp({
             // The refresher is set in AssessmentShell (spec 8.9.4).
             case name.startsWith('refreshers/'):
                 return null;
+            // The front door is framed by nothing (8.13.3): it is not a
+            // screen inside a course and not a screen inside the app, and
+            // D30 allows no fourth shell.
+            case name === 'landing':
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

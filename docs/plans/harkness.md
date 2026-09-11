@@ -10,15 +10,15 @@ Items here are prefixed `H` so they never collide with the spec item numbers thi
 
 Ledger entries this unit writes: [D44](../02-design.md) the name, the motto and the monogram · [D45](../02-design.md) the invitation gate · [D46](../02-design.md) the wordmark, the motto's placement, the composition and the ground.
 
-Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landing page) · an amendment to **8.6.1**, and one to **8.13.4** the day after writing it.
+Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landing page) · an amendment to **8.6.1**, and two to **8.13.4** the day it was written.
 
 ## Where it stands (2026-09-11)
 
-**Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · `6b50c3d` H1.13 and H3.1–H3.3 · **H3.4 and H2.4** — the four questions answered, D46 written, `app.css` and the settled artboards moved to W3.
+**Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · `6b50c3d` H1.13 and H3.1–H3.3 · **H3.4 and H2.4** — the four questions answered, D46 written, `app.css` and the settled artboards moved to W3 · **H4** — the front door is built and matches its artboards at both widths.
 
 Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name (H6.3, blocked), and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
 
-**Open.** **H2.5** · **H4** the landing page, unblocked now that H3 is judged · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
+**Open.** **H2.5** · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
 
 **To land the unit:** triage this file into the durable tier and delete it in the same commit as the last of the work (spec 9.6).
 
@@ -80,7 +80,17 @@ Four decisions are deliberately deferred to looking rather than arguing: the wor
 
 ## H4. The landing page
 
-*Depends on H3 — the page is not built until the artboards are judged (confirmed 2026-09-11, Colin). **Unblocked:** `Landing.dc.html` and `LandingPhone.dc.html` are what 8.13.6 measures against. Lands as spec section **8.13** plus an amendment to **8.6.1**; see [docs/specs/08-interface.md](../specs/08-interface.md) for the items themselves.*
+*Landed 2026-09-11 as spec section **8.13**; 8.6's map and table carried S0 from the day the section was written. `Landing.dc.html` and `LandingPhone.dc.html` are what 8.13.6 measured against — both widths shot in a signed-out browser and compared to the artboard.*
+
+`GET /` left the auth group and became one condition in the route: `Auth::check()` redirects to the dashboard, everyone else gets `Inertia::render('landing')`. Leaving it in the group would have sent the visitor to sign in and left no front door to reach. `EntryRedirectTest` holds both arms; it used to assert the guest arm was a redirect to sign-in.
+
+`landing.tsx` is written phone-first and the desktop reverses the row, because the phone's DOM order — mark, then argument — is the one order both widths can share: a column has no right-hand side to put an object on. The one thing rendered twice is the second paragraph's closing clause, which the phone artboard drops; it is a `hidden lg:inline` span rather than two paragraphs.
+
+The quiet button is the app's `variant="outline" size="action"`, which the dashboard's dialog already uses, plus `bg-transparent shadow-none` — the starter kit's outline fills with `--ground`, and on `--door` that read as a panel rather than as the artboard's unfilled second action.
+
+**Two spec amendments, both from the same looking-at-it pass that wrote H3.4's corrections.** 8.13.4 and D46 both still required a single Terms link at the foot; the chosen artboards carry none, and the commit that cut the footer said so in its message and nowhere durable. Both now say the page navigates in two places and both are buttons.
+
+**Open, and Colin's call:** the caption reads *Registration needs an invitation code*, which is on the artboard and is not true until H5 lands — `register` is ungated today. Nothing announces the domain yet, so nothing is being told to a visitor who is not Colin, but H5 should land before that changes.
 
 ## H5. The invitation gate
 

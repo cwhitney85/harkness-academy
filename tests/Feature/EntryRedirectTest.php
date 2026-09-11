@@ -4,17 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 8.6 -- `home | entry --> S1`.
+ * Spec 8.13.2 -- the entry URL decides its own audience.
  *
- * The entry URL renders nothing of its own. It is one decision made at the
- * auth boundary, and this holds both of its arms: a student reaches their
- * dashboard, a guest reaches sign-in. It replaces the starter kit's
- * ExampleTest, which asserted that `/` returned 200 -- true only while a
- * welcome page stood between the entry and the edge the map draws.
+ * `GET /` used to sit inside the auth group, which made both arms the
+ * middleware's: a student reached their dashboard and a guest was sent to sign
+ * in. 8.13 gave the guest a page, so the decision moved into the route and
+ * this holds both arms of it.
  */
 class EntryRedirectTest extends TestCase
 {
@@ -29,8 +29,11 @@ class EntryRedirectTest extends TestCase
     }
 
     #[Test]
-    public function a_guest_is_sent_to_sign_in(): void
+    public function a_guest_gets_the_landing_page(): void
     {
-        $this->get(route('home'))->assertRedirect(route('login'));
+        $response = $this->get(route('home'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('landing'));
     }
 }
