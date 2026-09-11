@@ -2,7 +2,7 @@
 
 *Provides: every screen the engines feed, package 4's missing HTTP layer, and the design language. Consumes: 1–6.*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D21](../02-design.md) the visual direction · [D22](../02-design.md) material carries meaning · [D23](../02-design.md) the checkpoint is a margin question · [D24](../02-design.md) Radix and the copied shadcn primitives stay · [D25](../02-design.md) queued generations need a waiting state · [D26](../02-design.md) the answer sheet · [D28](../02-design.md) the mounted-component class (8.8.10) · [D30](../02-design.md) three shells, and what they share · [D31](../02-design.md) `NextAction` and `ResumeRefusal` · [D32](../02-design.md) the worksheet's one disclosure path · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) what the syllabus panel may claim about the exam.
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D21](../02-design.md) the visual direction · [D22](../02-design.md) material carries meaning · [D23](../02-design.md) the checkpoint is a margin question · [D24](../02-design.md) Radix and the copied shadcn primitives stay · [D25](../02-design.md) queued generations need a waiting state · [D26](../02-design.md) the answer sheet · [D28](../02-design.md) the mounted-component class (8.8.10) · [D30](../02-design.md) three shells, and what they share · [D31](../02-design.md) `NextAction` and `ResumeRefusal` · [D32](../02-design.md) the worksheet's one disclosure path · [D33](../02-design.md) the exam screen's states are the server's · [D34](../02-design.md) what the syllabus panel may claim about the exam · [D44](../02-design.md) the name, the motto and the monogram.
 
 *The design is settled. `docs/design/canvas/` is its source of record; the published canvas is where it is read. Direction, palette, material system and the checkpoint choice are ledger entries D21–D24 in [docs/02-design.md](../02-design.md) — don't re-litigate them.*
 
@@ -61,12 +61,13 @@
 
 *Built before 8.7, not after it: five of the twelve screens have no routes yet, so this map decides package 4's URL structure once and as a whole rather than one controller at a time.*
 
-- **8.6.1 MUST** — One diagram in this spec showing every transition between the twelve screens, including resume and failure paths, and naming the URL of each. *Done: every route in `routes/` appears as at least one edge, and every screen 8.7 will build has a URL named here before its controller is written.*
+- **8.6.1 MUST** — One diagram in this spec showing every transition between the thirteen screens, including resume and failure paths, and naming the URL of each. *Done: every route in `routes/` appears as at least one edge, and every screen 8.7 will build has a URL named here before its controller is written.*
 
-### The twelve screens
+### The thirteen screens
 
 | # | Screen | URL | Route name | Status |
 |---|---|---|---|---|
+| S0 | Landing | `GET /` | `home` | **8.13 builds** (the route exists as a redirect) |
 | S1 | Dashboard | `GET /dashboard` | `dashboard` | exists (starter-kit placeholder; 8.10.1 replaces it) |
 | S2 | Course creation | `GET /courses/create` | `courses.create` | **8.7.1 builds** |
 | S3 | Knowledge interview | `GET /courses/{course}/knowledge-interview` | `courses.knowledge-interview.show` | **8.7.2 builds** |
@@ -80,14 +81,20 @@
 | S11 | Refresher | `GET /refreshers/{refresher}` | `refreshers.show` | exists |
 | S12 | Module rollup | `GET /modules/{module}` | `modules.show` | **8.10.2 builds** |
 
-Five have no route (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
+S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a redirect and gains a rendered page (8.13). Five have no route at all (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
 
 ### The map
 
 ```
-  GET /            ──► redirects, never renders: signed in ──► S1, otherwise sign in ──► S1
+  GET /            ──► signed in ──► S1; otherwise renders S0
   GET terms        ──  linked from registration
   GET install      ──  linked from the user menu: how to put OpenTutor on a phone's home screen (spec 7.1)
+
+  S0  LANDING                                          GET /   (signed out only)
+      ├─ "Log in" ───────────────────────────────►    the sign-in screen ──► S1
+      └─ "Register" ─────────────────────────────►    the register screen (invitation code, spec 1.6)
+            ├─ accepted ──► S1
+            └─ 422 no code, or a wrong one ──► the register screen, the error on the code field
 
   S1  DASHBOARD                                        GET /dashboard
       ├─ "Start a course" ────────────────────────►    S2
@@ -332,11 +339,28 @@ A student cannot tell a queued generation from a dead one. `syllabus.tsx` carrie
 - **8.12.3 MUST** — "Done — write it up" is a button, disabled once pressed, carrying 8.12.1's indicator. It is a copy string rendered as a link today. *Done: pressing it once leaves it disabled and indicating until the next screen paints; a second press is impossible.*
 - **8.12.4 WONT** — No indicator claims a time or a percentage. Queued generations have no reliable duration. *Falsified if: any indicator shows either.*
 
+## 8.13 The landing page
+
+*Added 2026-09-11, unit `harkness`. The first screen with an audience that is not the founder. Design is settled on the canvas page **B · brand** before this section is built (8.1.3); the brand itself is [D44](../02-design.md), and the ground it is set on becomes D46.*
+
+- **8.13.1 MUST** — 8.6's flow map and screen table carry S0: `GET /` renders the landing page for a signed-out visitor and redirects a signed-in one to S1. *Done: the map's first line and the table agree, and 8.6.1's condition — every route in `routes/` appears as an edge — still holds at thirteen screens.*
+- **8.13.2 MUST** — `home` leaves the `auth` middleware group; the redirect to the dashboard becomes a condition inside the route rather than middleware. *Done: a guest `GET /` returns 200 carrying the landing component; an authenticated `GET /` returns 302 to `/dashboard`.*
+- **8.13.3 MUST** — The page is framed by no shell. `app.tsx`'s layout switch returns `null` for it, as it does for `courses/`, `lessons/` and `refreshers/`. No fourth shell is created ([D30](../02-design.md)). *Done: the landing page renders with no rail, no breadcrumb and no user menu.*
+- **8.13.4 MUST** — A signed-out bar: the crest at left, **Log in** and **Register** at right. *Done: both links resolve, and the crest links to `/` rather than to the redirect `home` used to be.*
+- **8.13.5 MUST** — No signed-in state is designed or built for this screen, because a signed-in visitor is redirected before it renders (8.13.2). *Falsified if: the page reads `auth.user` for anything.*
+- **8.13.6 MUST** — Composition, ground, wordmark and motto placement are whatever the **B · brand** artboards settle, and the built page matches its artboard. *Done: measured at 1440px and 390px against the artboard it was drawn from.*
+- **8.13.7 MUST** — Nothing on the page claims the Harkness teaching method ([D44](../02-design.md)). *Done: no string on it mentions discussion-based, seminar or round-table teaching.*
+- **8.13.8 MUST** — `manifest.webmanifest` keeps `"start_url": "/"`. A member's installed app still opens on the dashboard, because 8.13.2 redirects them. *Done: `InstallTest` passes with no change but the renamed `name` and `short_name`.*
+- **8.13.9 SHOULD** — `auth-simple-layout.tsx`'s crest link to `home()` now lands somewhere. *Done: clicking the crest on the sign-in screen shows the landing page instead of bouncing back to sign-in.*
+- **8.13.10 WONT** — No pricing, no testimonials, no feature grid, no analytics, no email capture. *Falsified if: any of the five appears.*
+
 ## Acceptance test
 
 *The journey this package's items compose into. The per-item done-conditions each prove one item; this proves they work together (ledger [D29](../02-design.md)). It is runnable without opening another spec.*
 
-Signed in as a student with one active course, at 1440px and then again at 390px, without a developer touching the database:
+Signed out, in a browser that has never seen the app: `/` shows the landing page, carrying Log in and Register and no rail, and nothing on it claims a teaching method. Sign in — `/` goes to the dashboard from then on and never renders again.
+
+Then, signed in as a student with one active course, at 1440px and then again at 390px, without a developer touching the database:
 
 1. Walk every screen: dashboard → create a course → knowledge interview → goals interview → syllabus → a lesson with its checkpoint and its explainer → lesson complete → homework → the final exam closed, open and marked → a refresher at each grain → the module rollup.
 2. At every one of them, the crest goes home. No screen scrolls sideways at 390px; every touch target clears 44px; body prose measures about 72 characters at 1440px and about 50 at 390px with no change of type size.

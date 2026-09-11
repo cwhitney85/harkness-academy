@@ -70,6 +70,8 @@
 | D41 | A validation error names every rule the field broke, and the joining is Inertia's boundary | current |
 | D42 | A free-text subtopic is checked against its module before a course exists | current |
 | D43 | The password rule is eight characters, in every environment | current |
+| D44 | The name, the motto and the monogram — Harkness Academy, *Licet Facere*, HA | current |
+| D45 | Entry is one shared invitation code, held in config | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -810,3 +812,40 @@ Rejected: **`min(8)->uncompromised()` in production** -- the Have I Been Pwned k
 
 Rejected: **keeping the production rule and relaxing only locally** -- it is production that friends and family register against.
 
+## D44. The name, the motto and the monogram (resolved 2026-09-11, unit `harkness`, Colin)
+
+The product was named OpenTutor from 2026-08-21 until this entry. The name described the category and claimed nothing, which was right while the only user was the founder and wrong the moment the app had a domain and a front door.
+
+**Chosen: Harkness Academy**, at `harkness.academy`. The name is Colin's college dormitory, where he met most of his friends; that origin is the real one and is never told publicly. The Harkness *pedagogy* — twelve students round an oval table at Phillips Exeter, the teacher mostly silent — was discovered after the name was picked, and is a coincidence rather than a claim.
+
+**The pedagogy is not claimed, and no user-visible copy may claim it.** The product is a one-to-one tutor; there is no table and there are no peers. What the name is allowed to carry is the *register* — the New England prep-school anchor this ledger already settled in D21, whose named references are *Dead Poets Society*, *School Ties*, *The Holdovers* and *Scent of a Woman*. The register lives in type, colour and material. It does not live in sentences about seminars.
+
+**Chosen motto: `LICET FACERE`** — "it is permitted to do." It is the Latin of the phrase *you can just do things*, which is the brand's actual claim, and **that phrase never appears in English anywhere in the product**. The motto is set the way a school motto is set: two words, engraved, unglossed, and funny only to a reader who translates it.
+
+Rejected: **`Age Modo`** — "just act." More idiomatic Latin and punchier as a mark, and semantically wrong: it is Nike's *Just Do It*, a claim about effort and discipline. The claim being made is about permission, which is the opposite end of the same sentence.
+
+Rejected: **`Licet Tibi Res Facere`** and **`Licet Tibi Facere`** — literal calques of the English. The first is a sentence rather than a motto and cannot be engraved; the second keeps the direct address at three words and reads as address rather than as inscription. Motto register is two to three words — *Non Sibi*, *Veritas*, *Finis Origine Pendet*.
+
+**Chosen monogram: `HA`, inside the crest, with the motto on a band beneath the shield at hero size only.** `HA` reads as a laugh, which is the point: a traditional surface with an irreverent core, the same joke the Latin is telling. The band is a third `Crest` variant used by one call site; `filled` and `outline` are untouched, so the rail, the exam cover, the auth layout and the icons are unaffected.
+
+Rejected: **the plain letter swap with no band** — correct and cheaper, and it leaves the motto as a line of copy beside the mark rather than part of the object. Kept as the small-size reduction, which is what every existing call site draws.
+
+Rejected: **an entwined `HA` ligature** — better craft, unproven at 16px where a joined pair closes up, and it introduces a drawn letterform the canvas has none of.
+
+The crest itself is unchanged from D21: wine shield, gold rule, chevron, Georgia caps. This entry changes two letters and adds a band.
+
+## D45. Entry is one shared invitation code, held in config (resolved 2026-09-11, unit `harkness`, spec item 1.6)
+
+The landing page puts a Register button on a public domain, and `users.plan` has one value with no quota, price or entitlement behind it (D11): nothing in the app limits what an account spends. Friends and family are wanted; strangers who find the URL are not.
+
+**Chosen: one shared code, read from the environment through `config/`, checked in `CreateNewUser` beside the existing 18-or-older attestation.** It is the least new structure that makes the wanted thing true — no table, no migration, no model. Rotating it is an environment change and a deploy.
+
+**The invitation is not a plan.** An invited account is `standard` like every other. Skill level is pedagogy and plan is economics (spec 4.5.6); entry is neither, and must not become a third axis.
+
+Accepted cost: **one person cannot be revoked without cutting off everyone.** Rotating the code invalidates it for all future registrations; accounts already created are unaffected. At friends-and-family scale that is a message in a group chat, not an outage.
+
+Rejected: **per-person codes in a table** — revocable and attributable, and it buys a migration, a model, an admin surface to mint codes and a second entity in the data model, for a list of people Colin can name. The trigger to build it is the day he cannot.
+
+Rejected: **no gate at all, and a spend cap instead** — a cap reads `usage_events` back as a total and refuses work mid-course, which is failing closed on a student who did nothing wrong (spec 4.5.1). The gate belongs at the door, not in the lesson engine.
+
+Rejected: **no Register link at all, with invited friends sent straight to the form** — the door works and is unguessable, and a returning member who forgets whether they have an account finds nothing to tell them.
