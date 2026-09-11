@@ -105,7 +105,7 @@ class CacheSpikeCommand extends Command
             .'plainly rather than softening them, and you never introduce more scaffolding than the student in '
             .'front of you actually needs to take the next step on their own.';
 
-        return "You are running a prompt-caching spike for OpenTutor (spec 2.4).\n\n"
+        return "You are running a prompt-caching spike for Harkness Academy (spec 2.4).\n\n"
             .implode("\n\n", array_map(
                 fn (int $i): string => "Instruction {$i}. {$paragraph}",
                 range(1, max(1, $paragraphs)),

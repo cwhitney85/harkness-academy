@@ -24,7 +24,7 @@ use Laravel\Ai\Streaming\Events\TextDelta;
 /**
  * One lesson being taught (spec 5.1, 5.2, 5.3).
  *
- * **The one real agent** (ledger D4). Everything else in OpenTutor is a
+ * **The one real agent** (ledger D4). Everything else in Harkness Academy is a
  * scripted call; this is the open-ended conversation, and it is code-paced
  * (D5): the application decides when a section starts and ends, the model
  * teaches the section it is asked for and stops.

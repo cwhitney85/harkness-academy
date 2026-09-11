@@ -16,23 +16,23 @@ import { Head } from '@inertiajs/react';
 export default function Install() {
     return (
         <>
-            <Head title="Put OpenTutor on your phone" />
+            <Head title="Put Harkness Academy on your phone" />
 
             <div className="measure py-8 sm:py-12">
                 <h1 className="display text-[38px] leading-[1.07] sm:text-[43px]">
-                    Put OpenTutor on your phone
+                    Put Harkness Academy on your phone
                 </h1>
                 <p className="mt-4">
-                    Added to your home screen, OpenTutor opens as its own app —
-                    no address bar, no tabs, just the lesson. It is the same
-                    account and the same courses; nothing is downloaded and
+                    Added to your home screen, Harkness Academy opens as its own
+                    app — no address bar, no tabs, just the lesson. It is the
+                    same account and the same courses; nothing is downloaded and
                     nothing works differently.
                 </p>
 
                 <Steps label="On iPhone or iPad">
                     <li>
-                        Open OpenTutor in Safari. Other browsers cannot do this
-                        on iOS.
+                        Open Harkness Academy in Safari. Other browsers cannot
+                        do this on iOS.
                     </li>
                     <li>
                         Tap the Share button — the square with an arrow coming
@@ -49,7 +49,7 @@ export default function Install() {
                 </Steps>
 
                 <Steps label="On Android">
-                    <li>Open OpenTutor in Chrome.</li>
+                    <li>Open Harkness Academy in Chrome.</li>
                     <li>
                         Tap the three-dot menu at the top right and choose{' '}
                         <Item>Install app</Item>, or{' '}

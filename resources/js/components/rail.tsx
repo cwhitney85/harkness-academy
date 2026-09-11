@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 import Crest from '@/components/crest';
 import { dashboard } from '@/routes';
@@ -33,6 +33,8 @@ export const railControl = `flex size-11 flex-none items-center justify-center $
  * negative margin — the hit box grows, the artboard's spacing does not move.
  */
 export function RailHead({ subtitle }: { subtitle: string }) {
+    const { name } = usePage().props;
+
     return (
         <div className="flex flex-none items-center gap-3">
             <Link
@@ -42,8 +44,8 @@ export function RailHead({ subtitle }: { subtitle: string }) {
                 <Crest className="h-10 w-[34px] flex-none" />
             </Link>
             <div className="min-w-0">
-                <div className="display text-2xl leading-none text-ground">
-                    OpenTutor
+                <div className="display truncate text-2xl leading-none text-ground">
+                    {name}
                 </div>
                 <div className="label mt-1 truncate text-[10px] text-brass">
                     {subtitle}

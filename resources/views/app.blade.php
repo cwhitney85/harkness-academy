@@ -23,7 +23,7 @@
              open when it was added — the page titles here are per screen. --}}
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-title" content="OpenTutor">
+        <meta name="apple-mobile-web-app-title" content="Harkness Academy">
 
         @fonts
 

@@ -6,10 +6,10 @@
 |--------------------------------------------------------------------------
 |
 | This file is merged over the laravel/ai package defaults, so only the keys
-| OpenTutor overrides appear here. The package's `providers` block already
-| reads ANTHROPIC_API_KEY, so it is inherited untouched -- and inheriting it
-| keeps all sixteen providers configured, which is what makes switching one a
-| change of env vars rather than a change of code.
+| Harkness Academy overrides appear here. The package's `providers` block
+| already reads ANTHROPIC_API_KEY, so it is inherited untouched -- and
+| inheriting it keeps all sixteen providers configured, which is what makes
+| switching one a change of env vars rather than a change of code.
 |
 | CAUTION: mergeConfigFrom is a SHALLOW array_merge. A top-level key defined
 | here REPLACES the package's key of the same name outright. Adding a partial

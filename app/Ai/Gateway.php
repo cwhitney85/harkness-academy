@@ -9,9 +9,9 @@ use App\Ai\Prompts\PromptRepository;
 /**
  * The provider gateway (spec 2.1).
  *
- * Every AI call in OpenTutor starts here. Call sites name a prompt key from
- * the 2.3.2 inventory and a capability tier comes with it; no call site ever
- * names a model, and no call site talks to laravel/ai directly.
+ * Every AI call in Harkness Academy starts here. Call sites name a prompt
+ * key from the 2.3.2 inventory and a capability tier comes with it; no call
+ * site ever names a model, and no call site talks to laravel/ai directly.
  */
 final class Gateway
 {

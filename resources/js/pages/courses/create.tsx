@@ -371,8 +371,8 @@ function FreeTextHint({ module }: { module: string }) {
             >
                 Pick any topic under {module} you don't see listed here. A topic
                 that turns out to belong to another subject or is not covered by
-                OpenTutor is turned away. This is experimental and could produce
-                odd results if it does not adhere to the subject.
+                Harkness Academy is turned away. This is experimental and could
+                produce odd results if it does not adhere to the subject.
             </TooltipContent>
         </Tooltip>
     );

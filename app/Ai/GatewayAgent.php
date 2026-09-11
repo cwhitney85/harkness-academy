@@ -14,8 +14,8 @@ use Laravel\Ai\Promptable;
  *
  * laravel/ai's own AnonymousAgent cannot carry provider options, which is what
  * the 2.4 caching workaround needs, so the gateway builds this instead. It is
- * the single place OpenTutor hands an agent to a provider; nothing else in the
- * app constructs one.
+ * the single place Harkness Academy hands an agent to a provider; nothing
+ * else in the app constructs one.
  */
 class GatewayAgent implements Agent, Conversational, HasProviderOptions, HasTools
 {

@@ -39,8 +39,8 @@ class InstallTest extends TestCase
     {
         $manifest = $this->manifest();
 
-        $this->assertSame('OpenTutor', $manifest['name']);
-        $this->assertSame('OpenTutor', $manifest['short_name']);
+        $this->assertSame('Harkness Academy', $manifest['name']);
+        $this->assertSame('Harkness Academy', $manifest['short_name']);
         $this->assertSame('/', $manifest['start_url']);
         $this->assertSame('standalone', $manifest['display']);
 
@@ -93,7 +93,7 @@ class InstallTest extends TestCase
         $response->assertOk();
         $response->assertSee('<link rel="manifest" href="/manifest.webmanifest">', false);
         $response->assertSee('<meta name="apple-mobile-web-app-capable" content="yes">', false);
-        $response->assertSee('<meta name="apple-mobile-web-app-title" content="OpenTutor">', false);
+        $response->assertSee('<meta name="apple-mobile-web-app-title" content="Harkness Academy">', false);
     }
 
     #[Test]

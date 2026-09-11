@@ -1,5 +1,5 @@
 /**
- * The five events OpenTutor streams (spec 5.2.5).
+ * The five events Harkness Academy streams (spec 5.2.5).
  *
  * One vocabulary for every streamed turn in the product — a lesson section, a
  * Q&A turn, the side-tab explainer and an interview question all arrive as

@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         //
         // It exists to give package 8's screens something to render before the
         // engines had ever been run (spec 8.2), and it gets there by deleting
-        // every course belonging to colin@opentutor.test first -- which, now
+        // every course belonging to colin@harkness.test first -- which, now
         // that a real course is being taught to that same student, is their
         // progress. It is run when it is wanted and never as a side effect of
         // `--seed` (Colin, 2026-09-02):

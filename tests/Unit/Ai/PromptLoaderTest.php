@@ -23,7 +23,7 @@ class PromptLoaderTest extends TestCase
     {
         parent::setUp();
 
-        $this->directory = sys_get_temp_dir().'/opentutor-prompts-'.bin2hex(random_bytes(6));
+        $this->directory = sys_get_temp_dir().'/harkness-prompts-'.bin2hex(random_bytes(6));
 
         mkdir($this->directory, 0o755, true);
     }

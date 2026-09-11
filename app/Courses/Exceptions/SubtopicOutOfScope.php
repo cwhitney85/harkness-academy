@@ -6,7 +6,8 @@ use App\Courses\SubtopicName;
 use App\Models\Module;
 
 /**
- * The typed subtopic is not something OpenTutor teaches at all (spec 4.9.4).
+ * The typed subtopic is not something Harkness Academy teaches at all
+ * (spec 4.9.4).
  *
  * No module would take it, so there is nowhere to offer and nothing to
  * suggest -- the student is told so and left on the picker.

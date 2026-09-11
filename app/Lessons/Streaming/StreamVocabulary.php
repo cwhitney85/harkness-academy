@@ -5,7 +5,7 @@ namespace App\Lessons\Streaming;
 use InvalidArgumentException;
 
 /**
- * The complete set of events OpenTutor streams (spec 5.2.5).
+ * The complete set of events Harkness Academy streams (spec 5.2.5).
  *
  * 5.2.5's done-condition is "recorded transcript validates; no undocumented
  * events". This list is what "documented" means, and `assertKnown` is what

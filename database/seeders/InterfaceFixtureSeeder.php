@@ -74,7 +74,7 @@ class InterfaceFixtureSeeder extends Seeder
      * per-student and a fixture spread over several would exercise none of
      * them.
      */
-    public const EMAIL = 'colin@opentutor.test';
+    public const EMAIL = 'colin@harkness.test';
 
     public const PASSWORD = 'password';
 

@@ -16,7 +16,7 @@ class CreateNewUser implements CreatesNewUsers
      * Validate and create a newly registered user.
      *
      * Registration requires an 18-or-older attestation bundled into Terms of
-     * Service acceptance (spec 1.2). OpenTutor does not serve under-18
+     * Service acceptance (spec 1.2). Harkness Academy does not serve under-18
      * accounts, so an unchecked attestation fails validation and no user row
      * is created.
      *

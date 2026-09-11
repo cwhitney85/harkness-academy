@@ -1,7 +1,7 @@
 import type { SVGProps } from 'react';
 
 /**
- * The OpenTutor crest (D21) — the single artwork source for the rail, the exam
+ * The Harkness Academy crest (D21) — the single artwork source for the rail, the exam
  * cover, completion states, the favicon and package 7's icons (spec 8.3.5).
  * No call site draws its own shield.
  *
@@ -22,7 +22,7 @@ export default function Crest({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             role="img"
-            aria-label="OpenTutor"
+            aria-label="Harkness Academy"
             {...props}
         >
             <path

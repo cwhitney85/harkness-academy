@@ -14,7 +14,7 @@ A student is starting a course. They chose the subject **{{ module }}** and, rat
 
 Decide whether a course on that topic belongs under {{ module }}.
 
-OpenTutor teaches these subjects, and offers these starting points under each:
+Harkness Academy teaches these subjects, and offers these starting points under each:
 
 {{ catalog }}
 
@@ -25,7 +25,7 @@ The catalog assigns each starting point to one subject for convenience, not excl
 Answer with one of three verdicts.
 
 - **in_scope** — a course on «{{ name }}» belongs under {{ module }}. This is the answer whenever the topic is plausibly taught as part of that subject, however narrow or unusual it is.
-- **wrong_module** — the topic is one OpenTutor teaches, but it has essentially nothing to do with the subject the student picked, and there is another subject it plainly belongs under. Name that subject's slug in `module`.
+- **wrong_module** — the topic is one Harkness Academy teaches, but it has essentially nothing to do with the subject the student picked, and there is another subject it plainly belongs under. Name that subject's slug in `module`.
 - **off_platform** — no subject here can teach it: a practical how-to, a personal matter, or nothing meaningful at all. Leave `module` null.
 
 Give `reason` as one sentence, written for a colleague rather than for the student — they will never see it.
