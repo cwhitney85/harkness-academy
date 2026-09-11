@@ -2,7 +2,7 @@
 
 *Provides: the app skeleton every other package builds on. Consumes: nothing.*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D2](../02-design.md) Inertia + React · [D7](../02-design.md) the data model · [R4](../02-design.md) Laravel Cloud, and the host must not buffer SSE · [W3](../02-design.md) `master` · [W4](../02-design.md) branching · [D41](../02-design.md) an error names every rule the field broke. Traps found here: [T1, T4](../lessons.md). Deploy runbook: [docs/deploy.md](../deploy.md).
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D2](../02-design.md) Inertia + React · [D7](../02-design.md) the data model · [R4](../02-design.md) Laravel Cloud, and the host must not buffer SSE · [W3](../02-design.md) `master` · [W4](../02-design.md) branching · [D41](../02-design.md) an error names every rule the field broke · [D43](../02-design.md) the password rule is eight characters. Traps found here: [T1, T4](../lessons.md). Deploy runbook: [docs/deploy.md](../deploy.md).
 
 - **1.1 MUST** — Laravel 13, Inertia + React starter, Postgres, queues, scheduler. *Done: boots locally; page renders through Inertia.*
 - **1.2 MUST** — Auth + accounts; 18+ attestation in ToS at signup. *Done: register/login/logout pass; under-18 blocks signup.*

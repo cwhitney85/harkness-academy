@@ -69,6 +69,7 @@
 | D40 | Where the correct option sits is the writer's, and it is dealt out rather than shuffled | current |
 | D41 | A validation error names every rule the field broke, and the joining is Inertia's boundary | current |
 | D42 | A free-text subtopic is checked against its module before a course exists | current |
+| D43 | The password rule is eight characters, in every environment | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -765,7 +766,7 @@ Rider: **exactly four options, not three to four** (6.6.1). `MIN_OPTIONS` was 3,
 
 The password rules reached the register, reset and settings-security screens only as the WebKit `passwordrules` attribute, which renders no visible text. A student therefore learned the rules one failed submission at a time — and could not learn them faster than that, because Inertia's `resolveValidationErrors` keeps `errors.field` a string by dropping all but the first message a field failed on. Two rules broken, one rule named, one more round trip.
 
-**The lines are derived from `Password::defaults()`, not written out.** `App\Auth\PasswordRequirements::inWords()` reads `appliedRules()` — public on the rule — and returns one readable line per condition. The rule differs by environment (`min(8)` locally, `min(12)` plus four character classes and the breach check in production), so a hand-written list would be wrong in one of the two, and wrong silently.
+**The lines are derived from `Password::defaults()`, not written out.** `App\Auth\PasswordRequirements::inWords()` reads `appliedRules()` — public on the rule — and returns one readable line per condition. The rule differed by environment at the time (`min(8)` locally, `min(12)` plus four character classes and the breach check in production; since [D43](#d43-the-password-rule-is-eight-characters-in-every-environment-resolved-2026-09-11-package-1-item-15-dogfood-repair) it is one rule), so a hand-written list would have been wrong in one of the two, and wrong silently.
 
 **The joining happens in `HandleInertiaRequests`, once, for every field.** Inertia already carries `$withAllErrors`; turning it on and joining each field's messages back into one string means `errors.password` names all of them while staying the type every `<InputError message=>` in the app reads.
 
@@ -798,3 +799,14 @@ Rejected: **an override button — "keep it under Language".** It makes every wr
 Rejected: **failing open when the provider is unreachable.** Chosen in framing and reversed by Colin during design: *"I don't think the course should start if it's a broken call."* Failing closed is 4.5.1 as written — nothing downstream exists to protect — so this needs no exception, and the catalog path still starts any preset subtopic during an outage.
 
 Rejected: **dropping the `reason` field once the copy became ours.** It is generated after the verdict and reading it costs nothing, and it is the only record of why a student was turned away. It is stored against the refusal for an admin UI to read back (Colin, 2026-09-09).
+
+## D43. The password rule is eight characters, in every environment (resolved 2026-09-11, package 1 item 1.5, dogfood repair)
+
+The app is going to friends and family, and the production rule -- twelve characters, mixed case, a number, a symbol, and the breach-list check -- was the first thing they met. It is more than the accounts protect, and composition rules are the part people feel and the part that buys least: the usual answer is `Password1!`.
+
+`Password::defaults()` is now `Password::min(8)` with no environment branch. The register, reset and settings-security screens derive their text from it (D41), so the visible list shrank to one line with no screen touched.
+
+Rejected: **`min(8)->uncompromised()` in production** -- the Have I Been Pwned k-anonymity check refuses passwords already in leaked lists and asks nothing of the student while typing. It is the one rule worth adding back if the app ever holds more than course notes; it is not needed to start, and it adds an outbound call to registration.
+
+Rejected: **keeping the production rule and relaxing only locally** -- it is production that friends and family register against.
+
