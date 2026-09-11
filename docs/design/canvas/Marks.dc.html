@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Serif:ital@0;1&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
+      --gold:oklch(0.83 0.090 88); --rule:oklch(0.87 0.012 95);
+      --desk:oklch(0.938 0.014 95);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .hand{font-family:"Caveat",cursive;font-size:21px;line-height:1.3;color:var(--wine)}
+    /* W3: stacked letterspaced caps. The negative right margin gives back the
+       trailing letter-space so the block optically centres. */
+    .w3{font-family:"Instrument Serif",Georgia,serif;text-transform:uppercase;
+      letter-spacing:.30em;margin-right:-.30em;line-height:1.12}
+    .btn{font-family:"Newsreader",Georgia,serif;font-size:15px;letter-spacing:.13em;
+      text-transform:uppercase;background:var(--wine);color:oklch(0.97 0.010 60);
+      border:none;padding:13px 30px;cursor:pointer}
+    .btn-quiet{background:none;color:var(--wine);border:1px solid var(--rule);padding:12px 28px}
+  </style>
+</helmet>
+
+<div style="width:1440px; height:1320px; background:var(--ground); padding:56px 64px; display:flex; flex-direction:column; gap:0">
+
+  <div style="display:flex; align-items:baseline; gap:20px; border-bottom:1px solid var(--rule); padding-bottom:14px">
+    <div class="disp" style="font-size:30px">Marks</div>
+    <div class="lab" style="flex-grow:1">Two questions: which wordmark, and where the motto sits</div>
+    <div class="lab" style="color:var(--wine)">D44</div>
+  </div>
+
+  <!-- ── THE WORDMARK ───────────────────────────────────────────────── -->
+  <div class="lab" style="color:var(--wine); margin:34px 0 4px">1 · The wordmark</div>
+  <p style="margin:0 0 26px; max-width:640px; color:var(--muted); font-size:15.5px">W1 sets the name as one line of Instrument Serif beside the crest. W3 stacks it as letterspaced caps, the way a school sets its own name on a gate. Both are drawn at every size the app actually uses.</p>
+
+  <div style="display:grid; grid-template-columns:92px 1fr 1fr; column-gap:44px; row-gap:0; align-items:stretch">
+
+    <div></div>
+    <div class="lab" style="border-bottom:1px solid var(--rule); padding-bottom:8px">W1 — one line</div>
+    <div class="lab" style="border-bottom:1px solid var(--rule); padding-bottom:8px">W3 — stacked caps</div>
+
+    <!-- HERO -->
+    <div class="lab" style="padding-top:34px; text-align:right">Hero</div>
+    <div style="padding:30px 0 30px; border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:26px">
+      <svg width="78" height="92" viewBox="0 0 34 40" fill="none" style="flex:0 0 78px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="disp" style="font-size:56px; line-height:1">Harkness Academy</div>
+    </div>
+    <div style="padding:30px 0 30px; border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:26px">
+      <svg width="78" height="92" viewBox="0 0 34 40" fill="none" style="flex:0 0 78px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="w3" style="font-size:38px">Harkness<br>Academy</div>
+    </div>
+
+    <!-- RAIL -->
+    <div class="lab" style="padding-top:38px; text-align:right">Rail<br><span style="font-size:10px; letter-spacing:.08em">252px</span></div>
+    <div style="padding:24px 0; border-bottom:1px solid var(--rule)">
+      <div style="width:252px; background:var(--railgreen); padding:24px 22px; display:flex; gap:12px; align-items:center">
+        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" style="flex:0 0 34px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div style="min-width:0">
+          <div class="disp" style="font-size:22px; line-height:1.06; color:oklch(0.95 0.012 100)">Harkness Academy</div>
+          <div class="lab" style="margin-top:4px; color:var(--brass); font-size:10px">Conversational Basics</div>
+        </div>
+      </div>
+      <div class="lab" style="margin-top:10px; color:var(--wine); font-size:10.5px">Wraps to two lines at 22px. One line needs 17px.</div>
+    </div>
+    <div style="padding:24px 0; border-bottom:1px solid var(--rule)">
+      <div style="width:252px; background:var(--railgreen); padding:24px 22px; display:flex; gap:12px; align-items:center">
+        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" style="flex:0 0 34px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div style="min-width:0">
+          <div class="w3" style="font-size:15px; color:oklch(0.95 0.012 100)">Harkness<br>Academy</div>
+          <div class="lab" style="margin-top:5px; color:var(--brass); font-size:10px">Conversational Basics</div>
+        </div>
+      </div>
+      <div class="lab" style="margin-top:10px; color:var(--hunter); font-size:10.5px">Fits with 58px spare. Stacking is what the rail wants.</div>
+    </div>
+
+    <!-- AUTH -->
+    <div class="lab" style="padding-top:36px; text-align:right">Auth</div>
+    <div style="padding:26px 0; border-bottom:1px solid var(--rule)">
+      <div style="width:420px; background:var(--surface); border:1px solid var(--rule); padding:30px 34px 26px; text-align:center">
+        <svg width="38" height="45" viewBox="0 0 34 40" fill="none" style="margin:0 auto 12px; display:block">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div class="disp" style="font-size:27px; line-height:1">Harkness Academy</div>
+        <div class="lab" style="margin-top:16px">Sign in to continue</div>
+      </div>
+    </div>
+    <div style="padding:26px 0; border-bottom:1px solid var(--rule)">
+      <div style="width:420px; background:var(--surface); border:1px solid var(--rule); padding:30px 34px 26px; text-align:center">
+        <svg width="38" height="45" viewBox="0 0 34 40" fill="none" style="margin:0 auto 14px; display:block">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div class="w3" style="font-size:19px">Harkness<br>Academy</div>
+        <div class="lab" style="margin-top:16px">Sign in to continue</div>
+      </div>
+    </div>
+
+    <!-- 16px -->
+    <div class="lab" style="padding-top:30px; text-align:right">16px<br><span style="font-size:10px; letter-spacing:.08em">Favicon,<br>footer, tab</span></div>
+    <div style="padding:24px 0; display:flex; align-items:center; gap:38px">
+      <div style="display:flex; align-items:center; gap:7px">
+        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" style="flex:0 0 14px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="2.4"/>
+          <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="2.2" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="10" letter-spacing="0.5">HA</text>
+        </svg>
+        <div class="disp" style="font-size:16px; line-height:1">Harkness Academy</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:7px; background:var(--railgreen); padding:8px 12px">
+        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" style="flex:0 0 14px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="2.4"/>
+          <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="2.2" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="10" letter-spacing="0.5">HA</text>
+        </svg>
+        <div class="disp" style="font-size:16px; line-height:1; color:oklch(0.95 0.012 100)">Harkness Academy</div>
+      </div>
+    </div>
+    <div style="padding:24px 0; display:flex; align-items:center; gap:38px">
+      <div style="display:flex; align-items:center; gap:8px">
+        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" style="flex:0 0 14px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="2.4"/>
+          <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="2.2" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="10" letter-spacing="0.5">HA</text>
+        </svg>
+        <div class="w3" style="font-size:9.5px">Harkness<br>Academy</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; background:var(--railgreen); padding:8px 12px">
+        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" style="flex:0 0 14px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="2.4"/>
+          <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="2.2" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="10" letter-spacing="0.5">HA</text>
+        </svg>
+        <div class="w3" style="font-size:9.5px; color:oklch(0.95 0.012 100)">Harkness<br>Academy</div>
+      </div>
+      <div class="lab" style="color:var(--wine); font-size:10.5px; max-width:150px; line-height:1.5">Two 9.5px lines is smaller than the app sets anything.</div>
+    </div>
+
+  </div>
+
+  <!-- ── THE MOTTO ──────────────────────────────────────────────────── -->
+  <div class="lab" style="color:var(--wine); margin:44px 0 4px">2 · The motto</div>
+  <p style="margin:0 0 26px; max-width:640px; color:var(--muted); font-size:15.5px">Hero size only, either way. P1 makes <em>Licet Facere</em> part of the crest — a band under the shield, the way a school engraves it on the object. P2 leaves the crest alone and engraves the motto as its own line beneath the wordmark.</p>
+
+  <div style="display:flex; gap:64px; align-items:flex-start">
+
+    <!-- P1: the band -->
+    <div style="flex:0 0 460px">
+      <div class="lab" style="border-bottom:1px solid var(--rule); padding-bottom:8px; margin-bottom:30px">P1 — on the band</div>
+      <div style="display:flex; align-items:center; gap:28px">
+        <svg width="138" height="133" viewBox="0 0 60 58" fill="none" style="flex:0 0 138px">
+          <path d="M15 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+          <path d="M15 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+          <text x="30" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+          <path d="M2 42h56v11H2z" fill="var(--wine)"/>
+          <path d="M2 42h56M2 53h56" stroke="var(--gold)" stroke-width="0.9"/>
+          <text x="30" y="50.1" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="6.3" letter-spacing="0.85">LICET FACERE</text>
+        </svg>
+        <div class="disp" style="font-size:46px; line-height:1">Harkness Academy</div>
+      </div>
+      <div class="lab" style="margin-top:22px; font-size:10.5px; line-height:1.6; color:var(--muted)">A third crest variant, used by one call site. The band is drawn, never set — it survives being rasterised into an icon.</div>
+    </div>
+
+    <!-- P2: engraved line -->
+    <div style="flex:0 0 460px">
+      <div class="lab" style="border-bottom:1px solid var(--rule); padding-bottom:8px; margin-bottom:30px">P2 — engraved beneath</div>
+      <div style="display:flex; align-items:center; gap:28px">
+        <svg width="113" height="133" viewBox="0 0 34 40" fill="none" style="flex:0 0 113px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div>
+          <div class="disp" style="font-size:46px; line-height:1">Harkness Academy</div>
+          <div style="display:flex; align-items:center; gap:14px; margin-top:15px">
+            <span style="height:1px; width:34px; background:var(--brass)"></span>
+            <span style="font-size:12.5px; letter-spacing:.34em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
+            <span style="height:1px; flex-grow:1; background:var(--brass)"></span>
+          </div>
+        </div>
+      </div>
+      <div class="lab" style="margin-top:22px; font-size:10.5px; line-height:1.6; color:var(--muted)">No new crest variant. The motto is copy, so it sets in the page's own type and can be read at any width.</div>
+    </div>
+
+  </div>
+
+  <!-- ── THE CREST, ONE INK ─────────────────────────────────────────── -->
+  <div class="lab" style="color:var(--wine); margin:44px 0 20px">3 · The same two letters in one ink — unchanged by either decision</div>
+  <div style="display:flex; gap:30px; align-items:flex-end">
+    <div style="background:oklch(0.30 0.055 250); padding:26px 34px; display:flex; gap:26px; align-items:center; color:oklch(0.80 0.030 250)">
+      <svg width="46" height="54" viewBox="0 0 34 40" fill="none" style="flex:0 0 46px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="currentColor" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="currentColor" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="lab" style="color:oklch(0.78 0.030 250)">Blue book cover<br>outline, currentColor</div>
+    </div>
+    <div style="background:var(--wine); padding:26px 34px; display:flex; gap:26px; align-items:center; color:oklch(0.90 0.060 60)">
+      <svg width="46" height="54" viewBox="0 0 34 40" fill="none" style="flex:0 0 46px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="currentColor" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="currentColor" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="lab" style="color:oklch(0.88 0.060 60)">Completion state<br>outline on wine</div>
+    </div>
+    <div style="background:var(--ground); border:1px solid var(--rule); padding:26px 34px; display:flex; gap:26px; align-items:center">
+      <svg width="46" height="54" viewBox="0 0 34 40" fill="none" style="flex:0 0 46px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="lab">App mark<br>filled, wine and gold</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

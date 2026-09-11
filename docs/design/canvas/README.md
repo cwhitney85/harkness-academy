@@ -1,6 +1,6 @@
 # Design canvas — source of record
 
-The visual language of OpenTutor lives here as source, and is read as a published canvas:
+The visual language of Harkness Academy lives here as source, and is read as a published canvas:
 
 **https://claude.ai/code/artifact/5d5d7052-86b8-4230-8c2a-606cba1b6f46**
 
@@ -13,17 +13,20 @@ Each `.dc.html` file is one artboard. `canvas.json` places them, names the pages
 | **A · materials** | The settled design: lesson, photocopy quiz, blue-book exam (closed and opened), the four checkpoint treatments, the two phone reductions, and the parked legal pad. |
 | **A · dosage** | Three settings of direction A — Restrained, Spirited, Full. Superseded, kept for the record of what was cut. |
 | **First directions** | The original three directions (Chalkboard, Foolscap, Assembly Hall) across lesson, syllabus and homework. Superseded. |
+| **B · brand** | The name, the mark and the front door ([D44](../../02-design.md), spec 8.13). Nothing on it is chosen yet: the wordmark, the motto's placement, the page and the ground are each isolated on their own artboard. |
 
 ## Rebuilding the canvas
 
-Invoke the `design` skill, then seed a fresh copy of its payload from these files:
+Invoke the `design` skill, then seed a fresh copy of its payload from these files — every `.dc.html` in this directory, plus `canvas.json`:
 
 ```
+cd docs/design/canvas
+ARGS=(); for f in *.dc.html; do ARGS+=(--artboard "$f"); done
 node "<skill base>/seed-canvas.mjs" \
   --template "<skill base>/payload.template.html" \
-  --out opentutor-direction-study.html \
-  --title "OpenTutor Direction Study" \
-  --artboard Main.dc.html --artboard ALesson.dc.html ... \
+  --out harkness-academy-design-study.html \
+  --title "Harkness Academy Design Study" \
+  "${ARGS[@]}" \
   --canvas canvas.json
 ```
 
