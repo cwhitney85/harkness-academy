@@ -1,4 +1,4 @@
-# OpenTutor — what the app does
+# Harkness Academy — what the app does
 
 *Durable tier (ledger [D27](02-design.md)). Required by spec 9.2. This document describes the **running system**: what a student can do, in what order, and which part of the app answers. The specs in [`docs/specs/`](specs/) say what must be true per package; this says what happens between creating a course and passing its final exam.*
 

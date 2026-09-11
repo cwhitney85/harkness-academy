@@ -1,4 +1,4 @@
-# OpenTutor — traps and postmortems
+# Harkness Academy — traps and postmortems
 
 *Durable tier (ledger [D27](02-design.md)). Required by spec 9.5. What this file owns: **tooling traps** — behaviour of Laravel, Vite, the AI SDK or the host that cost a session and will cost the next one — and **incident postmortems**, where something reached a student or a bill before it was found.*
 

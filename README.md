@@ -1,4 +1,4 @@
-# OpenTutor
+# Harkness Academy
 
 An LLM personal tutor. Laravel 13 + Inertia/React + Postgres, Anthropic-direct.
 

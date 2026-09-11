@@ -1,6 +1,8 @@
-# OpenTutor — Frame
+# Harkness Academy — Frame
 
 *Recorded 2026-08-21. Product name is a working title.*
+
+*The product was named OpenTutor until 2026-09-11; see [D44](02-design.md). Body prose below is left as it was written.*
 
 ## Situation
 

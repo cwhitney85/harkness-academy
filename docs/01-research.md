@@ -1,6 +1,8 @@
-# OpenTutor — Research Findings
+# Harkness Academy — Research Findings
 
 *Recorded 2026-08-21. Confidence labels: confirmed / probable / uncertain / unknown.*
+
+*The product was named OpenTutor until 2026-09-11; see [D44](02-design.md). Body prose below is left as it was written.*
 
 ## Thread 1 — Competitive landscape
 

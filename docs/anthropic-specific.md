@@ -26,7 +26,7 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 
 **These numbers show the system breakpoint is the one doing the work, and that the top-level breakpoint alone would have missed.** The two calls are separate conversations with *different* user messages ("one", "two"), sharing only the system prefix. Call 1 wrote two cacheable prefixes: `[system]` at 4,742 and `[system + "one"]` at 4,753. Call 2's prefix is `[system + "two"]`, which matches the first of those and not the second — hence 4,742 read and only 11 written for its own tail. With top-level `cache_control` alone there would have been a single breakpoint, placed after `"one"`, and call 2 would have read nothing.
 
-That is the cross-conversation case from the design rationale below, measured rather than argued. It is also the case OpenTutor is made of: every lesson in a course is a separate conversation over one shared prefix.
+That is the cross-conversation case from the design rationale below, measured rather than argued. It is also the case Harkness Academy is made of: every lesson in a course is a separate conversation over one shared prefix.
 
 ### What each breakpoint is actually worth
 
@@ -64,7 +64,7 @@ Anthropic does not cache by default — unlike OpenAI, it is opt-in. There are t
 - **Per-block** — `cache_control: {type: "ephemeral"}` on a specific content block. The breakpoint sits exactly where you put it.
 - **Top-level** — `cache_control` as a request field, which auto-applies the breakpoint to the *last* cacheable block (system + tools by default).
 
-OpenTutor emits **both**, for reasons that are specific to how a course is shaped:
+Harkness Academy emits **both**, for reasons that are specific to how a course is shaped:
 
 - The **system breakpoint** covers spec 2.3.3's stable prefix, `[persona | criteria | wk | guidance]`. That prefix is per-course, not per-conversation: every lesson in a course shares it. With only the top-level form, the breakpoint lands after the newest user message, so the *first* call of every new lesson re-writes the whole prefix at 1.25x. The explicit system breakpoint is what makes lesson two cheap.
 - The **tail breakpoint** covers the growing lesson transcript within one conversation, which the system breakpoint cannot reach.

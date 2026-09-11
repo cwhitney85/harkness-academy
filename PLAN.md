@@ -1,6 +1,8 @@
-# OpenTutor — Build Plan
+# Harkness Academy — Build Plan
 
 *Scheduled for retirement. What survives here is the dependency graph and the retirement clause. **Do not write session status into this file** — package state lives in its spec's done-conditions, and where a fact belongs is [CLAUDE.md](CLAUDE.md)'s tier table.*
+
+*The product was named OpenTutor until 2026-09-11; see [D44](docs/02-design.md). Body prose below is left as it was written.*
 
 ## Dependency graph
 

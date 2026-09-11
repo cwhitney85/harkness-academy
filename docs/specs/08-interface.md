@@ -88,7 +88,7 @@ S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a 
 ```
   GET /            ──► signed in ──► S1; otherwise renders S0
   GET terms        ──  linked from registration
-  GET install      ──  linked from the user menu: how to put OpenTutor on a phone's home screen (spec 7.1)
+  GET install      ──  linked from the user menu: how to put Harkness Academy on a phone's home screen (spec 7.1)
 
   S0  LANDING                                          GET /   (signed out only)
       ├─ "Log in" ───────────────────────────────►    the sign-in screen ──► S1

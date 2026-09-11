@@ -42,7 +42,7 @@ In practice you set almost nothing:
 |---|---|
 | `ANTHROPIC_API_KEY` | **Always.** Nothing injects it, and without it the app deploys clean and dies at the first interview — a 500 on the interview's stream, surfacing as a 422 on the answer that follows it. Prefer a **linked secret** over a custom variable: Secrets Manager encrypts it in the browser, never shows it again and is KMS-backed. Organization → Settings → Secrets → New secret, then link it to the environment (the **Link secrets** button in General Settings' injected variables section) and deploy from the staged-changes banner. Do not also set a custom variable of the same name — custom variables outrank linked secrets, so a leftover one silently shadows every later rotation. |
 | `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy. |
-| `APP_NAME` | Only if the injected value is not `OpenTutor` — it renders user-visibly through Inertia's shared props. |
+| `APP_NAME` | Only if the injected value is not `Harkness Academy` — it renders user-visibly through Inertia's shared props. |
 
 A variable only reaches the application on a **deploy**, not a restart: the build runs `php artisan optimize`, which caches config and freezes every `env()` value into that cache.
 

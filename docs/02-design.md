@@ -1,4 +1,4 @@
-# OpenTutor — Design Decision Ledger
+# Harkness Academy — Design Decision Ledger
 
 *Recorded 2026-08-21. Each decision: chosen candidate, rejected candidates, deciding rationale.*
 
