@@ -8,17 +8,17 @@ Items here are prefixed `H` so they never collide with the spec item numbers thi
 
 **Hierarchy is dependency.** H3 needs H1 and H2; H4 needs H3; H5 and H6 need nothing.
 
-Ledger entries this unit writes: [D44](../02-design.md) the name, the motto and the monogram · [D45](../02-design.md) the invitation gate · **D46** the landing page's ground, written after node H3 is judged.
+Ledger entries this unit writes: [D44](../02-design.md) the name, the motto and the monogram · [D45](../02-design.md) the invitation gate · [D46](../02-design.md) the wordmark, the motto's placement, the composition and the ground.
 
-Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landing page) · an amendment to **8.6.1**.
+Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landing page) · an amendment to **8.6.1**, and one to **8.13.4** the day after writing it.
 
 ## Where it stands (2026-09-11)
 
-**Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · **H1.13 and H3.1–H3.3**, the canvas re-seeded in place with a fourth page.
+**Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · `6b50c3d` H1.13 and H3.1–H3.3 · **H3.4 and H2.4** — the four questions answered, D46 written, `app.css` and the settled artboards moved to W3.
 
-Nothing in the running app says OpenTutor. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name (H6.3, blocked), and the **rail wordmarks on the canvas's settled artboards** — those read `OpenTutor` until W1/W3 is judged, because the string that replaces them is the thing under test (H3.3, then H3.4).
+Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name (H6.3, blocked), and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
 
-**Open.** **H3.4**, waiting on Colin to judge four questions on page B · brand · H2.4 (D46, after that judgement) · H2.5 · **H4** the landing page, needs H3 · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
+**Open.** **H2.5** · **H4** the landing page, unblocked now that H3 is judged · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
 
 **To land the unit:** triage this file into the durable tier and delete it in the same commit as the last of the work (spec 9.6).
 
@@ -51,7 +51,7 @@ Scale, measured 2026-09-11: **78 occurrences across 55 files**; 51 in 32 files o
 - **H2.1 MUST** — Ledger **D44**: the name, the motto, the monogram, and the rejected candidates. *Done: a session reading D44 can say why the motto is not "Age Modo" without asking.*
 - **H2.2 MUST** — D44 states that the Harkness pedagogy is **not** claimed. *Done: no string in `resources/` mentions discussion-based or seminar teaching.*
 - **H2.3 MUST** — Ledger **D45**: the invitation gate is one shared code in config, and why not a table. *Done: D45 names the revocation cost it accepted.*
-- **H2.4 MUST** — Ledger **D46**: the landing page's ground, written **after** node H3 is judged, naming the two rejected grounds and whether `app.css`'s "nothing is ever set on it" comment about `--desk` survives. *Done: `app.css`'s comment and D46 agree.*
+- **H2.4 DONE** — Ledger **D46**: the landing page's ground, written **after** node H3 is judged, naming the two rejected grounds and whether `app.css`'s "nothing is ever set on it" comment about `--desk` survives. *Done: `app.css`'s comment and D46 agree.* It grew past its brief because the same sitting settled all four questions, so D46 carries the wordmark, the motto's placement and the composition too. The comment did not survive: the landing page sets type on `--desk`. It is still not a fourth ground in D22's sense, and the rewritten comment says why.
 - **H2.5 SHOULD** — `docs/system.md` gains the landing page and the invitation gate. *Done: a reader who has never seen the repo can say what an unauthenticated visitor sees.*
 
 ## H3. The artboards
@@ -63,12 +63,20 @@ Four decisions are deliberately deferred to looking rather than arguing: the wor
 - **H3.1 DONE** — A new canvas page **B · brand** carrying eight artboards: `Marks`; `LandingCrest` ×3 (paper, green, desk); `LandingArgument`; `Footer`; `LandingPhone` ×2 (paper, green). *Done: the published canvas shows all eight, and each candidate ground appears at 1440px and at 390px.* Desk at 390px shares `LandingPhonePaper`, which carries two frames side by side: a 2.4% lightness step reads as nothing when the two are not adjacent, so a lone desk phone would have answered no question. `launch` now opens the canvas on page-4.
 - **H3.2 DONE** — No placeholder text. `LandingArgument` carries **"Enroll yourself."** over the real lifecycle subhead: *a tutor that interviews you, writes a syllabus you approve, teaches it lesson by lesson, and examines you at the end.* *Done: the artboards contain no lorem ipsum — the rule `docs/design/canvas/README.md` already states.*
 - **H3.3 DONE** — `Marks` sets W1 (`Harkness Academy`, one line) and W3 (stacked letterspaced caps) against both crest variants at hero, rail, auth and 16px sizes. *Done: the wordmark decision is answerable from that artboard alone.* `Marks` also carries the motto question, because P1 and P2 are both compositions of the mark and belong beside the wordmark rather than on a landing artboard that is holding everything but its ground constant.
-- **H3.4 MUST** — Whatever wins changes `docs/design/canvas/` **and** `resources/css/app.css` in the same commit (8.1.3). *Done: no commit touches one without the other.* **This is the open item.** Four answers are needed: W1 or W3 · P1 or P2 · L1 or L2 · G1, G2 or G3. Two are already half-answered by drawing them — `Harkness Academy` at 22px wraps to two lines in the 252px rail where the stacked form fits with 58px spare, and G2 costs the primary button a gold hairline it does not need on either light ground. Neither is a decision; both are what the artboards were for.
+- **H3.4 DONE** — Whatever wins changes `docs/design/canvas/` **and** `resources/css/app.css` in the same commit (8.1.3). *Done: no commit touches one without the other.* Colin's call, 2026-09-11: **W3 · P2 · L2 · G3**, and drop both the bar and the footer. All of it is D46.
+
+  The commit went further than `app.css`, because W3 is a composition rather than a token and leaving the app rendering W1 is the drift 8.1.3 exists to prevent. `<Wordmark/>` splits `APP_NAME` on whitespace and renders a line per word; `rail.tsx` and `app-logo.tsx` are its two call sites, and `auth-simple-layout.tsx` draws the crest with no wordmark, so there is no third. `.wordmark` is the class, beside `.display`/`.label`/`.hand`.
+
+  The rail head changed shape with it: crest and the two 15px lines are both 34px, so they align as one object, and the subtitle drops below them behind a hairline. Colin's diagnosis was that the crest was splitting the name from the course; the hairline is what stops the course from reading as a product tagline once it is on its own line.
+
+  P1 is rejected rather than dead. The band does not read at any size the page uses, because an 11-unit band under a 38-unit shield is a smudge — but that is an argument about the shield's size, not about the idea. D46 names it as the thing to revisit if the crest is punched up.
+
+  On the canvas: `Landing` and `LandingPhone` are the chosen page. `Marks` and the three `LandingCrest` grounds stay as the record of what they beat, retitled. `LandingArgument`, `Footer` and the two candidate phones are deleted — L1 survives in the three ground artboards, so nothing about the comparison is lost by removing the four.
 - **H3.5 WONT** — No artboard for a signed-in navbar. `/` redirects members, so no signed-in user ever sees this page. *Falsified if: the landing route renders for an authenticated request.*
 
 ## H4. The landing page
 
-*Depends on H3 — the page is not built until the artboards are judged (confirmed 2026-09-11, Colin). Lands as spec section **8.13** plus an amendment to **8.6.1**; see [docs/specs/08-interface.md](../specs/08-interface.md) for the items themselves.*
+*Depends on H3 — the page is not built until the artboards are judged (confirmed 2026-09-11, Colin). **Unblocked:** `Landing.dc.html` and `LandingPhone.dc.html` are what 8.13.6 measures against. Lands as spec section **8.13** plus an amendment to **8.6.1**; see [docs/specs/08-interface.md](../specs/08-interface.md) for the items themselves.*
 
 ## H5. The invitation gate
 

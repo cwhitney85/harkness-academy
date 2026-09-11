@@ -72,6 +72,7 @@
 | D43 | The password rule is eight characters, in every environment | current |
 | D44 | The name, the motto and the monogram — Harkness Academy, *Licet Facere*, HA | current |
 | D45 | Entry is one shared invitation code, held in config | current |
+| D46 | The wordmark stacks, the motto is engraved, and the front door is set on the desk | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -849,3 +850,29 @@ Rejected: **per-person codes in a table** — revocable and attributable, and it
 Rejected: **no gate at all, and a spend cap instead** — a cap reads `usage_events` back as a total and refuses work mid-course, which is failing closed on a student who did nothing wrong (spec 4.5.1). The gate belongs at the door, not in the lesson engine.
 
 Rejected: **no Register link at all, with invited friends sent straight to the form** — the door works and is unguessable, and a returning member who forgets whether they have an account finds nothing to tell them.
+
+## D46. The wordmark stacks, the motto is engraved, and the front door is set on the desk (resolved 2026-09-11, unit `harkness`, spec item 8.13, Colin)
+
+D44 settled the name, the motto's words and the two letters. It left four things to be decided by drawing them rather than arguing them, on canvas page **B · brand**. This entry is the answer to all four, and the artboards titled CHOSEN there are what it means.
+
+**Chosen wordmark: W3, stacked letterspaced caps** — one word per line, Instrument Serif, `0.3em` tracking. The 252px rail decided it and nothing else needed to: `Harkness Academy` set as one line wraps there at any size large enough to read, where the stacked form fits with 58px to spare. The crest is 34px tall and two 15px lines are 34px, so mark and name align as one object, with the course on its own line beneath a hairline — beside the mark it read as a tagline for the product rather than as which course you are in.
+
+Rejected: **W1, the name on one line** — what every screen drew until now, and the form the longer name broke. It survives nowhere; `<Wordmark/>` splits `APP_NAME` on whitespace, so the config value stays the one owner of the string (H1.2) and a one-word name would still render.
+
+**Chosen motto placement: P2, engraved as its own line** under a brass rule beneath the wordmark, hero size only. It costs no new artwork: the motto is copy, so it sets in the page's own type and reads at any width.
+
+Rejected: **P1, on a band beneath the shield** — D44's own preference, and drawing it is what refuted it. At every size the page actually uses, a band 11 units tall under a 38-unit shield does not read as a band; it reads as a smudge under the crest, and the two words inside it are illegible below hero size. **This is the entry to revisit if the crest is ever punched up** — the idea is right and the current shield is too small to carry it. No third `Crest` variant was built, so `filled` and `outline` remain the whole component.
+
+**Chosen page: L2, the argument leads.** "Enroll yourself." is the first thing on the page; the mark is the page's one object, at the right, rather than a header.
+
+Rejected: **L1, the mark leads** — a centred crest over the name over one sentence. It is the more conventional academy front door and says nothing in the first second: a visitor who has never heard of the product learns the name before learning what it does.
+
+**Chosen ground: G3, the desk** (`--desk`, a shade under `--ground`). The front door is the one screen with no student inside it, and the step down from the reading ground is what says the course has not started yet.
+
+Rejected: **G1, paper** — the reading ground, which made the front door look like a lesson already in progress. Rejected: **G2, rail green** full bleed — the deepest value in the palette, and wine on it is a 0.16 lightness step, so the primary action needs a gold hairline to hold its edge that it needs on neither light ground. Adding an outline to the one action colour to make it survive its background is the background being wrong (8.3.4).
+
+**`app.css`'s `--desk` comment does not survive as written.** It claimed nothing is ever set on the desk, which is why it is not a fourth ground; the landing page sets type directly on it. The comment now says what is true: the desk carries the two surfaces that are not course material — the exam book lying on the page, and the front door — and it is still not a fourth ground in D22's sense, because the three grounds are bound to what a student is *doing* and on the desk nobody is doing anything.
+
+**The signed-out bar and the footer are both cut**, which amends spec item 8.13.4. Both were drawn; every link either carried has another owner. The motto is in the hero (P2), the 18-or-older attestation is on the registration form (D45), "put it on your phone" is a member route off the user menu, and Log in and Register are the hero's two buttons — a bar repeating them put two primary actions above the fold competing with each other. **Terms** was the one item with no other owner on a public page: today it is reachable only *from* the registration form, so it stays as a single quiet line at the foot of the page.
+
+Rejected: **keeping the bar for the crest's sake**, so the mark appears at the top of the page as it does on every other screen. The other screens are shells around a course; this one is not, and L2 already puts the mark on the page as an object.

@@ -23,6 +23,10 @@
     a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
     .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
     .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    /* W3, the wordmark (D46). The negative right margin gives back the
+       trailing letter-space so the block sits flush against the crest. */
+    .w3{font-family:"Instrument Serif",Georgia,serif;text-transform:uppercase;
+      letter-spacing:.30em;margin-right:-.30em;line-height:1.12}
     .pen{font-family:"Caveat",cursive;color:var(--pen)}
     /* strict 30px rhythm: every line box is 30px and every rule sits on a baseline */
     .leaf{background-image:repeating-linear-gradient(to bottom, transparent 0 29px, var(--leafline) 29px 30px)}
@@ -36,16 +40,16 @@
 <div style="display:flex; height:900px; width:1440px; background:var(--ground)">
 
   <aside style="width:252px; flex:0 0 252px; background:var(--railgreen); color:oklch(0.90 0.014 110); padding:24px 22px; display:flex; flex-direction:column; gap:24px">
-    <div style="display:flex; gap:12px; align-items:center">
-      <svg width="34" height="40" viewBox="0 0 34 40" fill="none" style="flex:0 0 34px">
-        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="1.8"/>
-        <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="1.6" fill="none"/>
-        <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
-      </svg>
-      <div>
-        <div class="disp" style="font-size:24px; line-height:1; color:oklch(0.95 0.012 100)">OpenTutor</div>
-        <div class="lab" style="margin-top:4px; color:var(--brass); font-size:10px">Conversational Basics</div>
+    <div style="display:flex; flex-direction:column; gap:13px">
+      <div style="display:flex; gap:13px; align-items:center">
+        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" style="flex:0 0 34px">
+          <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="oklch(0.36 0.115 22)" stroke="oklch(0.83 0.090 88)" stroke-width="1.8"/>
+          <path d="M2 15l15 7 15-7" stroke="oklch(0.83 0.090 88)" stroke-width="1.6" fill="none"/>
+          <text x="17" y="13" text-anchor="middle" fill="oklch(0.86 0.090 88)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+        </svg>
+        <div class="w3" style="font-size:15px; color:oklch(0.95 0.012 100)">Harkness<br>Academy</div>
       </div>
+      <div class="lab" style="color:var(--brass); font-size:10px; border-top:1px solid oklch(0.32 0.045 155); padding-top:11px">Conversational Basics</div>
     </div>
     <div style="display:flex; flex-direction:column; gap:9px">
       <div class="lab" style="color:var(--gold); border-bottom:1px solid oklch(0.32 0.045 155); padding-bottom:6px">Course</div>

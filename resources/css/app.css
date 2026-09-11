@@ -72,9 +72,16 @@
        cannot drift off the rules by being set from a second one (8.4.3). */
     --leaf-rhythm: 30px;
 
-    /* The desk the exam lies on: a shade under --ground, so the book reads as
-       an object put down on the page rather than as the page. Nothing is ever
-       set on it, which is why it is not a fourth ground. */
+    /* The desk: a shade under --ground. Two things use it, and neither is a
+       surface a student works on. The exam book lies on it, so the book reads
+       as an object put down on the page rather than as the page (8.4.3). The
+       landing page is set on it (D46) — the front door is the one screen with
+       no student inside it, and the step down from --ground is what says the
+       course has not started yet.
+
+       It is still not a fourth ground in D22's sense. The three grounds are
+       bound to what a student is doing — paper reads, photocopy practises,
+       blue book examines — and on the desk nobody is doing anything. */
     --desk: oklch(0.938 0.014 95);
 
     /* Both materials are objects photographed on the page rather than panels
@@ -280,6 +287,17 @@
         font-size: 21px;
         line-height: 1.3;
         color: var(--wine);
+    }
+
+    /* The wordmark (D46), which the artboards call `.w3`. The negative right
+       margin gives back the trailing letter-space, so the block sits flush
+       against the crest. `<Wordmark/>` is the only thing that wears it. */
+    .wordmark {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        margin-right: -0.3em;
+        line-height: 1.12;
     }
 
     /* The blue book's ruled interior (spec 8.4.3). One rule every

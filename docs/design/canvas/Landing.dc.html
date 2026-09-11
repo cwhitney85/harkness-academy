@@ -35,26 +35,20 @@
   </style>
 </helmet>
 
-<div style="width:1440px; height:900px; background:var(--ground); display:flex; flex-direction:column">
-
-  <!-- SIGNED-OUT BAR (8.13.4) — identical to the LandingCrest three -->
-  <div style="display:flex; align-items:center; gap:11px; padding:22px 56px; border-bottom:1px solid var(--rule)">
-    <svg width="22" height="26" viewBox="0 0 34 40" fill="none" style="flex:0 0 22px">
-      <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="2"/>
-      <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.8" fill="none"/>
-      <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
-    </svg>
-    <div class="disp" style="font-size:19px; line-height:1">Harkness Academy</div>
-    <div style="flex-grow:1"></div>
-    <div class="lab" style="color:var(--muted)">Log in</div>
-    <div class="lab" style="color:var(--brass); margin-left:26px">Register</div>
-  </div>
+<!-- CHOSEN: L2 argument-led · G3 desk · W3 stacked caps · P2 motto engraved.
+     No bar and no footer — every link either of them carried has another
+     owner, except Terms, which is the one quiet line at the foot. -->
+<div style="width:1440px; height:900px; background:var(--desk); display:flex; flex-direction:column">
 
   <div style="flex-grow:1; display:flex; align-items:center">
 
-    <!-- THE ARGUMENT LEADS -->
-    <div style="flex-grow:1; padding:0 56px 40px 96px; max-width:820px">
-      <h1 class="disp" style="font-size:92px; line-height:0.98; margin:0">Enroll yourself.</h1>
+    <div style="flex-grow:1; padding:0 56px 0 108px; max-width:840px">
+      <h1 class="disp" style="font-size:96px; line-height:0.97; margin:0">Enroll yourself.</h1>
+
+      <div style="display:flex; align-items:center; gap:16px; margin-top:22px">
+        <span style="height:1px; width:44px; background:var(--brass)"></span>
+        <span style="font-size:12.5px; letter-spacing:.34em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
+      </div>
 
       <p style="margin:30px 0 0; max-width:604px; font-size:21px; line-height:1.55">
         A tutor that interviews you, writes a syllabus you approve, teaches it lesson by lesson, and examines you at the end.
@@ -72,21 +66,22 @@
       <div class="lab" style="margin-top:22px; font-size:11px">Registration needs an invitation code</div>
     </div>
 
-    <!-- THE MARK AS AN OBJECT, NOT AS A HEADER -->
-    <div style="flex:0 0 480px; display:flex; align-items:center; justify-content:center; padding-right:56px">
-      <svg width="270" height="261" viewBox="0 0 60 58" fill="none">
-        <path d="M15 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
-        <path d="M15 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
-        <text x="30" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
-        <path d="M2 42h56v11H2z" fill="var(--wine)"/>
-        <path d="M2 42h56M2 53h56" stroke="var(--gold)" stroke-width="0.9"/>
-        <text x="30" y="50.1" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="6.3" letter-spacing="0.85">LICET FACERE</text>
+    <!-- The mark is the page's one object. It is not a header, so there is
+         nothing to repeat it in a bar. -->
+    <div style="flex:0 0 492px; display:flex; flex-direction:column; align-items:center; gap:34px; padding-right:64px">
+      <svg width="186" height="219" viewBox="0 0 34 40" fill="none">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
       </svg>
+      <div class="w3" style="font-size:30px; text-align:center">Harkness<br>Academy</div>
     </div>
 
   </div>
 
-  <div class="lab" style="padding:18px 56px; border-top:1px solid var(--rule); font-size:10.5px">L2 · ARGUMENT LEADS — same ground and same mark as L1 on paper. The only variable is which one the eye lands on first.</div>
+  <div style="padding:0 56px 30px 108px">
+    <span class="lab" style="font-size:10.5px">Terms</span>
+  </div>
 </div>
 </x-dc>
 </body>

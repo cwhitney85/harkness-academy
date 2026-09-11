@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Serif:ital@0;1&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
+      --gold:oklch(0.83 0.090 88); --rule:oklch(0.87 0.012 95);
+      --desk:oklch(0.938 0.014 95);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .hand{font-family:"Caveat",cursive;font-size:21px;line-height:1.3;color:var(--wine)}
+    /* W3: stacked letterspaced caps. The negative right margin gives back the
+       trailing letter-space so the block optically centres. */
+    .w3{font-family:"Instrument Serif",Georgia,serif;text-transform:uppercase;
+      letter-spacing:.30em;margin-right:-.30em;line-height:1.12}
+    .btn{font-family:"Newsreader",Georgia,serif;font-size:15px;letter-spacing:.13em;
+      text-transform:uppercase;background:var(--wine);color:oklch(0.97 0.010 60);
+      border:none;padding:13px 30px;cursor:pointer}
+    .btn-quiet{background:none;color:var(--wine);border:1px solid var(--rule);padding:12px 28px}
+  </style>
+</helmet>
+
+<!-- The same page at 390px. The mark moves above the argument, because a
+     column has no right-hand side to put an object on. -->
+<div style="width:390px; height:844px; background:var(--desk); display:flex; flex-direction:column; padding:0 20px">
+
+  <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; padding-bottom:30px">
+
+    <div style="display:flex; align-items:center; gap:16px">
+      <svg width="44" height="52" viewBox="0 0 34 40" fill="none" style="flex:0 0 44px">
+        <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="var(--wine)" stroke="var(--gold)" stroke-width="1.8"/>
+        <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
+        <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
+      </svg>
+      <div class="w3" style="font-size:19px">Harkness<br>Academy</div>
+    </div>
+
+    <h1 class="disp" style="font-size:52px; line-height:0.98; margin:34px 0 0">Enroll yourself.</h1>
+
+    <div style="display:flex; align-items:center; gap:13px; margin-top:16px">
+      <span style="height:1px; width:30px; background:var(--brass)"></span>
+      <span style="font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
+    </div>
+
+    <p style="margin:24px 0 0; font-size:17px; line-height:1.58">
+      A tutor that interviews you, writes a syllabus you approve, teaches it lesson by lesson, and examines you at the end.
+    </p>
+
+    <p style="margin:14px 0 0; font-size:15.5px; line-height:1.6; color:var(--muted)">
+      You name the subject. It finds out what you already know before it teaches you anything.
+    </p>
+
+    <button class="btn" style="width:100%; margin-top:30px; padding:15px 0">Enroll yourself</button>
+    <button class="btn btn-quiet" style="width:100%; margin-top:10px; padding:14px 0">Log in</button>
+
+    <div class="lab" style="margin-top:18px; font-size:10.5px">Registration needs an invitation code</div>
+  </div>
+
+  <div style="padding-bottom:26px">
+    <span class="lab" style="font-size:10.5px">Terms</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

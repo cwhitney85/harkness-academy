@@ -13,7 +13,7 @@ Each `.dc.html` file is one artboard. `canvas.json` places them, names the pages
 | **A · materials** | The settled design: lesson, photocopy quiz, blue-book exam (closed and opened), the four checkpoint treatments, the two phone reductions, and the parked legal pad. |
 | **A · dosage** | Three settings of direction A — Restrained, Spirited, Full. Superseded, kept for the record of what was cut. |
 | **First directions** | The original three directions (Chalkboard, Foolscap, Assembly Hall) across lesson, syllabus and homework. Superseded. |
-| **B · brand** | The name, the mark and the front door ([D44](../../02-design.md), spec 8.13). Nothing on it is chosen yet: the wordmark, the motto's placement, the page and the ground are each isolated on their own artboard. |
+| **B · brand** | The name, the mark and the front door ([D44](../../02-design.md), [D46](../../02-design.md), spec 8.13). The two artboards titled CHOSEN are what ships; the rest is the record of what they beat. |
 
 ## Rebuilding the canvas
 

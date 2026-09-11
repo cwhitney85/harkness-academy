@@ -199,76 +199,58 @@
       "title": "D \u2014 Assembly Hall \u00b7 Homework"
     },
     {
-      "file": "Marks.dc.html",
+      "file": "Landing.dc.html",
       "page": "page-4",
       "x": 0,
       "y": 0,
       "w": 1440,
+      "h": 900,
+      "title": "Landing \u2014 CHOSEN (L2 \u00b7 G3 desk \u00b7 W3 \u00b7 P2)"
+    },
+    {
+      "file": "LandingPhone.dc.html",
+      "page": "page-4",
+      "x": 1560,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Landing at 390px \u2014 CHOSEN"
+    },
+    {
+      "file": "Marks.dc.html",
+      "page": "page-4",
+      "x": 2070,
+      "y": 0,
+      "w": 1440,
       "h": 1320,
-      "title": "Marks \u2014 W1 vs W3, and P1 vs P2"
+      "title": "Marks \u2014 W3 and P2 chosen (W1, P1 rejected)"
     },
     {
       "file": "LandingCrestPaper.dc.html",
       "page": "page-4",
-      "x": 1560,
-      "y": 0,
+      "x": 0,
+      "y": 1440,
       "w": 1440,
       "h": 900,
-      "title": "L1 crest-led \u00b7 G1 paper"
+      "title": "Ground study \u00b7 G1 paper \u2014 REJECTED"
     },
     {
       "file": "LandingCrestGreen.dc.html",
       "page": "page-4",
-      "x": 3120,
-      "y": 0,
+      "x": 1560,
+      "y": 1440,
       "w": 1440,
       "h": 900,
-      "title": "L1 crest-led \u00b7 G2 rail green"
+      "title": "Ground study \u00b7 G2 rail green \u2014 REJECTED"
     },
     {
       "file": "LandingCrestDesk.dc.html",
       "page": "page-4",
-      "x": 4680,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "L1 crest-led \u00b7 G3 desk"
-    },
-    {
-      "file": "LandingArgument.dc.html",
-      "page": "page-4",
-      "x": 1560,
-      "y": 1020,
-      "w": 1440,
-      "h": 900,
-      "title": "L2 argument-led \u00b7 G1 paper"
-    },
-    {
-      "file": "Footer.dc.html",
-      "page": "page-4",
       "x": 3120,
-      "y": 1020,
+      "y": 1440,
       "w": 1440,
-      "h": 420,
-      "title": "Footer \u2014 one base under all three grounds"
-    },
-    {
-      "file": "LandingPhonePaper.dc.html",
-      "page": "page-4",
-      "x": 4680,
-      "y": 1020,
-      "w": 840,
-      "h": 844,
-      "title": "Landing at 390px \u2014 G1 paper beside G3 desk"
-    },
-    {
-      "file": "LandingPhoneGreen.dc.html",
-      "page": "page-4",
-      "x": 5640,
-      "y": 1020,
-      "w": 390,
-      "h": 844,
-      "title": "Landing at 390px \u2014 G2 rail green"
+      "h": 900,
+      "title": "Ground study \u00b7 G3 desk \u2014 ground CHOSEN, L1 composition rejected"
     }
   ],
   "annotations": [
@@ -315,10 +297,10 @@
     {
       "id": "brand-note",
       "x": 0,
-      "y": -440,
-      "w": 1200,
+      "y": -400,
+      "w": 1240,
       "page": "page-4",
-      "text": "NOTHING ON THIS PAGE IS CHOSEN YET. Four questions are deferred to looking rather than arguing, and each artboard isolates one of them and holds the rest constant.\n\nTHE WORDMARK  \u00b7  W1 one line vs W3 stacked letterspaced caps, drawn at hero, rail, auth and 16px. The rail at 252px is the size that decides it.\n\nTHE MOTTO  \u00b7  P1 on a band under the shield (a third Crest variant, one call site) vs P2 engraved as its own line beneath the wordmark (no new variant). Hero size only either way. LICET FACERE is never glossed in English anywhere in the product -- D44.\n\nTHE PAGE  \u00b7  L1 the mark leads vs L2 the argument leads. Same ground, same mark, same copy; only what the eye lands on first changes.\n\nTHE GROUND  \u00b7  G1 paper, G2 rail green, G3 desk. The three L1 artboards are one file emitted three times -- only the four colour variables differ. Two findings are already visible: on green, wine-on-green is a 0.16 lightness step and the button needs a gold hairline; on desk, type is set directly on --desk, which is what app.css's \"nothing is ever set on it\" comment currently denies. Whichever wins, D46 records it and that comment either survives or goes.\n\nTHE COPY IS REAL  \u00b7  \"Enroll yourself.\" over the actual lifecycle -- interview, syllabus you approve, lessons, exam. No lorem ipsum, and no claim about the Harkness teaching method (D44, spec 8.13.7). No pricing, testimonials, feature grid, analytics or email capture (8.13.10).\n\nThese artboards are FIXED-WIDTH MOCKUPS. Take colours, faces, ratios and rhythm literally; take pixel widths and absolute positions as illustration. See docs/design/canvas/README.md."
+      "text": "WHAT SHIPS  \u00b7  the two artboards titled CHOSEN. Everything else on this page is the record of what they beat (Colin, 2026-09-11).\n\nTHE WORDMARK  \u00b7  W3, stacked letterspaced caps. The 252px rail decided it: the name set as one line wraps there at any size large enough to read, and stacked it fits with 58px spare. The crest is 34px and two 15px lines are 34px, so mark and name are one object, with the course on its own line under a hairline. W1 rejected. The page-1 rails are drawn this way now, and <Wordmark/> is what the app renders.\n\nTHE MOTTO  \u00b7  P2, engraved as its own line under a brass rule. P1 put it on a band beneath the shield and the band did not read as a band at any size the page uses; it is rejected for now, and is the thing to revisit if the crest is ever punched up. No third Crest variant is built.\n\nTHE PAGE  \u00b7  L2, the argument leads. The mark is the page's one object rather than a header.\n\nTHE GROUND  \u00b7  G3, the desk -- a shade under --ground. The front door is the one screen with no student inside it, and the step down is what says the course has not started. G1 paper is the reading ground and made the door look like a lesson; G2 rail green cost the primary button a gold hairline it needs on neither light ground. app.css's --desk comment no longer claims nothing is ever set on it.\n\nNO BAR, NO FOOTER  \u00b7  both were drawn and both are cut. Every link they carried has another owner: the motto is in the hero, the 18+ attestation is on the registration form (D45), Install is a member route off the user menu, and Log in and Register are the hero's two buttons. Terms had no other owner on a public page, so it is the one quiet line at the foot. Spec 8.13.4 is rewritten to match.\n\nThese artboards are FIXED-WIDTH MOCKUPS. Take colours, faces, ratios and rhythm literally; take pixel widths and absolute positions as illustration. See docs/design/canvas/README.md."
     }
   ],
   "launch": {
