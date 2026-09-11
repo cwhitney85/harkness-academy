@@ -4,5 +4,5 @@
 <svg width="34" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="#6D1B20" stroke="#E0C482" stroke-width="1.8"/>
   <path d="M2 15l15 7 15-7" stroke="#E0C482" stroke-width="1.6" fill="none"/>
-  <text x="17" y="13" text-anchor="middle" fill="#E0C482" font-family="Georgia, serif" font-size="9.5" letter-spacing="1">OT</text>
+  <text x="17" y="13" text-anchor="middle" fill="#E0C482" font-family="Georgia, serif" font-size="9.5" letter-spacing="1">HA</text>
 </svg>

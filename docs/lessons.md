@@ -110,3 +110,14 @@ The symptom was an em dash printed as `\u2014` on a lesson screen, and the obvio
 
 Model-facing documents carry it too: `GUIDANCE.md` renders from the same JSON, so the tutor had been reading the escapes back as its own context for six days. Repairing stored prose means re-rendering everything derived from it.
 
+## T9. A bare `.svg` in headless Chrome renders 8px off
+
+*Found 2026-09-11, in the `harkness` rename.*
+
+Package 7's four icons are rasterised from the two SVG sources in `resources/icons/` by headless Chrome. Loading the `.svg` file **directly** — `--screenshot file://…/icon.svg` — renders it as a document, and Chrome gives a document an 8px body margin. Every pixel shifts down and right by 8, the field no longer reaches the edge, and a maskable icon's safe circle is no longer centred.
+
+Nothing in the output says so. The PNG is the right dimensions and looks approximately right at a glance; only overlaying it on the previous one shows the offset.
+
+**The fix is `scripts/icons.sh`**, which wraps the SVG in a `margin:0` page and sets the `<img>` to the exact target size. Run it after any change to the crest, and commit the PNGs with the SVGs.
+
+A second trap sits beside it: `resources/icons/icon.svg` has `width="512" height="512"` on both the `<svg>` element and its background `<rect>`. A `sed` that rescales the document by matching that string rescales the background too, and the field shrinks to a square in the corner.

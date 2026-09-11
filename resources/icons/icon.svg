@@ -4,15 +4,15 @@
      green, wine, gold). Change one, change the other (spec 8.3.5).
 
      Rasterised to public/icon-192.png, public/icon-512.png and
-     public/apple-touch-icon.png (spec 7.1) by loading this file in headless
-     Chrome with the width, height and window set to the target size. An icon
-     of purpose "any" is shown uncropped, so the crest is full height with a
-     margin of field around it. -->
+     public/apple-touch-icon.png (spec 7.1) by scripts/icons.sh, which renders
+     this file in headless Chrome at each target size. An icon of purpose
+     "any" is shown uncropped, so the crest is full height with a margin of
+     field around it. -->
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" fill="#051D0E"/>
   <g transform="translate(111.5 86) scale(8.5)">
     <path d="M2 2h30v22c0 8-9 12-15 14-6-2-15-6-15-14V2z" fill="#6D1B20" stroke="#E0C482" stroke-width="1.8"/>
     <path d="M2 15l15 7 15-7" stroke="#E0C482" stroke-width="1.6" fill="none"/>
-    <text x="17" y="13" text-anchor="middle" fill="#E0C482" font-family="Georgia, serif" font-size="9.5" letter-spacing="1">OT</text>
+    <text x="17" y="13" text-anchor="middle" fill="#E0C482" font-family="Georgia, serif" font-size="9.5" letter-spacing="1">HA</text>
   </g>
 </svg>

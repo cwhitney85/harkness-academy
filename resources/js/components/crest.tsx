@@ -46,7 +46,7 @@ export default function Crest({
                 fontSize={9.5}
                 letterSpacing={1}
             >
-                OT
+                HA
             </text>
         </svg>
     );
