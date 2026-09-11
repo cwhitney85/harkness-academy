@@ -859,7 +859,7 @@ D44 settled the name, the motto's words and the two letters. It left four things
 
 Rejected: **W1, the name on one line** — what every screen drew until now, and the form the longer name broke. It survives nowhere; `<Wordmark/>` splits `APP_NAME` on whitespace, so the config value stays the one owner of the string (H1.2) and a one-word name would still render.
 
-**Chosen motto placement: P2, engraved as its own line** under a brass rule beneath the wordmark, hero size only. It costs no new artwork: the motto is copy, so it sets in the page's own type and reads at any width.
+**Chosen motto placement: P2, engraved as its own line** between brass rules, hero size only. It costs no new artwork: the motto is copy, so it sets in the page's own type and reads at any width. It hangs off **the mark**, not off the headline — a school motto belongs to the crest, and under "Enroll yourself." it read as a subtitle for the sentence above it.
 
 Rejected: **P1, on a band beneath the shield** — D44's own preference, and drawing it is what refuted it. At every size the page actually uses, a band 11 units tall under a 38-unit shield does not read as a band; it reads as a smudge under the crest, and the two words inside it are illegible below hero size. **This is the entry to revisit if the crest is ever punched up** — the idea is right and the current shield is too small to carry it. No third `Crest` variant was built, so `filled` and `outline` remain the whole component.
 
@@ -867,11 +867,17 @@ Rejected: **P1, on a band beneath the shield** — D44's own preference, and dra
 
 Rejected: **L1, the mark leads** — a centred crest over the name over one sentence. It is the more conventional academy front door and says nothing in the first second: a visitor who has never heard of the product learns the name before learning what it does.
 
-**Chosen ground: G3, the desk** (`--desk`, a shade under `--ground`). The front door is the one screen with no student inside it, and the step down from the reading ground is what says the course has not started yet.
+**Chosen ground: G3, a step below the reading ground** — the front door is the one screen with no student inside it, and the step down is what says the course has not started yet. It is **`--door`, `oklch(0.915 0.016 95)`**, and not the `--desk` the G3 artboard was drawn on.
 
 Rejected: **G1, paper** — the reading ground, which made the front door look like a lesson already in progress. Rejected: **G2, rail green** full bleed — the deepest value in the palette, and wine on it is a 0.16 lightness step, so the primary action needs a gold hairline to hold its edge that it needs on neither light ground. Adding an outline to the one action colour to make it survive its background is the background being wrong (8.3.4).
 
-**`app.css`'s `--desk` comment does not survive as written.** It claimed nothing is ever set on the desk, which is why it is not a fourth ground; the landing page sets type directly on it. The comment now says what is true: the desk carries the two surfaces that are not course material — the exam book lying on the page, and the front door — and it is still not a fourth ground in D22's sense, because the three grounds are bound to what a student is *doing* and on the desk nobody is doing anything.
+**The desk could not carry it, which is why `--door` exists.** G3 was drawn on `--desk` and judged invisible: the desk is 2.4% under `--ground`, which is plenty where the two touch — the blue book lying on the page — and nothing at all full-bleed, where there is no `--ground` beside it to be read against. `--door` is a 1.15 contrast step against `--ground` where the desk was 1.07.
+
+Rejected: **deepening `--desk` itself** — one value instead of two, and it changes the exam screen to fix the landing page. The desk's job is to be the surface an object is photographed on, and it is correct at its current value for that job.
+
+**`app.css`'s `--desk` comment therefore survives, unchanged in substance.** It claims nothing is ever set on the desk, which is why it is not a fourth ground, and with the front door on `--door` that is still true. `--door` is a fourth *ground* in the plain sense and still not a fourth material in D22's: the three materials are bound to what a student is doing — paper reads, photocopy practises, blue book examines — and on the doorstep nobody is doing anything yet.
+
+`--muted-ink` holds **4.62:1** on `--door`, against 5.33 on `--ground`. Prose on the front door still clears AA; there is no room to go darker without moving the ink.
 
 **The signed-out bar and the footer are both cut**, which amends spec item 8.13.4. Both were drawn; every link either carried has another owner. The motto is in the hero (P2), the 18-or-older attestation is on the registration form (D45), "put it on your phone" is a member route off the user menu, and Log in and Register are the hero's two buttons — a bar repeating them put two primary actions above the fold competing with each other. **Terms** was the one item with no other owner on a public page: today it is reachable only *from* the registration form, so it stays as a single quiet line at the foot of the page.
 

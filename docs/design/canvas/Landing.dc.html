@@ -15,7 +15,7 @@
       --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
       --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
       --gold:oklch(0.83 0.090 88); --rule:oklch(0.87 0.012 95);
-      --desk:oklch(0.938 0.014 95);
+      --desk:oklch(0.938 0.014 95); --door:oklch(0.915 0.016 95);
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--ground);color:var(--ink);
@@ -35,20 +35,14 @@
   </style>
 </helmet>
 
-<!-- CHOSEN: L2 argument-led · G3 desk · W3 stacked caps · P2 motto engraved.
-     No bar and no footer — every link either of them carried has another
-     owner, except Terms, which is the one quiet line at the foot. -->
-<div style="width:1440px; height:900px; background:var(--desk); display:flex; flex-direction:column">
+<!-- CHOSEN: L2 argument-led · G3 desk · W3 stacked caps · P2 motto engraved
+     under the mark. No bar, no footer and no link but the two buttons. -->
+<div style="width:1440px; height:900px; background:var(--door); display:flex; flex-direction:column">
 
   <div style="flex-grow:1; display:flex; align-items:center">
 
     <div style="flex-grow:1; padding:0 56px 0 108px; max-width:840px">
       <h1 class="disp" style="font-size:96px; line-height:0.97; margin:0">Enroll yourself.</h1>
-
-      <div style="display:flex; align-items:center; gap:16px; margin-top:22px">
-        <span style="height:1px; width:44px; background:var(--brass)"></span>
-        <span style="font-size:12.5px; letter-spacing:.34em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
-      </div>
 
       <p style="margin:30px 0 0; max-width:604px; font-size:21px; line-height:1.55">
         A tutor that interviews you, writes a syllabus you approve, teaches it lesson by lesson, and examines you at the end.
@@ -75,12 +69,15 @@
         <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
       </svg>
       <div class="w3" style="font-size:30px; text-align:center">Harkness<br>Academy</div>
+
+      <!-- P2: the motto is engraved under the mark, not under the argument. -->
+      <div style="display:flex; align-items:center; gap:16px; margin-top:-14px">
+        <span style="height:1px; width:36px; background:var(--brass)"></span>
+        <span style="font-size:12px; letter-spacing:.34em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
+        <span style="height:1px; width:36px; background:var(--brass)"></span>
+      </div>
     </div>
 
-  </div>
-
-  <div style="padding:0 56px 30px 108px">
-    <span class="lab" style="font-size:10.5px">Terms</span>
   </div>
 </div>
 </x-dc>

@@ -71,6 +71,10 @@ Four decisions are deliberately deferred to looking rather than arguing: the wor
 
   P1 is rejected rather than dead. The band does not read at any size the page uses, because an 11-unit band under a 38-unit shield is a smudge — but that is an argument about the shield's size, not about the idea. D46 names it as the thing to revisit if the crest is punched up.
 
+  **Two corrections from looking at it (Colin, same day).** The motto was drawn under "Enroll yourself." and reads there as a subtitle for the sentence above it; a school motto belongs to the crest, so it hangs off the mark at both widths. And G3 on `--desk` was invisible: 2.4% under `--ground` is plenty where the two touch, and nothing full-bleed. The front door gets **`--door`, `oklch(0.915 0.016 95)`** — its own token, because deepening `--desk` would change the exam screen to fix the landing page.
+
+  That reverses what this file and D46 first said about `app.css`'s `--desk` comment. It *does* survive: with the front door on `--door`, "nothing is ever set on it" is true again. The Terms line went with the same pass — the footer was already cut and one orphan link at the foot of an otherwise linkless page was not worth the row.
+
   On the canvas: `Landing` and `LandingPhone` are the chosen page. `Marks` and the three `LandingCrest` grounds stay as the record of what they beat, retitled. `LandingArgument`, `Footer` and the two candidate phones are deleted — L1 survives in the three ground artboards, so nothing about the comparison is lost by removing the four.
 - **H3.5 WONT** — No artboard for a signed-in navbar. `/` redirects members, so no signed-in user ever sees this page. *Falsified if: the landing route renders for an authenticated request.*
 
@@ -96,5 +100,7 @@ Four decisions are deliberately deferred to looking rather than arguing: the wor
 
 - **Whether Laravel Cloud can rename an application**, and whether that changes the injected `APP_NAME` (H6.3). Dashboard-only.
 - **Whether `harkness.academy` is attached in Cloud with TLS issued**, or only pointed by DNS (H6.1). Dashboard-only.
+- **Brass is 2.10:1 on `--door` and 2.42:1 on `--ground`** — below AA either way. Not caused by D46; every brass label in the app has always had it, and the motto line inherits it. Three ways out if it is ever worth fixing: words in `--muted-ink` with the rules left brass, words in wine (8.94:1, but wine is the one action colour, 8.3.4), or accept it as decorative. Palette-wide, so it is not the landing page's decision to make.
+
 - **Whether anything reads `usage_events` back as a per-user total.** Not investigated. Spec item 1.6.5 WONTs a spend cap, so nothing in this unit depends on the answer.
 - **`GUIDANCE.md` does not exist.** CLAUDE.md carries a standing convention — "GUIDANCE.md is model-facing only; no route or component may read it" — naming a file `find` locates nowhere in the repo. Out of scope for this unit; surfaced because the rename swept the same ground.

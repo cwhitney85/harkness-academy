@@ -15,7 +15,7 @@
       --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
       --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
       --gold:oklch(0.83 0.090 88); --rule:oklch(0.87 0.012 95);
-      --desk:oklch(0.938 0.014 95);
+      --desk:oklch(0.938 0.014 95); --door:oklch(0.915 0.016 95);
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--ground);color:var(--ink);
@@ -37,7 +37,7 @@
 
 <!-- The same page at 390px. The mark moves above the argument, because a
      column has no right-hand side to put an object on. -->
-<div style="width:390px; height:844px; background:var(--desk); display:flex; flex-direction:column; padding:0 20px">
+<div style="width:390px; height:844px; background:var(--door); display:flex; flex-direction:column; padding:0 20px">
 
   <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; padding-bottom:30px">
 
@@ -47,15 +47,17 @@
         <path d="M2 15l15 7 15-7" stroke="var(--gold)" stroke-width="1.6" fill="none"/>
         <text x="17" y="13" text-anchor="middle" fill="var(--gold)" font-family="Georgia,serif" font-size="9.5" letter-spacing="1">HA</text>
       </svg>
-      <div class="w3" style="font-size:19px">Harkness<br>Academy</div>
+      <div>
+        <div class="w3" style="font-size:19px">Harkness<br>Academy</div>
+        <!-- P2: the motto is engraved under the mark, not under the argument. -->
+        <div style="display:flex; align-items:center; gap:11px; margin-top:9px">
+          <span style="height:1px; width:22px; background:var(--brass)"></span>
+          <span style="font-size:10.5px; letter-spacing:.32em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
+        </div>
+      </div>
     </div>
 
     <h1 class="disp" style="font-size:52px; line-height:0.98; margin:34px 0 0">Enroll yourself.</h1>
-
-    <div style="display:flex; align-items:center; gap:13px; margin-top:16px">
-      <span style="height:1px; width:30px; background:var(--brass)"></span>
-      <span style="font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--brass)">Licet Facere</span>
-    </div>
 
     <p style="margin:24px 0 0; font-size:17px; line-height:1.58">
       A tutor that interviews you, writes a syllabus you approve, teaches it lesson by lesson, and examines you at the end.
@@ -69,10 +71,6 @@
     <button class="btn btn-quiet" style="width:100%; margin-top:10px; padding:14px 0">Log in</button>
 
     <div class="lab" style="margin-top:18px; font-size:10.5px">Registration needs an invitation code</div>
-  </div>
-
-  <div style="padding-bottom:26px">
-    <span class="lab" style="font-size:10.5px">Terms</span>
   </div>
 </div>
 </x-dc>

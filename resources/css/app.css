@@ -72,17 +72,23 @@
        cannot drift off the rules by being set from a second one (8.4.3). */
     --leaf-rhythm: 30px;
 
-    /* The desk: a shade under --ground. Two things use it, and neither is a
-       surface a student works on. The exam book lies on it, so the book reads
-       as an object put down on the page rather than as the page (8.4.3). The
-       landing page is set on it (D46) — the front door is the one screen with
-       no student inside it, and the step down from --ground is what says the
-       course has not started yet.
-
-       It is still not a fourth ground in D22's sense. The three grounds are
-       bound to what a student is doing — paper reads, photocopy practises,
-       blue book examines — and on the desk nobody is doing anything. */
+    /* The desk the exam lies on: a shade under --ground, so the book reads as
+       an object put down on the page rather than as the page. Nothing is ever
+       set on it, which is why it is not a fourth ground. The landing page was
+       drawn on it and moved off — see --door below. */
     --desk: oklch(0.938 0.014 95);
+
+    /* The front door's ground (D46) — the one screen with no student inside
+       it, a step below the ground the course is read on.
+
+       It is its own value because the desk could not do the job. The desk is
+       2.4% under --ground, which is plenty where the two touch — the blue
+       book lying on the page — and nothing at all full-bleed, where there is
+       no --ground beside it to be read against. Deepening the desk instead
+       would have changed the exam screen to fix the landing page.
+
+       --muted-ink holds 4.62:1 here, so prose on it still clears AA. */
+    --door: oklch(0.915 0.016 95);
 
     /* Both materials are objects photographed on the page rather than panels
        drawn on it, and the shadow is what says so (8.4.2, 8.4.3). */
@@ -205,6 +211,7 @@
     --color-leaf-rule: var(--leaf-rule);
     --color-leaf-margin: var(--leaf-margin);
     --color-desk: var(--desk);
+    --color-door: var(--door);
     --color-pen: var(--pen);
 
     /* The tokens, reachable as utilities: bg-ground, text-ink, border-hairline. */
