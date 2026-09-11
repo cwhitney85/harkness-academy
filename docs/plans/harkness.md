@@ -12,6 +12,16 @@ Ledger entries this unit writes: [D44](../02-design.md) the name, the motto and 
 
 Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landing page) · an amendment to **8.6.1**.
 
+## Where it stands (2026-09-11)
+
+**Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh`.
+
+Nothing in the running app says OpenTutor. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name (H6.3, blocked), and the canvas (H1.13, which belongs with H3's re-seed).
+
+**Open.** H1.13 · H2.4 (D46, after H3) · H2.5 · **H3** the eight artboards, unblocked · **H4** the landing page, needs H3 · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
+
+**To land the unit:** triage this file into the durable tier and delete it in the same commit as the last of the work (spec 9.6).
+
 ---
 
 ## H1. The rename
