@@ -31,13 +31,13 @@ export default function Landing() {
     return (
         <div className="flex min-h-svh flex-col justify-center gap-[34px] bg-door px-5 py-12 lg:flex-row-reverse lg:items-center lg:gap-0 lg:px-0 lg:py-0">
             {/*
-              * The crest, the wordmark and the motto as one object — the
-              * page's only artwork, and the only place the motto is set at
-              * all. The rules either side of it are what "engraved" means
-              * (P2); on the phone the mark sits at the argument's left edge,
-              * so the right-hand rule would run into nothing and only the
-              * left one is drawn.
-              */}
+             * The crest, the wordmark and the motto as one object — the
+             * page's only artwork, and the only place the motto is set at
+             * all. The rules either side of it are what "engraved" means
+             * (P2); on the phone the mark sits at the argument's left edge,
+             * so the right-hand rule would run into nothing and only the
+             * left one is drawn.
+             */}
             <div className="flex items-center gap-4 lg:w-[492px] lg:flex-none lg:flex-col lg:items-center lg:gap-[34px] lg:pr-16">
                 <Crest className="h-13 w-11 flex-none lg:h-[219px] lg:w-[186px]" />
 
@@ -76,7 +76,7 @@ export default function Landing() {
 
                 <div className="mt-[30px] flex flex-col gap-2.5 lg:mt-10 lg:flex-row lg:items-center lg:gap-4">
                     <Button asChild size="action" className="w-full lg:w-auto">
-                        <Link href={register()}>Enroll yourself</Link>
+                        <Link href={register()}>Register</Link>
                     </Button>
                     <Button
                         asChild
