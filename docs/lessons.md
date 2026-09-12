@@ -121,3 +121,24 @@ Nothing in the output says so. The PNG is the right dimensions and looks approxi
 **The fix is `scripts/icons.sh`**, which wraps the SVG in a `margin:0` page and sets the `<img>` to the exact target size. Run it after any change to the crest, and commit the PNGs with the SVGs.
 
 A second trap sits beside it: `resources/icons/icon.svg` has `width="512" height="512"` on both the `<svg>` element and its background `<rect>`. A `sed` that rescales the document by matching that string rescales the background too, and the field shrinks to a square in the corner.
+
+## T10. The lesson stream was cut at 20 seconds by nginx, not by the student
+
+*Found 2026-09-12, on the first real course run against `harkness.academy`.*
+
+A lesson's first section streamed nothing, showed "The tutor could not be reached", and did it again on reload. The interviews before it had streamed fine, and the syllabus had generated fine. The logs named it exactly:
+
+```
+[error] upstream timed out (110: Connection timed out) while reading upstream,
+request: "GET /lessons/19/sections/1/stream", upstream: "fastcgi://127.0.0.1:9000"
+```
+
+**Laravel Cloud's nginx gives PHP-FPM 20 seconds to produce the next byte**, and the wait for Anthropic's first token is longer than that on a lesson-sized prompt. Every paired FPM trace shows PHP parked in `fread()` inside `laravel/ai`'s `ParsesServerSentEvents::readLine()` — blocked on the provider's socket, unable to write anything of its own.
+
+**It is not SSE buffering**, which is the hazard [R4](02-design.md) names and [deploy.md](deploy.md) carried as unverified for four packages. Buffering would have broken the interviews too. Streaming works on Cloud; what fails is silence.
+
+**Three ceilings, and they were in the wrong order.** PHP's `max_execution_time` is 0 and FPM sets no `request_terminate_timeout`, so the only limits are nginx's 20s and the application's own 120s — `lesson.system` is `tier: mid`, and `lesson.section` inherits it. A proxy that gives up six times sooner than the application means the application's error handling never runs, which is the same defect the queue's `--timeout` had at 60s under a 300s cap.
+
+**The fix is `NGINX_HTTP_TIMEOUT`.** Cloud renders `fastcgi_read_timeout` from that environment variable — visible only in `/etc/nginx/templates/default.conf.template`, documented nowhere — and it is set to 180 for this environment, above the `mid` tier's 120. deploy.md owns the number and the rule that it must exceed the tier's own timeout.
+
+**The heartbeat could not have saved it, and that is the second trap.** `EventStream::heartbeatIfDue()` beats at 15 seconds, comfortably under 20 — but it is only ever called from inside the delta callback, so it cannot beat until the stream it is protecting has already started. Anthropic does send its own keepalive during a long wait, and `laravel/ai`'s `HandlesTextStreaming` parses the `ping` event and then matches no branch for it, so it is dropped before `each()` ever sees it. **There is no seam in the SDK that fires during the wait**, which is why the ordering of ceilings is what this depends on rather than a heartbeat.

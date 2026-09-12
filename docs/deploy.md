@@ -45,6 +45,7 @@ In practice you set almost nothing:
 | `ANTHROPIC_API_KEY` | **Always.** Nothing injects it, and without it the app deploys clean and dies at the first interview — a 500 on the interview's stream, surfacing as a 422 on the answer that follows it. Prefer a **linked secret** over a custom variable: Secrets Manager encrypts it in the browser, never shows it again and is KMS-backed. Organization → Settings → Secrets → New secret, then link it to the environment (the **Link secrets** button in General Settings' injected variables section) and deploy from the staged-changes banner. Do not also set a custom variable of the same name — custom variables outrank linked secrets, so a leftover one silently shadows every later rotation. |
 | `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy — and set it again to the custom domain once that one is connected. |
 | `APP_NAME` | Only if the injected value is not `Harkness Academy` — it renders user-visibly through Inertia's shared props. |
+| `NGINX_HTTP_TIMEOUT` | **Always.** How long nginx waits for the next byte from PHP-FPM, in seconds. The default of 20 kills every lesson stream — see **Streaming** below. Set it to `180`. |
 | `INVITATION_CODE` | **Always.** The shared code registration requires (spec 1.6, ledger D45). Nothing injects it, and unset means nobody can register — including you. Rotating it is a change here and a deploy; it invalidates the code for every future registration at once and leaves existing accounts alone. A linked secret is the better home for the same reason `ANTHROPIC_API_KEY` uses one. |
 
 A variable only reaches the application on a **deploy**, not a restart: the build runs `php artisan optimize`, which caches config and freezes every `env()` value into that cache.
@@ -156,11 +157,17 @@ Hitting the limit takes the environment down until it is raised or the billing c
 
 **Stopping an environment does not stop all charges.** Compute stops billing; attached resources do not. The database's compute scales to zero on its own, but storage bills continuously. To reach zero, delete the database cluster — the schema lives entirely in migrations, so a redeploy rebuilds it.
 
-## Open constraint — SSE buffering
+## Streaming — the constraint R4 named, and the one that actually bit
 
-Design R4 records a hard requirement: **the host must not buffer SSE.** The lesson engine (package 5) streams over `text/event-stream`, and a buffering proxy turns streamed tutoring into a page that sits blank and then dumps.
+**Cloud does not buffer SSE, verified 2026-09-12 on a real course.** Design R4 records a hard requirement — the host must not buffer SSE — and this file carried it as unverified from package 1. Interviews and lesson sections both stream token by token behind `X-Accel-Buffering: no`. R4 is satisfied and needs no workaround.
 
-Laravel's `eventStream` sends `X-Accel-Buffering: no` and flushes between generator yields, which is the standard mitigation. **This is unverified on Cloud.** It cannot be tested until 5.1 streams something real. Verify it there before building on it; if Cloud buffers, R4 says revisit the hosting choice rather than work around it.
+**What bites instead is silence, not buffering.** Cloud's nginx allows **20 seconds** between bytes from PHP-FPM and then cuts the connection, and the wait for a model's first token on a lesson-sized prompt is longer than that. The failure reads as `upstream timed out (110: Connection timed out) while reading upstream` in the environment's logs, and reaches the student as "The tutor could not be reached". Trap [T10](lessons.md) is the whole story.
+
+**`NGINX_HTTP_TIMEOUT` is the setting, and it must exceed the application's own ceiling.** Cloud renders `fastcgi_read_timeout` from this environment variable; it appears in `/etc/nginx/templates/default.conf.template` and in no documentation. **Set it to 180.** The longest streamed call the app makes is a lesson section, which runs at the `mid` tier's 120-second timeout in `config/ai.php`, and 180 sits above it for the same reason the queue's `--timeout` of 360 sits above `top`'s 300: the application's error handling must win over the platform's, or the student is told nothing useful by the layer that gave up first.
+
+**Raise them together or not at all.** If any streamed prompt's tier timeout is ever raised past 180, this variable goes up with it — nothing in the code checks that ordering, and the symptom of getting it wrong is a stream that dies with no application error anywhere.
+
+Two related limits are hard-coded in Cloud's nginx and cannot be set: `send_timeout 20s` and `keepalive_timeout 20s`. Neither governs this path — the first bounds writes to a client that has stopped reading, the second an idle connection between requests — but they are the next suspects if a stream is ever cut at 20 seconds again after this variable is raised.
 
 ## Notes for later packages
 
