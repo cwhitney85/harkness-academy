@@ -6,7 +6,9 @@ Done when: a push to `master` lands on a live URL over TLS, with no developer to
 
 ## One-time setup
 
-**1. Create the application.** Laravel Cloud dashboard → **+ New application** → **Connect to GitHub** → grant access to `cwhitney85/open-tutor`. Name it `opentutor`, pick a region, **Create Application**. This creates a default environment; the deployed branch is `master`.
+**1. Create the application.** Laravel Cloud dashboard → **+ New application** → **Connect to GitHub** → grant access to `cwhitney85/open-tutor`. Name it `Harkness Academy`, pick a region, **Create Application**. This creates a default environment; the deployed branch is `master`.
+
+The repository is still named `open-tutor` and stays that way; the application name is a Cloud label, not the product's name. **An application created under an older name can be renamed** — Settings → the application's name — and both name and slug are editable (Cloud's own API takes `name` and `slug` on `PATCH /applications/{application}`). Renaming changes the assigned `*.laravel.cloud` domain, which is built from the application and environment names, so it needs a redeploy afterwards and `APP_URL` updated with it if it still points at that domain.
 
 **2. Set the PHP runtime to 8.4.** General Settings → Runtime. Cloud defaults new environments to **8.5** — override it. CI runs 8.4, and an environment that differs from CI defeats the point of having CI.
 
@@ -41,8 +43,9 @@ In practice you set almost nothing:
 | Variable | When |
 |---|---|
 | `ANTHROPIC_API_KEY` | **Always.** Nothing injects it, and without it the app deploys clean and dies at the first interview — a 500 on the interview's stream, surfacing as a 422 on the answer that follows it. Prefer a **linked secret** over a custom variable: Secrets Manager encrypts it in the browser, never shows it again and is KMS-backed. Organization → Settings → Secrets → New secret, then link it to the environment (the **Link secrets** button in General Settings' injected variables section) and deploy from the staged-changes banner. Do not also set a custom variable of the same name — custom variables outrank linked secrets, so a leftover one silently shadows every later rotation. |
-| `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy. |
+| `APP_URL` | After the first deploy, set to the assigned `*.laravel.cloud` domain, then redeploy — and set it again to the custom domain once that one is connected. |
 | `APP_NAME` | Only if the injected value is not `Harkness Academy` — it renders user-visibly through Inertia's shared props. |
+| `INVITATION_CODE` | **Always.** The shared code registration requires (spec 1.6, ledger D45). Nothing injects it, and unset means nobody can register — including you. Rotating it is a change here and a deploy; it invalidates the code for every future registration at once and leaves existing accounts alone. A linked secret is the better home for the same reason `ANTHROPIC_API_KEY` uses one. |
 
 A variable only reaches the application on a **deploy**, not a restart: the build runs `php artisan optimize`, which caches config and freezes every `env()` value into that cache.
 
@@ -104,8 +107,46 @@ Deploying a managed queue sets `QUEUE_CONNECTION=cloud` environment-wide, overri
 
 - Set `APP_URL` to the assigned domain and redeploy.
 - Confirm the queue is draining. The **Queues** dashboard under Monitoring shows job volume and failures for a managed queue; `php artisan queue:monitor cloud:<queue name>` from the **Commands** tab reports its backlog. Commands run through `bash -c "…"`, so avoid double quotes inside them — an `--execute="…"` dies on its own quoting before it ever reaches PHP.
-- Register an account against the live URL. Registration exercises Postgres writes and the 18+ attestation (spec 1.2) in one step.
+- Register an account against the live URL, with the invitation code from step 6. Registration exercises Postgres writes, the invitation gate (spec 1.6) and the 18+ attestation (spec 1.2) in one step. A wrong code failing on its own field is the gate working; a *correct* code failing that way means `INVITATION_CODE` never reached the application — a variable only lands on a deploy.
+- Attach the custom domain, below.
 - Confirm `/up` returns 200.
+
+## The custom domain
+
+`harkness.academy` is the address; the assigned `*.laravel.cloud` domain keeps working alongside it. Do this after the first successful deploy — the free domain is only issued then.
+
+**Attaching it is the moment the app becomes indexable.** Cloud sets `X-Robots-Tag: noindex, nofollow` on every `*.laravel.cloud` domain and sets it on no custom domain. The invitation gate (spec 1.6) is what stands between a search result and an account.
+
+**1. Add the domain.** Environment → **Network** settings → **Add domain**. Four questions, and what they mean here:
+
+| Question | Answer for `harkness.academy` | Why |
+|---|---|---|
+| Wildcard support | No | One apex domain. Wildcards force the pre-verification path and add a DNS record you must keep forever. |
+| Redirect behaviour | `www` → apex | The apex is the address; `www` should not be a second one. |
+| Downtime preference | Brief downtime is fine | Nothing is serving on the domain yet, so there is no traffic to interrupt. This is the **real-time** path: point the domain first, and Cloud verifies and issues TLS behind it. |
+| Cloudflare DNS | Whatever is true | It changes which records Cloud asks for, and a hostname already proxied through Cloudflare rules out pre-verification entirely. |
+
+**2. Add the records Cloud shows you.** The dashboard prints the exact type, name and value — copy them rather than composing them. What they are:
+
+- **Origin record** — where traffic goes. An **A** record to an IP when DNS is not Cloudflare, a **CNAME** when it is (Cloudflare flattens a CNAME at the apex, which plain DNS cannot do).
+- **Ownership** — `TXT _cf-custom-hostname.harkness.academy`, on the pre-verification path only. Harmless to leave in place afterwards.
+- **SSL validation** — `TXT _acme-challenge.harkness.academy`, or a CNAME of the same name for wildcard DCV delegation. On Cloudflare these must be **DNS only** (grey cloud): proxying them blocks certificate issuance.
+
+**3. Refresh until Connected.** Three things verify separately — hostname, SSL, origin — and the status names which is still outstanding: *Verifying ownership* is waiting on DNS propagation, *Verifying* means only origin routing is outstanding. Most domains connect inside 15 minutes; Cloud retries for about 12 hours before it says *Timed out*, so there is nothing to re-trigger by hand. On the real-time path, loading the domain in a browser helps Cloud see traffic and finish the last check.
+
+Check propagation from the terminal rather than guessing:
+
+```sh
+dig NS harkness.academy +short          # who answers for the domain
+dig A harkness.academy +short           # or CNAME, whichever Cloud asked for
+dig TXT _acme-challenge.harkness.academy +short
+```
+
+No output means the record is missing or has not propagated.
+
+**4. Set it primary, then set `APP_URL`.** Mark the domain primary in the environment's domain settings, set `APP_URL=https://harkness.academy`, and **deploy** — a variable reaches the app on a deploy, not a restart. Until then every absolute URL the app generates still names the `*.laravel.cloud` domain.
+
+TLS is provisioned and renewed automatically for each custom domain; there is nothing to install and no renewal to diary. The Starter plan includes 10 custom domains per organization, so this one costs nothing.
 
 ## Cost control
 
