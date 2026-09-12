@@ -16,7 +16,7 @@ Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landin
 
 **Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · `6b50c3d` H1.13 and H3.1–H3.3 · **H3.4 and H2.4** — the four questions answered, D46 written, `app.css` and the settled artboards moved to W3 · **H4** — the front door is built and matches its artboards at both widths.
 
-Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name, which only the dashboard can change (H6.3 says how), and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
+Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), nothing — the Cloud application was renamed to `Harkness Academy` (handle `harkness-academy`) on 2026-09-11, and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
 
 `956cd09` **H5** — the gate is in `CreateNewUser` · `140dc94` **H6.1 and H6.3**, and H5's deploy half with them.
 
@@ -107,6 +107,8 @@ Two messages, because two rules can break: `required` says *Registration is by i
 1.6.2 needed no code at all — `plan` defaults to `standard` in both the migration and `User::$attributes`. The test pins it.
 
 Local `.env` carries `INVITATION_CODE=local-invite` so the dev app can register; the value is Colin's to change.
+
+The field also sets `autoCapitalize="none" autoCorrect="off" spellCheck={false}`. The match is case-sensitive and exact, and an iOS keyboard capitalises the first letter of a text input by default — a correct code typed on a phone would have failed on the one screen with no way to see why.
 
 ## H6. Deploy and domain
 

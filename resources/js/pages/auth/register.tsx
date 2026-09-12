@@ -43,6 +43,9 @@ export default function Register({
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="off"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
+                                    spellCheck={false}
                                     name="invitation_code"
                                     placeholder="The code you were sent"
                                 />
