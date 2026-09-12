@@ -114,4 +114,22 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Invitation Gate (spec 1.6)
+    |--------------------------------------------------------------------------
+    |
+    | Registration requires this code. It is one shared value for everyone
+    | invited, with no table and no per-person codes (ledger D45): rotating it
+    | is an environment change and a deploy, and it invalidates the code for
+    | every future registration at once.
+    |
+    | There is no default. An unset code means no registration can succeed,
+    | which is the safe direction to fail -- nothing a student has already
+    | earned is behind this rule (spec 4.5.1).
+    |
+    */
+
+    'invitation_code' => env('INVITATION_CODE'),
+
 ];

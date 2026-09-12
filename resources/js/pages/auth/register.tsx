@@ -33,13 +33,29 @@ export default function Register({
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
+                                <Label htmlFor="invitation_code">
+                                    Invitation code
+                                </Label>
+                                <Input
+                                    id="invitation_code"
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    tabIndex={1}
+                                    autoComplete="off"
+                                    name="invitation_code"
+                                    placeholder="The code you were sent"
+                                />
+                                <InputError message={errors.invitation_code} />
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
                                     id="name"
                                     type="text"
                                     required
-                                    autoFocus
-                                    tabIndex={1}
+                                    tabIndex={2}
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Full name"
@@ -56,7 +72,7 @@ export default function Register({
                                     id="email"
                                     type="email"
                                     required
-                                    tabIndex={2}
+                                    tabIndex={3}
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
@@ -69,7 +85,7 @@ export default function Register({
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={3}
+                                    tabIndex={4}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
@@ -90,7 +106,7 @@ export default function Register({
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={4}
+                                    tabIndex={5}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
@@ -106,7 +122,7 @@ export default function Register({
                                     <Checkbox
                                         id="tos_accepted"
                                         name="tos_accepted"
-                                        tabIndex={5}
+                                        tabIndex={6}
                                         className="mt-0.5"
                                     />
                                     <Label
@@ -114,7 +130,7 @@ export default function Register({
                                         className="text-sm leading-snug font-normal"
                                     >
                                         I accept the{' '}
-                                        <TextLink href={terms()} tabIndex={6}>
+                                        <TextLink href={terms()} tabIndex={7}>
                                             Terms of Service
                                         </TextLink>
                                         .
@@ -126,7 +142,7 @@ export default function Register({
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={7}
+                                tabIndex={8}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -136,7 +152,7 @@ export default function Register({
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={8}>
+                            <TextLink href={login()} tabIndex={9}>
                                 Log in
                             </TextLink>
                         </div>
