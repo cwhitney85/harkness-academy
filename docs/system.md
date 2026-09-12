@@ -46,10 +46,13 @@ Finishing a lesson is irrevocable, and everything after it runs on the queue: th
 
 ## 3. The screens, and what frames each
 
-Twelve screens. The full transition map — every edge, every URL, the resume table and the failure paths — is **[spec 8.6](specs/08-interface.md#86-flow-map)**, and is not repeated here.
+Thirteen screens. The full transition map — every edge, every URL, the resume table and the failure paths — is **[spec 8.6](specs/08-interface.md#86-flow-map)**, and is not repeated here.
+
+**The front door** is what a signed-out visitor meets at `/`: the crest, the wordmark and the motto as one object, the headline, what the app does in a sentence of lifecycle, and two buttons — Register and Log in. Nothing else on it navigates: no bar, no footer, no third link. A member never sees it, because `/` redirects them to the dashboard.
 
 | Screen | URL | Frame |
 |---|---|---|
+| Landing page | `/` | no shell, signed out only |
 | Dashboard | `/dashboard` | the app layout |
 | Module rollup | `/modules/{module}` | the app layout |
 | Course creation | `/courses/create` | the pipeline shell |
@@ -63,9 +66,11 @@ Twelve screens. The full transition map — every edge, every URL, the resume ta
 
 Two pairs share a URL by design: a completed lesson and a sat exam are *states of the screen the student is already on*, not places they navigate to.
 
-**Outside the twelve**, and reached from the user menu or from the sign-in flow rather than from a course: the terms page, the install-instructions page, the three settings screens (profile, security, and an appearance screen that is deliberately unreachable while dark mode is unshipped), and the seven authentication screens the starter kit provides — sign in, register, forgot and reset password, confirm password, verify email, and the two-factor challenge.
+**Outside the thirteen**, and reached from the user menu or from the sign-in flow rather than from a course: the terms page, the install-instructions page, the three settings screens (profile, security, and an appearance screen that is deliberately unreachable while dark mode is unshipped), and the seven authentication screens the starter kit provides — sign in, register, forgot and reset password, confirm password, verify email, and the two-factor challenge.
 
-**Three shells, plus the starter kit's app layout** ([D30](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured. The dashboard and the module rollup are not any of those and are set in the app layout. All three shells draw the same crest at the head of their rail, and it is the link back to the dashboard — the only way out of a course that is not the browser's address bar (8.5.7). Settings, auth and the install page sit outside the twelve and use the starter kit's own chrome.
+**Registration is by invitation.** The register screen's first field — above Name, holding the focus — is an invitation code. It is one shared value, read from the environment and matched exactly; an environment that sets none admits nobody rather than everybody. A wrong code fails on its own field, naming the rule it broke. Nothing else about the account differs: an invited account is on the standard plan, because the gate is who gets in, not what they spend ([1.6](specs/01-foundation.md)).
+
+**Three shells, plus the starter kit's app layout** ([D30](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured. The dashboard and the module rollup are not any of those and are set in the app layout. All three shells draw the same crest at the head of their rail, and it is the link back to the dashboard — the only way out of a course that is not the browser's address bar (8.5.7). Settings, auth and the install page sit outside the thirteen and use the starter kit's own chrome, and the landing page is framed by nothing at all.
 
 ## 4. The routes, by subsystem
 
@@ -77,7 +82,7 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 
 **[`routes/assessment.php`](../routes/assessment.php)** — everything graded outside a lesson. Homework and its answers; the final exam, opening it, saving a sitting in progress, and handing one in; the three doors that create a refresher (lesson, subtopic, module) and the refresher screen and its answers.
 
-**[`routes/web.php`](../routes/web.php)** — the entry redirect, the dashboard, the module rollup, the terms page and the install-instructions page. It requires the other three files, plus **[`routes/settings.php`](../routes/settings.php)**, which holds profile, password, security and the passkey endpoint password managers read. **[`routes/console.php`](../routes/console.php)** defines no routes.
+**[`routes/web.php`](../routes/web.php)** — the entry route, which renders the landing page for a signed-out visitor and redirects a member to the dashboard; the dashboard, the module rollup, the terms page and the install-instructions page. It requires the other three files, plus **[`routes/settings.php`](../routes/settings.php)**, which holds profile, password, security and the passkey endpoint password managers read. **[`routes/console.php`](../routes/console.php)** defines no routes.
 
 ## 5. The records
 

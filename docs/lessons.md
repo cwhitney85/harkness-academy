@@ -142,3 +142,13 @@ request: "GET /lessons/19/sections/1/stream", upstream: "fastcgi://127.0.0.1:900
 **The setting is "HTTP timeout" in the environment's General Settings, and it caps at 60 seconds.** It renders `fastcgi_read_timeout` through the container's `NGINX_HTTP_TIMEOUT`. A custom environment variable of that name does nothing — custom variables reach the application's `.env`, not the container environment nginx's entrypoint reads — which cost an hour and two deploys to establish. **60 is below the `mid` tier's 120**, so the ordering the queue gets right cannot be bought here: the rule becomes *nothing inside a streamed request may go quiet for 60 seconds*, and deploy.md owns it.
 
 **The heartbeat could not have saved it, and that is the second trap.** `EventStream::heartbeatIfDue()` beats at 15 seconds, comfortably under 20 — but it is only ever called from inside the delta callback, so it cannot beat until the stream it is protecting has already started. Anthropic does send its own keepalive during a long wait, and `laravel/ai`'s `HandlesTextStreaming` parses the `ping` event and then matches no branch for it, so it is dropped before `each()` ever sees it. **There is no seam in the SDK that fires during the wait**, which is why the ordering of ceilings is what this depends on rather than a heartbeat.
+
+## T11. The phone keyboard corrects an exact-match field, and the screen cannot say so
+
+*Found 2026-09-11, in the `harkness` unit, on spec 1.6.*
+
+An invitation code is matched **case-sensitively and exactly**. iOS capitalises the first letter of a plain `<input type="text">` by default, and offers autocorrect on it — so a correct code typed on a phone arrives wrong, on the one screen where the app is forbidden to say what the right answer looks like (1.6.4). The visitor sees *That is not the invitation code* and has nothing to check it against.
+
+**The fix is three attributes on any field the app compares exactly:** `autoCapitalize="none" autoCorrect="off" spellCheck={false}`. Codes, slugs and identifiers all qualify; a name or a free-text answer does not.
+
+Nothing in a desktop browser reproduces it, and no test catches it — the field's value in a test is whatever the test typed.

@@ -70,9 +70,9 @@
 | D41 | A validation error names every rule the field broke, and the joining is Inertia's boundary | current |
 | D42 | A free-text subtopic is checked against its module before a course exists | current |
 | D43 | The password rule is eight characters, in every environment | current |
-| D44 | The name, the motto and the monogram — Harkness Academy, *Licet Facere*, HA | current |
+| D44 | The name, the motto and the monogram — Harkness Academy, *Licet Facere*, HA | **amended by D46** — the band beneath the shield was drawn and rejected |
 | D45 | Entry is one shared invitation code, held in config | current |
-| D46 | The wordmark stacks, the motto is engraved, and the front door is set on the desk | current |
+| D46 | The wordmark stacks, the motto is engraved, and the front door gets its own ground | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -813,7 +813,9 @@ Rejected: **`min(8)->uncompromised()` in production** -- the Have I Been Pwned k
 
 Rejected: **keeping the production rule and relaxing only locally** -- it is production that friends and family register against.
 
-## D44. The name, the motto and the monogram (resolved 2026-09-11, unit `harkness`, Colin)
+## D44. The name, the motto and the monogram (resolved 2026-09-11, unit `harkness`, Colin; **the monogram's band amended by [D46](#d46-the-wordmark-stacks-the-motto-is-engraved-and-the-front-door-gets-its-own-ground-resolved-2026-09-11-unit-harkness-spec-item-813-colin)**)
+
+> **Amended — there is no band.** The motto's placement below was this entry's preference, not a drawn result; drawing it on canvas page B · brand refuted it, and D46 sets the motto as its own engraved line instead. No third `Crest` variant exists — `filled` and `outline` are still the whole component. The name, the pedagogy rule, the motto's words and the two letters all stand.
 
 The product was named OpenTutor from 2026-08-21 until this entry. The name described the category and claimed nothing, which was right while the only user was the founder and wrong the moment the app had a domain and a front door.
 
@@ -833,7 +835,9 @@ Rejected: **the plain letter swap with no band** — correct and cheaper, and it
 
 Rejected: **an entwined `HA` ligature** — better craft, unproven at 16px where a joined pair closes up, and it introduces a drawn letterform the canvas has none of.
 
-The crest itself is unchanged from D21: wine shield, gold rule, chevron, Georgia caps. This entry changes two letters and adds a band.
+The crest itself is unchanged from D21: wine shield, gold rule, chevron, Georgia caps. This entry changes two letters.
+
+**What keeps the old name, deliberately.** The Postgres databases stay `opentutor` and `opentutor_test`, and with them `phpunit.xml`, `.env.example`'s `DB_DATABASE`, the `createdb` line in the README and the CI workflow — renaming a live database holding a real course buys nothing. The git repository and working directory stay `open-tutor` for the same reason. So does body prose in the historical tier (`00-frame.md`, `01-research.md`, `03-spec.md`, `PLAN.md`): those are dated records of what was decided under the old name, and each carries one line under its title pointing here instead.
 
 ## D45. Entry is one shared invitation code, held in config (resolved 2026-09-11, unit `harkness`, spec item 1.6)
 
@@ -851,7 +855,7 @@ Rejected: **no gate at all, and a spend cap instead** — a cap reads `usage_eve
 
 Rejected: **no Register link at all, with invited friends sent straight to the form** — the door works and is unguessable, and a returning member who forgets whether they have an account finds nothing to tell them.
 
-## D46. The wordmark stacks, the motto is engraved, and the front door is set on the desk (resolved 2026-09-11, unit `harkness`, spec item 8.13, Colin)
+## D46. The wordmark stacks, the motto is engraved, and the front door gets its own ground (resolved 2026-09-11, unit `harkness`, spec item 8.13, Colin)
 
 D44 settled the name, the motto's words and the two letters. It left four things to be decided by drawing them rather than arguing them, on canvas page **B · brand**. This entry is the answer to all four, and the artboards titled CHOSEN there are what it means.
 
