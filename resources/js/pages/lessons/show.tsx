@@ -164,7 +164,7 @@ export default function LessonScreenPage({
             readTurnStream(source.stream, handle)
                 .catch(() =>
                     setFailure(
-                        'The tutor could not be reached. Reload the page to try again.',
+                        'The tutor could not be reached. Try this section again.',
                     ),
                 )
                 .finally(() => {
@@ -421,7 +421,16 @@ export default function LessonScreenPage({
                                     checkpoint ? questionsInset : '',
                                 ].join(' ')}
                                 onClick={() => {
-                                    if (next > total) {
+                                    // A section the student is looking at
+                                    // that was never taught is one whose
+                                    // stream failed, and the only thing this
+                                    // button may do is ask for it again.
+                                    // Moving on would strand it: the rail
+                                    // disables an untaught section, so
+                                    // nothing could ever come back to it.
+                                    if (!taught(viewing)) {
+                                        teach(viewing);
+                                    } else if (next > total) {
                                         complete();
                                     } else if (taught(next)) {
                                         setHead(headAt(sections, next));
@@ -430,9 +439,11 @@ export default function LessonScreenPage({
                                     }
                                 }}
                             >
-                                {next > total
-                                    ? 'Finish this lesson'
-                                    : 'Continue'}
+                                {!taught(viewing)
+                                    ? 'Try again'
+                                    : next > total
+                                      ? 'Finish this lesson'
+                                      : 'Continue'}
                             </Button>
                         </div>
                     )}
