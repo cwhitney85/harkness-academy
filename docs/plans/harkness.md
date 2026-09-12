@@ -16,9 +16,11 @@ Spec items this unit adds: **1.6** (the invitation gate) · **8.13** (the landin
 
 **Landed.** `47e365a` D44, D45, spec 1.6 and spec 8.13 written · `057fdd1` H1.1–H1.7, and H2.1–H2.3 with them · `0870b38` H1.8–H1.10 · `81a45de` H1.11–H1.12, plus trap [T9](../lessons.md) and `scripts/icons.sh` · `6b50c3d` H1.13 and H3.1–H3.3 · **H3.4 and H2.4** — the four questions answered, D46 written, `app.css` and the settled artboards moved to W3 · **H4** — the front door is built and matches its artboards at both widths.
 
-Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name (H6.3, blocked), and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
+Nothing in the running app says OpenTutor, and nothing on canvas page A does either. What still does is deliberate: the `opentutor` and `opentutor_test` databases (H1.5 WONT), the Laravel Cloud application name, which only the dashboard can change (H6.3 says how), and the superseded canvas pages A · dosage and First directions, which are dated records (the H1.10 principle).
 
-**Open.** **H2.5** · **H5** the invitation gate, independent · **H6.1 and H6.3**, independent. H6.2 landed early inside H1.8.
+`956cd09` **H5** — the gate is in `CreateNewUser` · `140dc94` **H6.1 and H6.3**, and H5's deploy half with them.
+
+**Open.** **H2.5** only. H6.2 landed early inside H1.8.
 
 **To land the unit:** triage this file into the durable tier and delete it in the same commit as the last of the work (spec 9.6).
 
@@ -94,21 +96,35 @@ The quiet button is the app's `variant="outline" size="action"`, which the dashb
 
 ## H5. The invitation gate
 
-*Lands as spec item **1.6**; see [docs/specs/01-foundation.md](../specs/01-foundation.md). Independent of H3 and H4.*
+*Landed 2026-09-11 as spec item **1.6**; see [docs/specs/01-foundation.md](../specs/01-foundation.md).*
+
+`config('auth.invitation_code')` reads `INVITATION_CODE`, with **no default** — `Rule::in([null])` matches no string, so an environment missing the variable shuts the door rather than opening it. That is not the fail-open rule biting (4.5.1): nobody's progress is behind registration.
+
+The field is **first on the register screen**, above Name, and takes the autofocus. A visitor without a code learns it before filling in five fields rather than after. Every `tabIndex` on the screen shifted by one.
+
+Two messages, because two rules can break: `required` says *Registration is by invitation. Enter the code you were sent.* and `in` says *That is not the invitation code. Check the one you were sent.* Both land on the `invitation_code` field, which is 1.6.3 and D41.
+
+1.6.2 needed no code at all — `plan` defaults to `standard` in both the migration and `User::$attributes`. The test pins it.
+
+Local `.env` carries `INVITATION_CODE=local-invite` so the dev app can register; the value is Colin's to change.
 
 ## H6. Deploy and domain
 
-*Owner: this file. `docs/deploy.md` is a runbook, not a spec.*
+*Owner: this file. `docs/deploy.md` is a runbook, not a spec. Landed 2026-09-11.*
+
+The runbook gained a **The custom domain** section between the first-deploy checks and cost control, written from Cloud's own domains documentation rather than from memory: the four questions the Add domain dialog asks and the answer for a single apex, what each record is for (`_cf-custom-hostname` ownership, `_acme-challenge` SSL, A vs CNAME origin), what each verification status means, and the `dig` lines that say whether a record is visible. The one fact worth the section on its own: **`*.laravel.cloud` carries `X-Robots-Tag: noindex, nofollow` and a custom domain does not**, so attaching the domain is what makes the app indexable — and the gate H5 just built is what stands behind it.
+
+H5's deploy half landed here too: `INVITATION_CODE` is a row in the environment-variable table, and the after-deploy smoke test now says what a *correct* code failing means (the variable never reached the app — a variable lands on a deploy, not a restart).
 
 - **H6.1 MUST** — A custom-domain section: attaching `harkness.academy` in Laravel Cloud, the DNS records, TLS issuance, and setting `APP_URL` to it. *Done: a reader can attach a second domain without opening the Cloud docs.*
 - **H6.2 MUST** — The `APP_NAME` override row reads `Harkness Academy`. *Done: it names no old value.*
-- **H6.3 SHOULD** — Step 1's instruction to name the Cloud application `opentutor` is corrected, or marked historical if the application cannot be renamed. *Done: the doc states which, and does not instruct a reader to create an application named after the old product.* Whether Cloud allows renaming an application is **unknown** — dashboard-only, not inspectable from the repo.
+- **H6.3 SHOULD** — Step 1's instruction to name the Cloud application `opentutor` is corrected, or marked historical if the application cannot be renamed. *Done: the doc states which, and does not instruct a reader to create an application named after the old product.* **The unknown is closed, and not from the dashboard**: Cloud's public API takes `name` and `slug` on `PATCH /applications/{application}`, and its domains documentation says renaming an application changes the assigned `*.laravel.cloud` domain and needs a redeploy. Step 1 now says to name it `Harkness Academy`, and says how to rename one created under the old name.
 
 ---
 
 ## Open and unknown
 
-- **Whether Laravel Cloud can rename an application**, and whether that changes the injected `APP_NAME` (H6.3). Dashboard-only.
+- **Whether renaming the Cloud application changes the injected `APP_NAME`.** Renaming itself is settled (H6.3); what Cloud re-injects afterwards is not. It costs nothing either way — the `APP_NAME` row already says to override only when the injected value is wrong.
 - **Whether `harkness.academy` is attached in Cloud with TLS issued**, or only pointed by DNS (H6.1). Dashboard-only.
 - **Brass is 2.10:1 on `--door` and 2.42:1 on `--ground`** — below AA either way. Not caused by D46; every brass label in the app has always had it, and the motto line inherits it. Three ways out if it is ever worth fixing: words in `--muted-ink` with the rules left brass, words in wine (8.94:1, but wine is the one action colour, 8.3.4), or accept it as decorative. Palette-wide, so it is not the landing page's decision to make.
 
