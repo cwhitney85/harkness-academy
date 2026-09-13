@@ -73,6 +73,7 @@
 | D44 | The name, the motto and the monogram — Harkness Academy, *Licet Facere*, HA | **amended by D46** — the band beneath the shield was drawn and rejected |
 | D45 | Entry is one shared invitation code, held in config | current |
 | D46 | The wordmark stacks, the motto is engraved, and the front door gets its own ground | current |
+| D47 | An answer the tutor never replied to is replaced by the next one | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -886,3 +887,15 @@ Rejected: **deepening `--desk` itself** — one value instead of two, and it cha
 **The signed-out bar and the footer are both cut**, which amends spec item 8.13.4. Both were drawn; every link either carried has another owner. The motto is in the hero (P2), the 18-or-older attestation is on the registration form (D45), "put it on your phone" is a member route off the user menu, and Log in and Register are the hero's two buttons — a bar repeating them put two primary actions above the fold competing with each other. **Terms** was the one item with no other owner on a public page, and it was kept at first as a single quiet line at the foot. Looking at it cut that too: one orphan link at the foot of an otherwise linkless page does not earn the row, and the registration form it is reachable *from* is where a visitor meets it anyway. The front door navigates in two places, and both of them are buttons.
 
 Rejected: **keeping the bar for the crest's sake**, so the mark appears at the top of the page as it does on every other screen. The other screens are shells around a course; this one is not, and L2 already puts the mark on the page as an object.
+
+## D47. An answer the tutor never replied to is replaced by the next one (resolved 2026-09-13, package 10 item 10.3)
+
+**Chosen: `Transcript::answer()` overwrites a student turn that ends the transcript, and appends otherwise.**
+
+The student's row is written before the provider is called, so every failure after that point — a provider error, a cut connection, an empty reply — leaves an answer with no reply behind it. The screen hands the answer back to be sent again (10.3), and sending it appended a second copy. The old `stream.error` copy, *"send that again"*, had been producing that double-post all along.
+
+**A student turn with nothing after it can only be an answer whose reply was lost.** The tutor always speaks between two answers, so the replacement never erases anything the model saw.
+
+Rejected: **deduplicating on the client, or on equal text.** "Yes" twice in a row is an ordinary interview, and a client cannot see whether the first one reached the server.
+
+Rejected: **writing both rows only when the reply lands.** A lost reply then leaves nothing behind to replace, but `ask()` must stop reading the newest turn off the transcript, and an answer sent just before Done is dropped from the summary.
