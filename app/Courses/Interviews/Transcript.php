@@ -44,6 +44,29 @@ final class Transcript
     }
 
     /**
+     * Record the student's answer to the tutor's latest question.
+     *
+     * An answer already standing after that question is one whose reply never
+     * arrived -- the row is written before the provider is called, so a failed
+     * stream leaves it behind. The next answer replaces it rather than
+     * following it, so sending it again is not saying it twice (spec 10.3).
+     *
+     * Post: the transcript ends with exactly one student turn, holding `$content`.
+     */
+    public function answer(string $content): InterviewMessage
+    {
+        $latest = $this->latestTurn();
+
+        if ($latest?->speaker !== Speaker::Student) {
+            return $this->append(Speaker::Student, $content);
+        }
+
+        $latest->update(['content' => trim($content)]);
+
+        return $latest;
+    }
+
+    /**
      * The conversation as a script, for the summarizing prompt.
      */
     public function render(): string

@@ -168,7 +168,7 @@ final class InterviewSession implements CompletionListener
     {
         $this->assertUnderway();
 
-        $this->transcript->append(Speaker::Student, $text);
+        $this->transcript->answer($text);
 
         $this->budgetSpent = $this->transcript->questionsAsked() >= $this->interview->questionBudget();
 

@@ -1,8 +1,16 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 import InterviewScreen from '@/pages/courses/interview';
+import type { TurnEvent } from '@/types';
 
 /**
  * Spec 4.7 — the knowledge → goals transition opens the goals stream.
@@ -21,15 +29,20 @@ import InterviewScreen from '@/pages/courses/interview';
 
 const requested: string[] = [];
 
+/** What the next stream does; by default it never ends. */
+let stream: (onEvent: (event: TurnEvent) => void) => Promise<void> = () =>
+    new Promise<void>(() => {});
+
 vi.mock('@/lib/turn-stream', () => ({
-    readTurnStream: (url: string) => {
+    readTurnStream: (url: string, onEvent: (event: TurnEvent) => void) => {
         requested.push(url);
 
-        return new Promise<void>(() => {});
+        return stream(onEvent);
     },
 }));
 
 const post = vi.fn();
+const reload = vi.fn();
 
 // `Link` is here because the shell's crest is one (8.5.7), not because this
 // file tests it: an export the screen reaches for and the mock omits is a
@@ -49,7 +62,10 @@ vi.mock('@inertiajs/react', () => ({
             {children}
         </a>
     ),
-    router: { reload: vi.fn(), post: (...args: unknown[]) => post(...args) },
+    router: {
+        reload: (...args: unknown[]) => reload(...args),
+        post: (...args: unknown[]) => post(...args),
+    },
     // The rail head draws the wordmark from Inertia's shared props, which is
     // where `config('app.name')` reaches the client.
     usePage: () => ({ props: { name: 'Harkness Academy' } }),
@@ -71,15 +87,23 @@ vi.hoisted(() => {
 afterEach(() => {
     cleanup();
     requested.length = 0;
+    stream = () => new Promise<void>(() => {});
     post.mockClear();
+    reload.mockClear();
 });
 
-function props(kind: 'knowledge' | 'goals') {
+type Turn = { id: number; speaker: 'student' | 'tutor'; content: string };
+
+const ASKED: Turn[] = [
+    { id: 1, speaker: 'tutor', content: 'What can you say already?' },
+];
+
+function props(kind: 'knowledge' | 'goals', turns: Turn[] = []) {
     return {
         course: { id: 7, title: 'Beginner Spanish' },
         kind,
-        turns: [],
-        may_open: true,
+        turns,
+        may_open: turns.length === 0,
         limits: { answer_characters: 2000 },
         urls: {
             stream: `/courses/7/interviews/${kind}/stream`,
@@ -132,4 +156,153 @@ test('Done disables itself and names the write-up, and cannot be pressed twice',
     fireEvent.click(working);
 
     expect(post).toHaveBeenCalledTimes(1);
+});
+
+/**
+ * Spec 10 — a turn that did not end.
+ *
+ * Every arm below is the same sequence: the stream stops short of `turn.end`,
+ * the screen reloads, and what the reload brings back decides the recovery.
+ * `reloadBrings` plays the server's half in Inertia's order — the page is
+ * swapped, then `onSuccess`, then `onFinish`.
+ */
+
+function answer(text: string) {
+    fireEvent.change(screen.getByPlaceholderText('Answer in your own words…'), {
+        target: { value: text },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+}
+
+function composer(): string {
+    return (
+        screen.getByPlaceholderText(
+            'Answer in your own words…',
+        ) as HTMLTextAreaElement
+    ).value;
+}
+
+function reply(text: string): (onEvent: (event: TurnEvent) => void) => void {
+    return (onEvent) => {
+        onEvent({
+            name: 'turn.start',
+            data: { turn_id: 't', kind: 'interview' },
+        });
+        onEvent({ name: 'turn.delta', data: { turn_id: 't', text } });
+    };
+}
+
+/** `turns` is what the server holds; null is a reload that never arrived. */
+async function reloadBrings(turns: Turn[] | null, swap?: () => void) {
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+
+    const visit = reload.mock.calls[0][0];
+
+    act(() => {
+        if (turns !== null) {
+            swap?.();
+            visit.onSuccess({ props: { turns } });
+        }
+
+        visit.onFinish();
+    });
+}
+
+test('10.1, 10.3 — a failed answer reloads, and the answer is back in the box to send once', async () => {
+    stream = () => Promise.reject(new Error('offline'));
+    render(<InterviewScreen {...props('knowledge', ASKED)} />);
+
+    answer('Hola, y nada más.');
+    await reloadBrings(null);
+
+    expect(composer()).toBe('Hola, y nada más.');
+    expect(screen.getByText(/Your answer is back in the box/)).toBeDefined();
+
+    stream = () => new Promise<void>(() => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(requested).toEqual([
+        '/courses/7/interviews/knowledge/answers',
+        '/courses/7/interviews/knowledge/answers',
+    ]);
+});
+
+test('10.1, 10.2 — an answer the course has moved past lands on its current screen, saying nothing about the tutor', async () => {
+    stream = () => Promise.reject(new Error('Stream refused with 200.'));
+    const { rerender } = render(
+        <InterviewScreen {...props('knowledge', ASKED)} />,
+    );
+
+    answer('One more thing.');
+    await reloadBrings([], () => {
+        stream = () => new Promise<void>(() => {});
+        rerender(<InterviewScreen {...props('goals')} />);
+    });
+
+    expect(screen.getByText('What you want out of this')).toBeDefined();
+    expect(screen.queryByText(/tutor/i, { selector: '.text-wine' })).toBeNull();
+    expect(composer()).toBe('');
+});
+
+test('10.4 — a reply cut mid-stream stays on screen when the server never wrote it', async () => {
+    stream = async (onEvent) => {
+        reply('Muy bien. Now tell me')(onEvent);
+
+        throw new Error('cut');
+    };
+    render(<InterviewScreen {...props('knowledge', ASKED)} />);
+
+    answer('Hola.');
+    await reloadBrings(ASKED);
+
+    expect(screen.getByText('Muy bien. Now tell me')).toBeDefined();
+    expect(composer()).toBe('Hola.');
+});
+
+test('10.4, 10.5 — a reply written before its write-up failed is replaced by the server’s copy, and the copy names Done', async () => {
+    stream = async (onEvent) => {
+        reply('That is everything I needed.')(onEvent);
+        onEvent({
+            name: 'stream.error',
+            data: { code: 'interview_stream_failed', retryable: true },
+        });
+    };
+    const { rerender } = render(
+        <InterviewScreen {...props('knowledge', ASKED)} />,
+    );
+    const written: Turn[] = [
+        ...ASKED,
+        { id: 2, speaker: 'student', content: 'Nothing more.' },
+        { id: 3, speaker: 'tutor', content: 'That is everything I needed.' },
+    ];
+
+    answer('Nothing more.');
+    await reloadBrings(written, () =>
+        rerender(<InterviewScreen {...props('knowledge', written)} />),
+    );
+
+    // One copy of the reply: the server's, with the live fragment gone.
+    expect(screen.getByText('That is everything I needed.')).toBeDefined();
+    expect(screen.getByText(/press Done to try again/)).toBeDefined();
+    expect(composer()).toBe('');
+});
+
+test('10.5 — an opening that never arrived offers Try again, and Send waits for a question', async () => {
+    stream = () => Promise.reject(new Error('offline'));
+    render(<InterviewScreen {...props('knowledge')} />);
+
+    await reloadBrings([]);
+
+    expect(screen.getByText('The tutor could not be reached.')).toBeDefined();
+    expect(
+        screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled'),
+    ).toBe(true);
+
+    stream = () => new Promise<void>(() => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(requested).toEqual([
+        '/courses/7/interviews/knowledge/stream',
+        '/courses/7/interviews/knowledge/stream',
+    ]);
 });

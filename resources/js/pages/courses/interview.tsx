@@ -25,9 +25,12 @@ import type { TurnEvent } from '@/types';
  * cannot scroll it away.
  *
  * The model may also end the interview itself, mid-answer, and the five-event
- * vocabulary has no way to say so (5.2.5). So every finished turn is followed
- * by a reload: if the course has moved on, the server redirects, and if it has
- * not, the transcript is simply repainted from its rows.
+ * vocabulary has no way to say so (5.2.5). So every turn, finished or not, is
+ * followed by a reload: if the course has moved on, the server redirects, and
+ * if it has not, the transcript is simply repainted from its rows (spec 10.1).
+ * A turn that did not end is recovered from what that reload brings back — see
+ * `converse` — and never by posting the answer again on the student's behalf
+ * (10.7).
  *
  * That reload is what makes this screen an instance of the mounted-component
  * class (ledger D28). `router.reload()` preserves state, so when the redirect
@@ -110,36 +113,99 @@ function Conversation({
     const opened = useRef(false);
     const foot = useRef<HTMLDivElement>(null);
 
-    const handle = useCallback((event: TurnEvent) => {
-        switch (event.name) {
-            case 'turn.start':
-                setLive('');
-                break;
-            case 'turn.delta':
-                setLive((text) => (text ?? '') + event.data.text);
-                break;
-            case 'stream.error':
-                setFailure(
-                    event.data.retryable
-                        ? 'The tutor lost their thread. Nothing is lost — send that again.'
-                        : 'This interview cannot be continued here.',
-                );
-                break;
-            default:
-                break;
-        }
-    }, []);
+    /**
+     * One tutor turn — the opening question, or the reply to `answer` — then
+     * the reload that settles the screen on the server's copy of it.
+     *
+     * Only `turn.end` says the turn is safely written. Anything else — a
+     * refusal, a `stream.error`, a cut connection, an empty reply — is judged
+     * by what the reload brings back, because the server may have done more
+     * than the stream lived to say:
+     *
+     * - **The course moved.** The reload redirects, this component unmounts,
+     *   and nothing set below survives (10.1, 10.2).
+     * - **No new tutor turn.** The answer goes back in the box (10.3) — the
+     *   engine replaces an answer that was never replied to, so sending it
+     *   again does not say it twice — and whatever the tutor had got through
+     *   stays on screen until the next turn replaces it (10.4).
+     * - **A new tutor turn, and the stream reported a failure.** The reply was
+     *   written and the write-up after it was not (ledger D9's rider: it fails
+     *   closed), so the recovery is Done, not a second copy of the answer.
+     *
+     * Every copy names something on this screen (10.5).
+     */
+    const converse = useCallback(
+        (url: string, answer?: string) => {
+            const before = turns.at(-1)?.id ?? 0;
+            let ended = false;
+            let reported = false;
 
-    /** Repaint from rows, and follow the server if the course has moved on. */
-    const settle = useCallback(() => {
-        router.reload({
-            onFinish: () => {
-                setLive(null);
-                setPending(null);
-                setBusy(false);
-            },
-        });
-    }, []);
+            setBusy(true);
+            setFailure(null);
+            setLive(null);
+
+            readTurnStream(
+                url,
+                (event: TurnEvent) => {
+                    switch (event.name) {
+                        case 'turn.start':
+                            setLive('');
+                            break;
+                        case 'turn.delta':
+                            setLive((text) => (text ?? '') + event.data.text);
+                            break;
+                        case 'turn.end':
+                            ended = true;
+                            break;
+                        case 'stream.error':
+                            reported = true;
+                            break;
+                        default:
+                            break;
+                    }
+                },
+                answer === undefined
+                    ? {}
+                    : { method: 'POST', body: { text: answer } },
+            )
+                .catch(() => {})
+                .then(() => {
+                    let replied = ended;
+
+                    router.reload({
+                        onSuccess: (page) => {
+                            replied ||= (page.props.turns as Turn[]).some(
+                                (turn) =>
+                                    turn.speaker === 'tutor' &&
+                                    turn.id > before,
+                            );
+                        },
+                        onFinish: () => {
+                            setPending(null);
+                            setBusy(false);
+
+                            if (replied) {
+                                setLive(null);
+
+                                if (!ended && reported) {
+                                    setFailure(
+                                        'That could not be written up just now. Nothing is lost — press Done to try again.',
+                                    );
+                                }
+                            } else if (answer === undefined) {
+                                setFailure('The tutor could not be reached.');
+                            } else {
+                                setDraft(answer);
+                                setFailure(
+                                    'The tutor did not reply. Your answer is back in the box below — send it again.',
+                                );
+                            }
+                        },
+                    });
+                });
+        },
+        [turns],
+    );
 
     useEffect(() => {
         if (!may_open || opened.current) {
@@ -147,17 +213,8 @@ function Conversation({
         }
 
         opened.current = true;
-        setBusy(true);
-
-        readTurnStream(urls.stream, handle)
-            .then(settle)
-            .catch(() => {
-                setFailure(
-                    'The tutor could not be reached. Reload the page to try again.',
-                );
-                setBusy(false);
-            });
-    }, [may_open, urls.stream, handle, settle]);
+        converse(urls.stream);
+    }, [may_open, urls.stream, converse]);
 
     useEffect(() => {
         foot.current?.scrollIntoView({ block: 'end' });
@@ -166,28 +223,14 @@ function Conversation({
     function send() {
         const text = draft.trim();
 
-        if (text === '' || busy) {
+        // Nothing to answer until the tutor has asked (`may_open`).
+        if (text === '' || busy || may_open) {
             return;
         }
 
-        setBusy(true);
-        setFailure(null);
         setPending(text);
         setDraft('');
-
-        readTurnStream(urls.answers, handle, { method: 'POST', body: { text } })
-            .then(settle)
-            .catch(() => {
-                // The transcript is intact and the answer is handed back, which
-                // is the recovery the flow map draws for `stream.error`.
-                setFailure(
-                    'That did not reach the tutor. Try sending it again.',
-                );
-                setDraft(text);
-                setPending(null);
-                setLive(null);
-                setBusy(false);
-            });
+        converse(urls.answers, text);
     }
 
     /**
@@ -229,7 +272,18 @@ function Conversation({
             footer={
                 <div className="flex flex-col gap-2.5">
                     {failure && (
-                        <p className="text-[15px] text-wine">{failure}</p>
+                        <div className="flex items-center gap-4">
+                            <p className="text-[15px] text-wine">{failure}</p>
+                            {may_open && !busy && (
+                                <Button
+                                    size="action"
+                                    variant="outline"
+                                    onClick={() => converse(urls.stream)}
+                                >
+                                    Try again
+                                </Button>
+                            )}
+                        </div>
                     )}
                     <div className="flex items-end gap-3">
                         <textarea
@@ -248,7 +302,7 @@ function Conversation({
                         />
                         <Button
                             size="action"
-                            disabled={busy || draft.trim() === ''}
+                            disabled={busy || may_open || draft.trim() === ''}
                             onClick={send}
                         >
                             Send
@@ -294,7 +348,7 @@ function Conversation({
                     )}
 
                     {live !== null && (
-                        <Line speaker="tutor" content={live} streaming />
+                        <Line speaker="tutor" content={live} streaming={busy} />
                     )}
                 </div>
 

@@ -165,6 +165,35 @@ class KnowledgeInterviewTest extends TestCase
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
     }
 
+    /**
+     * Spec 10.3. The student's row is written before the provider is called,
+     * so a stream that fails leaves an answer the tutor never replied to --
+     * and the screen hands it back to be sent again.
+     */
+    #[Test]
+    public function an_answer_sent_again_after_a_failed_reply_is_not_said_twice(): void
+    {
+        $this->scriptTutor();
+        $course = $this->course();
+
+        $this->drain($this->interviews()->knowledge($course)->open());
+
+        // Never consumed: the request died before the reply was written.
+        $this->interviews()->knowledge($course)->answer('Not really, no.');
+
+        $this->drain($this->interviews()->knowledge($course)->answer('Not really, no.'));
+
+        $this->assertSame(
+            [[Speaker::Tutor, null], [Speaker::Student, 'Not really, no.'], [Speaker::Tutor, null]],
+            InterviewMessage::query()->orderBy('position')->get()
+                ->map(fn (InterviewMessage $turn): array => [
+                    $turn->speaker,
+                    $turn->speaker === Speaker::Student ? $turn->content : null,
+                ])
+                ->all(),
+        );
+    }
+
     #[Test]
     public function an_interview_that_was_never_opened_has_nothing_to_answer(): void
     {
