@@ -6,10 +6,12 @@ use App\Courses\Exceptions\CourseNotOpen;
 use App\Courses\Exceptions\InterviewNotUnderway;
 use App\Courses\Interviews\Interviews;
 use App\Courses\Interviews\InterviewSession;
+use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Courses\Concerns\ConductsInterview;
 use App\Http\Controllers\Courses\Concerns\StreamsTurns;
 use App\Models\Course;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -29,12 +31,17 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * interview is over", and adding a sixth event is a spec change (5.2.5), so
  * the screen reloads when a turn ends and this controller's GET twin redirects
  * if the course has moved.
+ *
+ * An interview that is already over is a refusal, not a failure (spec 10.2):
+ * the course moved, most often because the model ended the interview during
+ * the answer before this one. So it answers the way the Done button does, with
+ * wherever the course now stands, and the screen's reload follows it there.
  */
 class InterviewAnswerController extends Controller
 {
     use ConductsInterview, StreamsTurns;
 
-    public function store(Request $request, Course $course, Interviews $interviews): StreamedResponse
+    public function store(Request $request, Course $course, Interviews $interviews): StreamedResponse|RedirectResponse
     {
         $this->authorize('participate', $course);
 
@@ -47,8 +54,8 @@ class InterviewAnswerController extends Controller
 
         try {
             $reply = $session->answer($validated['text']);
-        } catch (InterviewNotUnderway|CourseNotOpen $e) {
-            abort(422, $e->getMessage());
+        } catch (InterviewNotUnderway|CourseNotOpen) {
+            return redirect(NextAction::url($course->refresh()));
         }
 
         return $this->streamInterviewTurn($course, $kind, $reply, [

@@ -170,6 +170,23 @@ class InterviewScreenTest extends TestCase
             ->assertRedirect(route('courses.syllabus.show', $course));
     }
 
+    /**
+     * Spec 10.2 -- a stale tab answering an interview the course has left.
+     * A refusal, not a failure: the student is sent where the course is.
+     */
+    #[Test]
+    public function an_answer_to_a_finished_interview_is_sent_where_the_course_now_stands(): void
+    {
+        GatewayAgent::fake()->preventStrayPrompts();
+        $course = $this->course(CourseStatus::GoalsInterview);
+
+        $this->actingAs($course->student)
+            ->post(route('courses.knowledge-interview.answers.store', $course), ['text' => 'One more thing.'])
+            ->assertRedirect(route('courses.goals-interview.show', $course));
+
+        $this->assertSame(0, InterviewMessage::query()->count());
+    }
+
     #[Test]
     public function no_one_may_read_another_students_interview(): void
     {

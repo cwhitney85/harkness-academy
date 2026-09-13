@@ -19,6 +19,9 @@ import type { TurnEvent } from '@/types';
  * status codes by design, and only genuine mid-flight failures arrive as
  * `stream.error`. This throws on them so a caller does not have to distinguish
  * "refused" from "said nothing".
+ *
+ * A redirect is a refusal too — the course has moved (spec 10.2). `fetch`
+ * follows it silently and would hand the parser a page of HTML.
  */
 export async function readTurnStream(
     url: string,
@@ -43,7 +46,7 @@ export async function readTurnStream(
                 : JSON.stringify(request.body),
     });
 
-    if (!response.ok || !response.body) {
+    if (!response.ok || response.redirected || !response.body) {
         throw new Error(`Stream refused with ${response.status}.`);
     }
 
