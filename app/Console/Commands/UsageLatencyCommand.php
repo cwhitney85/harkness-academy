@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\UsageEvent;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 /**
  * What every prompt actually costs in wall-clock time (spec 2.2.1).
@@ -39,6 +40,10 @@ class UsageLatencyCommand extends Command
             ->selectRaw('max(latency_ms) as max_ms')
             ->groupBy('prompt_key', 'tier')
             ->orderByDesc(DB::raw('max(latency_ms)'))
+            // A row per (prompt, tier) is a total, not a usage event, so it is
+            // read as the record it is rather than hydrated into a model
+            // that has no `calls` or `max_ms`.
+            ->toBase()
             ->get();
 
         if ($rows->isEmpty()) {
@@ -49,7 +54,7 @@ class UsageLatencyCommand extends Command
 
         $this->table(
             ['Prompt', 'Tier', 'Calls', 'Avg', 'Max', 'Tier cap', 'Against ceiling'],
-            $rows->map(fn (UsageEvent $row): array => [
+            $rows->map(fn (stdClass $row): array => [
                 $row->prompt_key,
                 $row->tier,
                 $row->calls,
