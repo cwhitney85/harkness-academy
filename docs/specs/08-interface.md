@@ -116,9 +116,10 @@ S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a 
   S3  KNOWLEDGE INTERVIEW                              GET /courses/{course}/knowledge-interview
       │   opening question   GET  …/knowledge-interview/stream    (only while the transcript holds nothing but the opening turn)
       │   each answer        POST …/knowledge-interview/answers   (streams the reply)
-      ├─ Done ──► POST …/knowledge-interview/complete  (writes WORKING_KNOWLEDGE) ──► S4
+      ├─ Done, or the tutor's signal ──► POST …/knowledge-interview/complete ──► S3 writing it up (queued, 11.4;
+      │     S3 reloads until WORKING_KNOWLEDGE is written) ──► S4
       ├─ stream.error ──► S3, transcript intact, the answer re-sent
-      └─ 422 summary unusable ──► S3, still underway, Done pressable again
+      └─ write-up unusable ──► S3, still underway, Done pressable again
 
   S4  GOALS INTERVIEW                                  GET /courses/{course}/goals-interview
       │   same three endpoints under …/goals-interview; complete writes CRITERIA
@@ -137,6 +138,7 @@ S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a 
       │   question          POST /lessons/{lesson}/questions            (streams; joins the transcript)
       │   highlight         POST /lessons/{lesson}/explanations         (streams; leaves the transcript alone)
       │   checkpoint        POST /lessons/{lesson}/checkpoints/{checkpoint}/answers
+      │   no checkpoint     POST /lessons/{lesson}/sections/{index}/checkpoint  (Try again, once a queued checkpoint's wait ran out, 11.3)
       ├─ reopen (5.3) ──► S6 at the stored section, transcript and checkpoints restored
       ├─ stream.error ──► S6; the same section URL replays a finished turn and re-teaches an unfinished one
       ├─ checkpoint grading fails open (5.2.1) ──► S6 continues; nothing is lost
@@ -251,6 +253,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `lessons.questions.store` | S6 Q&A turn (8.8.5) |
 | `lessons.explanations.store` | S6 selection explainer (8.8.4) |
 | `lessons.checkpoints.answers.store` | S6 checkpoint answer (8.8.3) |
+| `lessons.sections.checkpoint.store` | S6 asks again for a section's checkpoint (11.3) |
 | `lessons.complete` | S6 ──► S7 |
 | `lessons.homework.show` | S7 ──► **S8** |
 | `lessons.homework.answers.store` | S8 ──► S8 with the explanation revealed |

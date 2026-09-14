@@ -67,6 +67,12 @@ export default function LessonScreenPage({
     const [explaining, setExplaining] = useState<Explanation | null>(null);
     const [draft, setDraft] = useState('');
     const [busy, setBusy] = useState(false);
+    /**
+     * A reload is out to learn what became of the viewed section's checkpoint.
+     * Until it lands the screen does not know whether one is being written,
+     * so it says nothing either way.
+     */
+    const [settling, setSettling] = useState(false);
     const [failure, setFailure] = useState<string | null>(null);
 
     const completed = lesson.status === 'completed';
@@ -150,6 +156,22 @@ export default function LessonScreenPage({
         }
     }, []);
 
+    /**
+     * Learn whether a checkpoint is being written, or has arrived (11.6).
+     *
+     * The stream no longer carries a checkpoint it would have had to wait for
+     * (11.1), and the five events cannot say one was asked for (5.2.5), so the
+     * screen asks the server — for the two props that answer it and nothing
+     * else.
+     */
+    const settle = useCallback(() => {
+        setSettling(true);
+        router.reload({
+            only: ['sections', 'checkpoints'],
+            onFinish: () => setSettling(false),
+        });
+    }, []);
+
     const teach = useCallback(
         (index: number) => {
             const source = sections[index - 1];
@@ -170,10 +192,32 @@ export default function LessonScreenPage({
                 .finally(() => {
                     setLive(null);
                     setBusy(false);
+                    settle();
                 });
         },
-        [sections, handle],
+        [sections, handle, settle],
     );
+
+    // While a checkpoint is being written, look again every five seconds —
+    // the homework's and the syllabus's wait. The server stops saying it is
+    // being written once its wait runs out (11.3), which is what stops this.
+    const writing =
+        !completed && sections.some((row) => row.checkpoint_writing);
+
+    useEffect(() => {
+        if (!writing) {
+            return;
+        }
+
+        const timer = window.setInterval(
+            () => router.reload({ only: ['sections', 'checkpoints'] }),
+            // Spelled out, because the plain literal contains the highlight
+            // cap, which this screen must never restate (8.8.4).
+            5 * 1000,
+        );
+
+        return () => window.clearInterval(timer);
+    }, [writing]);
 
     // A section the student has reached but never been taught is taught on
     // arrival: opening a lesson is the tutor starting to talk, not a button.
@@ -300,6 +344,19 @@ export default function LessonScreenPage({
             .finally(() => setBusy(false));
     }
 
+    /** Try again, for a checkpoint whose wait ran out (11.3). */
+    function askForCheckpoint(url: string) {
+        setSettling(true);
+        setFailure(null);
+
+        postJson(url, {})
+            .then(settle)
+            .catch((error: Error) => {
+                setSettling(false);
+                setFailure(error.message);
+            });
+    }
+
     function complete() {
         setBusy(true);
 
@@ -392,6 +449,25 @@ export default function LessonScreenPage({
                         }
                     />
 
+                    {!checkpoint &&
+                        live === null &&
+                        !busy &&
+                        !settling &&
+                        taught(viewing) && (
+                            <CheckpointWait
+                                writing={
+                                    sections[viewing - 1]?.checkpoint_writing ??
+                                    false
+                                }
+                                onTryAgain={() =>
+                                    askForCheckpoint(
+                                        sections[viewing - 1]
+                                            .checkpoint_request,
+                                    )
+                                }
+                            />
+                        )}
+
                     {checkpoint && (
                         <CheckpointQuestion
                             questions={checkpoint.payload.checkpoint.questions}
@@ -450,6 +526,46 @@ export default function LessonScreenPage({
                 </div>
             )}
         </StudyShell>
+    );
+}
+
+/**
+ * Where a taught section's checkpoint would be, while it is not there
+ * (spec 11.3, 11.6).
+ *
+ * Either it is being written on the queue, and the margin says so, or its wait
+ * ran out — a stopped queue, or generation that failed open (5.2.1) — and the
+ * margin says that instead, with the one thing worth pressing. Continue is
+ * beneath it either way: a checkpoint never gated the lesson (5.2.4, 11.2).
+ */
+function CheckpointWait({
+    writing,
+    onTryAgain,
+}: {
+    writing: boolean;
+    onTryAgain: () => void;
+}) {
+    return (
+        <div className={`measure pb-4 ${questionsInset}`}>
+            {writing ? (
+                <p className="label">
+                    A question for this section is being written…
+                </p>
+            ) : (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <p className="text-[15px] text-muted-ink">
+                        No question for this section this time.
+                    </p>
+                    <Button
+                        size="action"
+                        variant="outline"
+                        onClick={onTryAgain}
+                    >
+                        Try again
+                    </Button>
+                </div>
+            )}
+        </div>
     );
 }
 

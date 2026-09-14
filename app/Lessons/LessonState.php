@@ -3,7 +3,9 @@
 namespace App\Lessons;
 
 use App\Assessment\QuizKind;
+use App\Courses\GenerationKind;
 use App\Lessons\Checkpoints\Checkpoint;
+use App\Models\GenerationRequest;
 use App\Models\Lesson;
 use App\Models\LessonMessage;
 use App\Models\Quiz;
@@ -103,6 +105,7 @@ final readonly class LessonState
      */
     private function sectionRows(): array
     {
+        $writing = $this->checkpointWriting();
         $rows = [];
 
         for ($index = 1; $index <= count($this->sections); $index++) {
@@ -111,10 +114,36 @@ final readonly class LessonState
                 'title' => $this->sections->title($index),
                 'concepts' => $this->sections->concepts($index),
                 'taught' => $this->transcript->section($index) instanceof LessonMessage,
+                'checkpoint_writing' => $index === $writing,
             ];
         }
 
         return $rows;
+    }
+
+    /**
+     * The section whose checkpoint is being written on the queue, if any
+     * (spec 11.6).
+     *
+     * The request row is the course's, not the section's (11.5), so it is
+     * read as belonging to the furthest section reached: sections are taught
+     * in order, and the end of the newest one is what asks. Only while the
+     * request is pending -- a checkpoint's wait runs out (11.3), and past that
+     * the screen stops saying one is coming.
+     */
+    private function checkpointWriting(): ?int
+    {
+        $index = $this->lesson->section_index;
+
+        $pending = GenerationRequest::for($this->lesson->course, GenerationKind::Checkpoint)?->isPending() ?? false;
+
+        if (! $pending || $index === null || ! $this->transcript->section($index) instanceof LessonMessage) {
+            return null;
+        }
+
+        $written = $this->lesson->quizzes()->ofKind(QuizKind::Checkpoint)->where('section_index', $index)->exists();
+
+        return $written ? null : $index;
     }
 
     /**

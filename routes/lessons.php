@@ -4,6 +4,7 @@ use App\Http\Controllers\Lessons\CheckpointAnswerController;
 use App\Http\Controllers\Lessons\LessonCompletionController;
 use App\Http\Controllers\Lessons\LessonController;
 use App\Http\Controllers\Lessons\LessonQuestionController;
+use App\Http\Controllers\Lessons\SectionCheckpointController;
 use App\Http\Controllers\Lessons\SectionStreamController;
 use App\Http\Controllers\Lessons\SelectionExplanationController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::post('lessons/{lesson}/checkpoints/{checkpoint}/answers', [CheckpointAnswerController::class, 'store'])
         ->name('lessons.checkpoints.answers.store');
+
+    Route::post('lessons/{lesson}/sections/{index}/checkpoint', [SectionCheckpointController::class, 'store'])
+        ->whereNumber('index')
+        ->name('lessons.sections.checkpoint.store');
 
     Route::post('lessons/{lesson}/complete', [LessonCompletionController::class, 'store'])
         ->name('lessons.complete');

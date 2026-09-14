@@ -9,7 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 
 /**
- * A `top`-tier generation the student is waiting on (ledger D25).
+ * A generation the student is waiting on (ledger D25, spec 11).
  *
  * The row is the wait. It exists from the press of the button until the thing
  * asked for exists, and then it is gone -- so a screen asking "is this being
@@ -37,17 +37,17 @@ class GenerationRequest extends Model
      *
      * Pre:  none. The caller has already decided the student may ask.
      * Post: a request row exists, carrying no failure. Returns null when a
-     *       request was already open, which is the caller's signal to dispatch
-     *       nothing -- a second press must not buy a second Opus call.
+     *       request was already pending, which is the caller's signal to
+     *       dispatch nothing -- a second press must not buy a second call.
      *
-     * A failed request is reopened rather than refused: the failure is the
-     * whole reason the student is pressing again.
+     * A failed or abandoned request is reopened rather than refused: the
+     * failure is the whole reason the student is pressing again.
      */
     public static function open(Course $course, GenerationKind $kind): ?self
     {
         $existing = self::for($course, $kind);
 
-        if ($existing instanceof self && ! $existing->hasFailed()) {
+        if ($existing instanceof self && $existing->isPending()) {
             return null;
         }
 
@@ -107,6 +107,20 @@ class GenerationRequest extends Model
     public function hasFailed(): bool
     {
         return $this->failed_at !== null;
+    }
+
+    /**
+     * Whether a screen should still say the work is coming.
+     *
+     * Not once it has failed, and not once it has been out longer than its
+     * kind will wait (`GenerationKind::patience`).
+     */
+    public function isPending(): bool
+    {
+        $patience = $this->kind->patience();
+
+        return ! $this->hasFailed()
+            && ($patience === null || $this->requested_at->isAfter(now()->subSeconds($patience)));
     }
 
     /**

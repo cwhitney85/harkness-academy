@@ -4,8 +4,10 @@ namespace App\Lessons;
 
 use App\Ai\Gateway;
 use App\Ai\PendingCall;
+use App\Courses\GenerationKind;
 use App\Lessons\Checkpoints\Checkpoint;
 use App\Lessons\Checkpoints\CheckpointGenerator;
+use App\Lessons\Checkpoints\WriteCheckpoint;
 use App\Lessons\Exceptions\LessonNotOpenable;
 use App\Lessons\Exceptions\NoSuchSection;
 use App\Lessons\Streaming\CheckpointReady;
@@ -14,6 +16,7 @@ use App\Lessons\Streaming\TurnDelta;
 use App\Lessons\Streaming\TurnEnd;
 use App\Lessons\Streaming\TurnKind;
 use App\Lessons\Streaming\TurnStart;
+use App\Models\GenerationRequest;
 use App\Models\Lesson;
 use App\Models\LessonMessage;
 use App\Models\Quiz;
@@ -87,9 +90,10 @@ final class LessonSession
      *
      * Pre: the lesson is openable, `$index` names one of its sections, and
      *      the student is not skipping ahead of where they have reached.
-     * Post: exactly one `section` row exists for `$index`, a `turn.end`
-     *       naming it has been written, and -- unless generation failed open
-     *       -- a `checkpoint.ready` has followed it.
+     * Post: exactly one `section` row exists for `$index` and a `turn.end`
+     *       naming it has been written. Its checkpoint followed as
+     *       `checkpoint.ready` if it already existed, and was asked for on the
+     *       queue if it did not.
      *
      * Reconnecting to a section that finished costs no tokens and produces
      * the identical event sequence, which is what makes 5.2.6's "replay if
@@ -266,21 +270,46 @@ final class LessonSession
     }
 
     /**
-     * Emit the section's checkpoint, if there is one to emit.
+     * Ask the queue for a taught section's checkpoint (spec 11.1).
      *
-     * Generation fails open (5.2.1): a section with no checkpoint simply has
-     * no `checkpoint.ready`, and the client's Continue is unaffected because
-     * checkpoints never gated it (5.2.4).
+     * The end of the section's stream asks, and so does the student's Try
+     * again once a wait has run out (11.3). Nothing is asked for when the
+     * checkpoint exists or a request is already pending -- the second is also
+     * what keeps a reconnect from buying a second generation.
+     *
+     * Pre: the section's teaching turn is in the transcript.
+     */
+    public function askForCheckpoint(int $index): void
+    {
+        if ($this->checkpoints->existing($this->lesson, $index) instanceof Quiz) {
+            return;
+        }
+
+        if (GenerationRequest::open($this->lesson->course, GenerationKind::Checkpoint) !== null) {
+            WriteCheckpoint::dispatch($this->lesson->id, $index);
+        }
+    }
+
+    /**
+     * Emit the section's checkpoint if it exists, and ask for it if it does not.
+     *
+     * Never generated here (11.1): a blocking call after `turn.end` is a
+     * silent stream, and the host cuts a silent stream at 60 seconds (T10). A
+     * checkpoint written on the queue reaches the screen through `LessonState`,
+     * and Continue is unaffected either way because checkpoints never gated it
+     * (5.2.4). A request already pending asks for nothing more.
      */
     private function offerCheckpoint(int $index, EventStream $out): void
     {
-        $out->heartbeatIfDue();
-
-        $quiz = $this->checkpoints->forSection($this->lesson, $index);
+        $quiz = $this->checkpoints->existing($this->lesson, $index);
 
         if ($quiz instanceof Quiz) {
             $out->send(new CheckpointReady($quiz->id, Checkpoint::of($quiz)->clientPayload()));
+
+            return;
         }
+
+        $this->askForCheckpoint($index);
     }
 
     /**

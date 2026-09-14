@@ -32,6 +32,16 @@ vi.mock('@/lib/turn-stream', () => ({
     },
 }));
 
+const posted: string[] = [];
+
+vi.mock('@/lib/api', () => ({
+    postJson: (url: string) => {
+        posted.push(url);
+
+        return Promise.resolve(null);
+    },
+}));
+
 vi.mock('@inertiajs/react', () => ({
     Head: () => null,
     Link: ({
@@ -63,11 +73,19 @@ vi.hoisted(() => {
 afterEach(() => {
     cleanup();
     requested.length = 0;
+    posted.length = 0;
     failNext = false;
 });
 
-/** A two-section lesson, resuming at `resumeAt`, with `taught` sections filed. */
-function props(resumeAt: number, taught: number[] = []): Props {
+/**
+ * A two-section lesson, resuming at `resumeAt`, with `taught` sections filed
+ * and `writing` naming the section whose checkpoint is on the queue.
+ */
+function props(
+    resumeAt: number,
+    taught: number[] = [],
+    writing: number | null = null,
+): Props {
     return {
         lesson: {
             id: 19,
@@ -85,7 +103,9 @@ function props(resumeAt: number, taught: number[] = []): Props {
             title: `Section ${index}`,
             concepts: [],
             taught: taught.includes(index),
+            checkpoint_writing: index === writing,
             stream: `/lessons/19/sections/${index}/stream`,
+            checkpoint_request: `/lessons/19/sections/${index}/checkpoint`,
         })),
         transcript: taught.map((index) => ({
             message_id: index,
@@ -145,4 +165,34 @@ test('a section whose stream failed offers Try again, and asks for itself', asyn
         '/lessons/19/sections/1/stream',
         '/lessons/19/sections/1/stream',
     ]);
+});
+
+/**
+ * Spec 11.2 and 11.6 — the checkpoint is written on the queue, the margin says
+ * so, and Continue does not wait for it.
+ */
+test('a section whose checkpoint is being written says so, and Continue still works', () => {
+    render(<LessonScreen {...props(1, [1], 1)} />);
+
+    expect(
+        screen.getByText('A question for this section is being written…'),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(requested).toEqual(['/lessons/19/sections/2/stream']);
+});
+
+/** Spec 11.3 — a wait that ran out says so, and Try again asks again. */
+test('a checkpoint that did not arrive offers Try again, which asks for it', async () => {
+    render(<LessonScreen {...props(1, [1])} />);
+
+    expect(
+        screen.getByText('No question for this section this time.'),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(posted).toEqual(['/lessons/19/sections/1/checkpoint']);
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
 });

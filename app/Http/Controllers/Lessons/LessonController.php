@@ -44,6 +44,7 @@ class LessonController extends Controller
                 static fn (array $section): array => [
                     ...$section,
                     'stream' => route('lessons.sections.stream', [$lesson, $section['index']]),
+                    'checkpoint_request' => route('lessons.sections.checkpoint.store', [$lesson, $section['index']]),
                 ],
                 $state['sections'],
             ),

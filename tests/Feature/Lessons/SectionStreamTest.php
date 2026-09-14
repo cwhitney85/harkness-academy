@@ -10,6 +10,7 @@ use App\Lessons\Streaming\StreamEvent;
 use App\Lessons\Streaming\StreamVocabulary;
 use App\Lessons\Streaming\TurnKind;
 use App\Models\LessonMessage;
+use App\Models\Quiz;
 use App\Models\UsageEvent;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -24,17 +25,16 @@ use RuntimeException;
 class SectionStreamTest extends SectionStreamTestCase
 {
     #[Test]
-    public function a_taught_section_streams_start_deltas_end_and_a_checkpoint(): void
+    public function a_taught_section_streams_start_deltas_and_end(): void
     {
         $this->scriptModel(['A variable is a letter standing in for a number.', $this->checkpointResponse()]);
 
         $frames = [];
         $this->teach(1, $frames);
 
-        $this->assertSame(
-            ['turn.start', 'turn.delta', 'turn.end', 'checkpoint.ready'],
-            $this->eventShapeIn($frames),
-        );
+        // No `checkpoint.ready`: a checkpoint that does not exist yet is
+        // written on the queue, not in the stream (spec 11.1).
+        $this->assertSame(['turn.start', 'turn.delta', 'turn.end'], $this->eventShapeIn($frames));
     }
 
     #[Test]
@@ -133,10 +133,7 @@ class SectionStreamTest extends SectionStreamTestCase
         // 5.2.6's done-condition: a complete, non-duplicated section and
         // exactly one message row.
         $this->assertSame(1, LessonMessage::query()->count());
-        $this->assertSame(
-            ['turn.start', 'turn.delta', 'turn.end', 'checkpoint.ready'],
-            $this->eventShapeIn($frames),
-        );
+        $this->assertSame(['turn.start', 'turn.delta', 'turn.end'], $this->eventShapeIn($frames));
     }
 
     #[Test]
@@ -169,14 +166,10 @@ class SectionStreamTest extends SectionStreamTestCase
             $this->turnTextIn($second),
             'The replay carries the whole persisted turn, in one delta.',
         );
-        // assertEquals, not assertSame: the first stream reads the row it
-        // just created and the replay reads it back out of Postgres, where
-        // jsonb stores an object's keys in its own order. Same document,
-        // different key order -- which is what "lossless" means for JSON.
-        $this->assertEquals(
-            $this->eventNamed($first, 'checkpoint.ready'),
-            $this->eventNamed($second, 'checkpoint.ready'),
-            'The same checkpoint, not a new one.',
+        $this->assertSame(
+            Quiz::query()->sole()->id,
+            $this->eventNamed($second, 'checkpoint.ready')['checkpoint_id'],
+            'The checkpoint the queue wrote, not a new one.',
         );
     }
 

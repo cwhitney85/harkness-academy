@@ -27,7 +27,11 @@ export type LessonSectionRow = {
     title: string;
     concepts: string[];
     taught: boolean;
+    /** Its checkpoint is out on the queue and could still arrive (spec 11.6). */
+    checkpoint_writing: boolean;
     stream: string;
+    /** Asks again for a checkpoint that did not arrive (spec 11.3). */
+    checkpoint_request: string;
 };
 
 export type LessonCheckpointRow = {
