@@ -39,12 +39,6 @@ v1 shipped on 2026-09-07: one student took one honest course cycle end to end, i
 browser and again on a phone, with no developer touching the database
 ([docs/system.md §8](docs/system.md)). What comes next, in the order it is worth doing:
 
-**Two packages opened by the first real courses, ahead of everything below.** Both are
-specced and buildable on their own by a cold session: [spec 10](docs/specs/10-interview-recovery.md)
-is the way out of a failed interview turn, and [spec 11](docs/specs/11-generation-off-the-request.md)
-takes the two blocking generations out of streamed requests. The incident behind both is
-trap [T10](docs/lessons.md).
-
 **Explicit teaching style, and personas the student picks.** A course already carries a
 style column and the persona is already a prompt file, but exactly one style ships and
 nothing chooses it. What is missing is the choice: a student says how they want to be

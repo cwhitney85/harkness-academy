@@ -34,7 +34,7 @@ Three separate defects sit behind that one screen.
 
 Against the deployed URL, on a course whose knowledge interview is underway:
 
-1. Answer the last question, so the model signals the interview complete. The screen arrives at the goals interview — whether the summary finished inside the request or the request died during it. *Known to race until [11.4](11-generation-off-the-request.md) lands: a cut while the summary is still running reloads before the course moves, and nothing on screen notices when it does.*
+1. Answer the last question, so the model signals the interview complete. The screen says it is writing up what you know, then arrives at the goals interview without a manual reload. Since [11.4](11-generation-off-the-request.md) the summary runs on the queue, so no request can die during it.
 2. Simulate a transient failure mid-answer (stop the environment, or cut the network between the browser and the host). The screen recovers to the same interview with the transcript the server holds, and the typed answer is still in the composer.
 3. Post an answer to the knowledge interview after it has completed — a stale tab, or the browser's back button. The student lands on the course's current screen, and is told nothing about tutors being unreachable.
 4. At no point in 1–3 is a manual browser reload required, and at no point does text the student has already read vanish without something replacing it.

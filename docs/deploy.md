@@ -61,10 +61,11 @@ Leave the **scheduler off**. Nothing in the app is scheduled, and a scheduler fi
 
 **A queue is not optional — see step 8.** This paragraph used to say to add no background process "until there is work for them", and by the time anyone reread it the work had existed for two packages.
 
-**8. Add a managed queue.** Required, not optional (ledger D25). Three things in this app run on the queue, and nothing drains them without this:
+**8. Add a managed queue.** Required, not optional (ledger D25). Everything below runs on the queue, and nothing drains it without this:
 
 - `CompletionPipeline` — the chain that writes homework and the working-knowledge summaries after a lesson (5.4.1). It has dispatched queued jobs since package 5. **An environment without a worker completes lessons and silently never writes their homework.**
 - `DrawUpSyllabus` and `WriteFinalExam` — the two `top`-tier generations. They run for minutes, and Cloudflare (Laravel Cloud's networking layer) cuts a request at about 100 seconds, so neither can be done in the request that asks for it.
+- `WriteCheckpoint` and `WriteUpInterview` — the two silent calls that used to end a streamed response (spec 11). **Without a worker, no section gets a checkpoint and no interview is ever written up.**
 
 Infrastructure canvas → **Add compute** → **Managed queue**:
 

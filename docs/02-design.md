@@ -74,6 +74,8 @@
 | D45 | Entry is one shared invitation code, held in config | current |
 | D46 | The wordmark stacks, the motto is engraved, and the front door gets its own ground | current |
 | D47 | An answer the tutor never replied to is replaced by the next one | current |
+| D48 | A checkpoint's wait runs out, and the course's request is read as the newest section's | current |
+| D49 | Done's write-up goes to the queue with the tutor's | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -899,3 +901,25 @@ The student's row is written before the provider is called, so every failure aft
 Rejected: **deduplicating on the client, or on equal text.** "Yes" twice in a row is an ordinary interview, and a client cannot see whether the first one reached the server.
 
 Rejected: **writing both rows only when the reply lands.** A lost reply then leaves nothing behind to replace, but `ask()` must stop reading the newest turn off the transcript, and an answer sent just before Done is dropped from the summary.
+
+## D48. A checkpoint's wait runs out, and the course's request is read as the newest section's (resolved 2026-09-13, package 11 items 11.3/11.5, Colin)
+
+**Chosen: one checkpoint request per course, as 11.5 keys it; it belongs to the furthest section taught; and it stops being awaited after two minutes.** Two minutes is `CheckpointGenerator`'s two attempts at the `cheap` tier's 60-second timeout, and lives as `GenerationKind::patience()`. After that the margin says there is no question for this section this time and offers **Try again**, with Continue beneath it as the way on.
+
+A checkpoint belongs to a section, and `generation_requests` is unique on (course, kind), so the row cannot say which section it is for. Sections are taught in order and the end of the newest one is what asks, so the newest taught section is the only honest reading. And a queued job that never runs, as happens when the queue is stopped, leaves the row there for good. Every other wait in the app polls until the row goes, and 11.3 forbids that here.
+
+The cost is named. A section that finishes while another section's request is still pending gets no checkpoint until the student presses Try again. With a working queue that needs a 25-second job to outlast a streamed section plus the reading after it, so in practice it happens when the queue is slow or stopped.
+
+Rejected: **a row that names its section** (lesson and section columns, a wider unique key). It is exact, but it rewrites the key 11.5 fixes, to serve a case only a stopped queue produces.
+
+Rejected: **the wait ending silently** (Colin). The note disappearing leaves the student with no idea that a question was due, and in a stopped-queue hour it happens on every section.
+
+Rejected: **waiting as long as it takes**, which is what the syllabus and the exam do. They fail closed and hold something the student cannot go on without. A checkpoint fails open, so a screen still promising one after its job could have finished is promising something that will not come.
+
+## D49. Done's write-up goes to the queue with the tutor's (resolved 2026-09-13, package 11 item 11.4, Colin)
+
+**Chosen: `InterviewSession` asks the queue for the write-up from both doors, and the interview takes no answers while it is pending.** 11.4 names the answer request, but the model's `signal_complete` and the Done button have always reached one write-up, and Done's POST was just as silent for the length of `wk.create`. While the write-up runs, the answer box, Send and Done are all disabled. An answer sent then would land in a transcript the write-up has already read (Colin).
+
+A failed write-up is kept on the request row rather than returned as a 422. The flow map's "422 summary unusable" edge becomes "write-up unusable", reached by the screen's reload.
+
+Rejected: **queueing only the answer request's write-up.** It gives the one write-up two paths, and it leaves Done exposed to the 60-second ceiling T10 is about.

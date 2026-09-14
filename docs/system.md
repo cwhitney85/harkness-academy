@@ -24,7 +24,7 @@ A course moves through seven positions, and two endings that are dates rather th
 
 A typed name is checked against the module it was typed under **before anything is written**, so the picker can now refuse. A subtopic this app teaches under another module is turned away with an offer to start it there in one press; one nothing here teaches is declined outright; and a check that cannot be run declines too, rather than starting a course it could not vet. There is no override. A name that matches a starting point of the module it was typed under is not checked at all, and neither is the catalog path — a preset belongs to its module by construction, so picking one still works while the check does not. The student reads the app's own words for all three refusals; what the check itself said is recorded and never shown.
 
-**2. Knowledge interview.** The tutor opens the conversation and asks about what the student already knows, budgeted at five questions — after the fifth the tutor is asked, on every turn, to wrap up and end the interview, but nothing forces it to. **The student is what bounds an interview**: a Done button is always visible and ends it at any point. **A turn that fails never strands the student.** The screen reloads, so it lands wherever the course now stands. If nothing moved, the unanswered answer goes back in the box, and sending it again replaces the lost one. Tutor text already on screen stays until the server's copy replaces it. On completion the transcript is summarized into that subtopic's `WORKING_KNOWLEDGE.md`, folding in whatever was already there rather than overwriting it.
+**2. Knowledge interview.** The tutor opens the conversation and asks about what the student already knows, budgeted at five questions — after the fifth the tutor is asked, on every turn, to wrap up and end the interview, but nothing forces it to. **The student is what bounds an interview**: a Done button is always visible and ends it at any point. **A turn that fails never strands the student.** The screen reloads, so it lands wherever the course now stands. If nothing moved, the unanswered answer goes back in the box, and sending it again replaces the lost one. Tutor text already on screen stays until the server's copy replaces it. On completion the transcript is summarized into that subtopic's `WORKING_KNOWLEDGE.md` on the queue, folding in whatever was already there rather than overwriting it. The screen says it is writing up, takes no more answers, and moves on when the document lands. A write-up that fails leaves the interview as it was, and Done tries again.
 
 **3. Goals interview.** The same, budgeted at four questions — one for each section of the document they become: what they hope to gain, what drew them to the subject, what success would look like, how they like to be assessed. On completion the transcript becomes `COURSE_CRITERIA.md` for this level.
 
@@ -34,7 +34,7 @@ A typed name is checked against the module it was typed under **before anything 
 
 **6. Active.** Approving the syllabus does four things in one transaction: writes the lesson rows (the first unlocked, the rest locked), renders a `GUIDANCE.md` into the memory tree for each lesson, stamps the approved draft, and moves the course to active. From here the course is teachable.
 
-Each lesson is taught in **sections**, paced by code rather than by the model. The tutor streams a section's prose; the student can ask questions in line, or highlight a passage and ask for it to be explained without that exchange joining the lesson transcript. Between sections a **checkpoint** appears — a single multiple-choice question generated from what was just taught, marked in code. Checkpoint grading **fails open**: if it breaks, the lesson continues and nothing is lost.
+Each lesson is taught in **sections**, paced by code rather than by the model. The tutor streams a section's prose; the student can ask questions in line, or highlight a passage and ask for it to be explained without that exchange joining the lesson transcript. After each section a **checkpoint** appears in the margin: a short multiple-choice question generated from what was just taught, and marked in code. It is written on the queue once the prose ends, so it arrives a moment after the section, and Continue never waits for it. Checkpoints **fail open**: if one has not arrived within two minutes, the margin says there is no question this time and offers Try again, and the lesson carries on.
 
 Finishing a lesson is irrevocable, and everything after it runs on the queue: the lesson is summarized, working knowledge is updated from that summary, **homework** is generated, and the next lesson is unlocked. Homework is a short quiz plus suggested reading; its results feed the *next* working-knowledge update.
 
@@ -108,13 +108,15 @@ The two vocabularies worth knowing: a course's **position** stores only the seve
 
 ## 6. What runs on the queue
 
-Three things, and the app is broken without a worker draining them ([T4](lessons.md)).
+Five things, and the app is broken without a worker draining them ([T4](lessons.md)).
 
 **Drawing up a syllabus** and **writing a final exam** are `top`-tier calls that can take minutes. Neither is done inside a request: the POST answers immediately, a `generation_requests` row *is* the wait, and the screen polls every five seconds until the artefact exists. Two consequences fall out of that row. A unique index on (course, kind) makes a double press free, where before every timeout-and-retry was another bill. And failure had to become persistent, because there is no longer a response to report it in — so both jobs write a student-facing message on the row, and both screens read it on every render, not once at mount ([D28](02-design.md)).
 
+**Writing a checkpoint** and **writing up an interview** are queued for a different reason: they are silent. Each is a non-streamed call that used to run at the end of a streamed response, after the tutor's last word, and the host cuts a response that has said nothing for 60 seconds ([T10](lessons.md), spec 11). They use the same `generation_requests` row. A checkpoint's wait runs out at two minutes, because it fails open ([D48](02-design.md)). An interview's write-up waits as long as it takes, because it fails closed.
+
 **The lesson completion chain** — summarize, update working knowledge, generate homework, unlock the next lesson — runs as a chain after a lesson is finished. Nothing in it is allowed to undo the completion. An environment with no worker completes lessons and silently never writes their homework.
 
-All three jobs are idempotent, because a managed queue delivers at least once.
+Every job is idempotent, because a managed queue delivers at least once.
 
 ## 7. Cost
 

@@ -116,8 +116,8 @@ S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a 
   S3  KNOWLEDGE INTERVIEW                              GET /courses/{course}/knowledge-interview
       │   opening question   GET  …/knowledge-interview/stream    (only while the transcript holds nothing but the opening turn)
       │   each answer        POST …/knowledge-interview/answers   (streams the reply)
-      ├─ Done, or the tutor's signal ──► POST …/knowledge-interview/complete ──► S3 writing it up (queued, 11.4;
-      │     S3 reloads until WORKING_KNOWLEDGE is written) ──► S4
+      ├─ Done ──► POST …/knowledge-interview/complete, or the tutor's signal during an answer ──► S3 writing it up
+      │     (queued, 11.4; S3 reloads until WORKING_KNOWLEDGE is written) ──► S4
       ├─ stream.error ──► S3, transcript intact, the answer re-sent
       └─ write-up unusable ──► S3, still underway, Done pressable again
 
