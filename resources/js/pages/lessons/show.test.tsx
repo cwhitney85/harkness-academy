@@ -175,7 +175,7 @@ test('a section whose checkpoint is being written says so, and Continue still wo
     render(<LessonScreen {...props(1, [1], 1)} />);
 
     expect(
-        screen.getByText('A question for this section is being written…'),
+        screen.getByText('Questions for this section are being written…'),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -188,7 +188,7 @@ test('a checkpoint that did not arrive offers Try again, which asks for it', asy
     render(<LessonScreen {...props(1, [1])} />);
 
     expect(
-        screen.getByText('No question for this section this time.'),
+        screen.getByText('No questions for this section this time.'),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));

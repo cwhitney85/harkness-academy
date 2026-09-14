@@ -36,7 +36,7 @@ enum GenerationKind: string
         return match ($this) {
             self::Syllabus => 'Your syllabus is being drawn up',
             self::FinalExam => 'Your exam is being written',
-            self::Checkpoint => 'A question for this section is being written',
+            self::Checkpoint => 'Questions for this section are being written',
             self::InterviewSummary => 'What you said is being written up',
         };
     }

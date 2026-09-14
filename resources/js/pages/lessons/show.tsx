@@ -549,7 +549,7 @@ function CheckpointWait({
         <div className={`measure pb-4 ${questionsInset}`}>
             {writing ? (
                 <p className="label">
-                    Questions for this section is being written…
+                    Questions for this section are being written…
                 </p>
             ) : (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
