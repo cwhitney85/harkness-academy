@@ -32,6 +32,10 @@ import type { TurnEvent } from '@/types';
  * `converse` — and never by posting the answer again on the student's behalf
  * (10.7).
  *
+ * Ending the interview — by Done or by the tutor — puts the write-up on the
+ * queue (spec 11.4), and the screen waits on `writing_up` the way S5 waits on
+ * a syllabus: it takes no answers, and reloads until the course moves.
+ *
  * That reload is what makes this screen an instance of the mounted-component
  * class (ledger D28). `router.reload()` preserves state, so when the redirect
  * it follows lands on the *other* interview, React is handed the same key and
@@ -45,6 +49,10 @@ type Interview = {
     kind: 'knowledge' | 'goals';
     turns: Turn[];
     may_open: boolean;
+    /** The write-up is out on the queue (11.4). */
+    writing_up: boolean;
+    /** Why the last write-up failed; Done asks again. */
+    write_up_failure: string | null;
     limits: { answer_characters: number };
     urls: { stream: string; answers: string; complete: string };
 };
@@ -85,6 +93,8 @@ function Conversation({
     kind,
     turns,
     may_open,
+    writing_up,
+    write_up_failure,
     limits,
     urls,
 }: Interview) {
@@ -98,14 +108,12 @@ function Conversation({
     const [busy, setBusy] = useState(false);
     const [failure, setFailure] = useState<string | null>(null);
     /**
-     * Done has been pressed and the write-up is being made (8.12.3).
-     *
-     * The summary is a model call inside the request, so the press is followed
-     * by a wait long enough for a student to conclude nothing happened. It is
-     * cleared when the visit finishes rather than on success alone: the
-     * write-up fails closed (4.5.1) and Done has to be pressable again.
+     * Done has been pressed and its visit is out (8.12.3). From the moment it
+     * lands, `writing_up` says the same thing for as long as the write-up is
+     * on the queue.
      */
-    const [writing, setWriting] = useState(false);
+    const [pressed, setPressed] = useState(false);
+    const writing = pressed || writing_up;
 
     // Guards the one request that is destructive if it is made twice. A ref
     // rather than state because React's StrictMode runs effects twice on
@@ -216,6 +224,19 @@ function Conversation({
         converse(urls.stream);
     }, [may_open, urls.stream, converse]);
 
+    // The syllabus's five-second wait. When the write-up lands the course has
+    // moved and this reload redirects; when it fails, `writing_up` goes false
+    // and the failure arrives with it.
+    useEffect(() => {
+        if (!writing_up) {
+            return;
+        }
+
+        const timer = window.setInterval(() => router.reload(), 5000);
+
+        return () => window.clearInterval(timer);
+    }, [writing_up]);
+
     useEffect(() => {
         foot.current?.scrollIntoView({ block: 'end' });
     }, [turns.length, live, pending]);
@@ -223,8 +244,9 @@ function Conversation({
     function send() {
         const text = draft.trim();
 
-        // Nothing to answer until the tutor has asked (`may_open`).
-        if (text === '' || busy || may_open) {
+        // Nothing to answer until the tutor has asked (`may_open`), and
+        // nothing once the conversation is being written up.
+        if (text === '' || busy || may_open || writing) {
             return;
         }
 
@@ -236,34 +258,26 @@ function Conversation({
     /**
      * The Done button (8.12.3, 2.3.4).
      *
-     * One press only: the summary is written on the way through this POST, and
-     * a second press while the first is out spends a second model call on the
-     * same transcript. A 422 is the summary being unusable — the transcript is
-     * intact, the course has not moved, and the sentence the controller sends
-     * is the one the student needs before pressing again (4.5.1).
+     * One press only. The POST asks the queue for the write-up and lands back
+     * here in `writing_up`; the server refuses a second request too, but a
+     * button that looks pressable while one is out invites the press.
      */
     function finish() {
         if (writing) {
             return;
         }
 
-        setWriting(true);
+        setPressed(true);
         setFailure(null);
 
         router.post(
             urls.complete,
             {},
-            {
-                preserveScroll: true,
-                onError: (errors) =>
-                    setFailure(
-                        errors.complete ??
-                            'That could not be written up just now. Nothing is lost — press Done again.',
-                    ),
-                onFinish: () => setWriting(false),
-            },
+            { preserveScroll: true, onFinish: () => setPressed(false) },
         );
     }
+
+    const shown = failure ?? (writing ? null : write_up_failure);
 
     return (
         <PipelineShell
@@ -271,9 +285,9 @@ function Conversation({
             course={course.title}
             footer={
                 <div className="flex flex-col gap-2.5">
-                    {failure && (
+                    {shown && (
                         <div className="flex items-center gap-4">
-                            <p className="text-[15px] text-wine">{failure}</p>
+                            <p className="text-[15px] text-wine">{shown}</p>
                             {may_open && !busy && (
                                 <Button
                                     size="action"
@@ -290,6 +304,7 @@ function Conversation({
                             value={draft}
                             rows={1}
                             maxLength={limits.answer_characters}
+                            disabled={writing}
                             placeholder="Answer in your own words…"
                             onChange={(event) => setDraft(event.target.value)}
                             onKeyDown={(event) => {
@@ -302,7 +317,12 @@ function Conversation({
                         />
                         <Button
                             size="action"
-                            disabled={busy || may_open || draft.trim() === ''}
+                            disabled={
+                                busy ||
+                                may_open ||
+                                writing ||
+                                draft.trim() === ''
+                            }
                             onClick={send}
                         >
                             Send

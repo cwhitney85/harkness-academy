@@ -37,10 +37,7 @@ trait ConductsInterview
 
     protected function session(Interviews $interviews, Course $course, InterviewKind $kind): InterviewSession
     {
-        return match ($kind) {
-            InterviewKind::Knowledge => $interviews->knowledge($course),
-            InterviewKind::Goals => $interviews->goals($course),
-        };
+        return $interviews->for($course, $kind);
     }
 
     /**

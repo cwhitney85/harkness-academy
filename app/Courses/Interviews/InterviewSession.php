@@ -14,8 +14,10 @@ use App\Courses\Exceptions\IllegalTransition;
 use App\Courses\Exceptions\InterviewAlreadyUnderway;
 use App\Courses\Exceptions\InterviewNotUnderway;
 use App\Courses\Exceptions\InterviewSummaryUnusable;
+use App\Courses\GenerationKind;
 use App\Memory\MemoryTree;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\StreamableAgentResponse;
@@ -34,16 +36,22 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  *              interview's status and the tutor's first question is streaming.
  *   `answer()` pre: the interview is underway. post: both turns are in the
  *              transcript, and the interview is over only if the tutor said so.
- *   ends       post: the document exists in the memory tree, no transcript row
- *              survives, and the course stands at `next()`. Either all three
- *              or none: they commit together.
+ *   ends       post: a write-up is pending on the queue, and the interview
+ *              refuses answers until it lands or fails.
+ *   `writeUp()` post: the document exists in the memory tree, no transcript
+ *              row survives, and the course stands at `next()`. Either all
+ *              three or none: they commit together.
  *
  * The two endings of 2.3.4 are one path here. The model's `signal_complete`
  * arrives *during* a stream, so it is recorded and acted on when the stream
- * finishes -- summarizing inside the tool call would delete the transcript
- * while the model was still writing into it. The Done button arrives with no
- * stream in flight and summarizes immediately. Same method, same order of
- * effects.
+ * finishes -- asking inside the tool call would let the write-up delete the
+ * transcript while the model was still writing into it. The Done button
+ * arrives with no stream in flight and asks immediately. Same method, same
+ * order of effects.
+ *
+ * **The write-up is queued work** (spec 11.4). It is a blocking, non-streamed
+ * call, and it used to run at the end of the answer's stream, where the host
+ * cuts a response that has said nothing for 60 seconds (T10).
  *
  * **R3's two doors are the only ways out, and the question budget is not a
  * third.** Spending it (4.3.1, 4.4.1) swaps KEEP_GOING for WRAP_UP in the
@@ -192,15 +200,13 @@ final class InterviewSession implements CompletionListener
 
     /**
      * The interview is over -- by the model's signal or the student's button.
-     *
-     * @throws InterviewSummaryUnusable
      */
     public function completed(CompletionSignal $signal): void
     {
         $this->signal ??= $signal;
 
         if (! $this->streaming) {
-            $this->summarize();
+            $this->askForWriteUp();
         }
     }
 
@@ -258,13 +264,25 @@ final class InterviewSession implements CompletionListener
                 }
 
                 if ($this->signal instanceof CompletionSignal) {
-                    $this->summarize();
+                    $this->askForWriteUp();
                 }
             });
     }
 
     /**
+     * Put the write-up on the queue, unless it is already there (spec 11.4).
+     */
+    private function askForWriteUp(): void
+    {
+        if (GenerationRequest::open($this->course, GenerationKind::InterviewSummary) !== null) {
+            WriteUpInterview::dispatch($this->course->id, $this->interview->kind());
+        }
+    }
+
+    /**
      * Turn the conversation into the document it existed to produce.
+     *
+     * Run by `WriteUpInterview`, never inside a request (11.4).
      *
      * Fails closed. An unusable summary leaves the transcript intact and the
      * course where it was, so the student can end the interview again; writing
@@ -273,7 +291,7 @@ final class InterviewSession implements CompletionListener
      *
      * @throws InterviewSummaryUnusable
      */
-    private function summarize(): void
+    public function writeUp(): void
     {
         // Already done -- a second Done press, or a signal that arrived after
         // the button. The transcript is the record of that: it only goes when
@@ -322,6 +340,14 @@ final class InterviewSession implements CompletionListener
         // document made of one line the student never typed, over whatever
         // earlier courses in the subtopic recorded (ledger D7a).
         if ($this->course->status !== $this->interview->status() || ! $this->transcript->hasTutorTurn()) {
+            throw InterviewNotUnderway::for($this->course, $this->interview->kind()->value);
+        }
+
+        // Being written up is over as far as the student is concerned: an
+        // answer sent now would land in a transcript the write-up has already
+        // read, and a second Done would ask for what is already asked for. A
+        // write-up that failed reopens the interview (11.4).
+        if (GenerationRequest::for($this->course, GenerationKind::InterviewSummary)?->isPending()) {
             throw InterviewNotUnderway::for($this->course, $this->interview->kind()->value);
         }
     }

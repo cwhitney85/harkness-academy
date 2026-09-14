@@ -5,7 +5,7 @@ namespace Tests\Feature\Courses;
 use App\Ai\GatewayAgent;
 use App\Courses\CourseStatus;
 use App\Courses\Exceptions\InterviewNotUnderway;
-use App\Courses\Exceptions\InterviewSummaryUnusable;
+use App\Courses\GenerationKind;
 use App\Courses\Interviews\InterviewKind;
 use App\Courses\Interviews\Interviews;
 use App\Courses\Interviews\KnowledgeInterview;
@@ -13,6 +13,7 @@ use App\Courses\Interviews\Speaker;
 use App\Courses\SkillLevel;
 use App\Memory\MemoryTree;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use App\Models\InterviewMessage;
 use App\Models\UsageEvent;
 use App\Models\User;
@@ -276,18 +277,18 @@ class KnowledgeInterviewTest extends TestCase
         $this->scriptTutor(document: '');
         $course = $this->course();
 
-        $this->expectException(InterviewSummaryUnusable::class);
+        $this->interview($course);
 
-        try {
-            $this->interview($course);
-        } finally {
-            $this->assertNull(
-                (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
-                'An empty document would erase what earlier courses recorded.',
-            );
-            $this->assertGreaterThan(0, InterviewMessage::query()->count(), 'The student can end the interview again.');
-            $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
-        }
+        $this->assertNull(
+            (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
+            'An empty document would erase what earlier courses recorded.',
+        );
+        $this->assertGreaterThan(0, InterviewMessage::query()->count(), 'The student can end the interview again.');
+        $this->assertSame(CourseStatus::KnowledgeInterview, $course->fresh()?->status);
+
+        // Written up on the queue (spec 11.4), so the failure is on the
+        // request row rather than thrown at a request that has already ended.
+        $this->assertTrue(GenerationRequest::for($course, GenerationKind::InterviewSummary)?->hasFailed());
     }
 
     /**

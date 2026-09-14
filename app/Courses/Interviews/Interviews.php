@@ -39,6 +39,14 @@ final class Interviews
         return $this->session($course, $this->goals);
     }
 
+    public function for(Course $course, InterviewKind $kind): InterviewSession
+    {
+        return match ($kind) {
+            InterviewKind::Knowledge => $this->knowledge($course),
+            InterviewKind::Goals => $this->goals($course),
+        };
+    }
+
     private function session(Course $course, Interview $interview): InterviewSession
     {
         return new InterviewSession(

@@ -98,12 +98,20 @@ const ASKED: Turn[] = [
     { id: 1, speaker: 'tutor', content: 'What can you say already?' },
 ];
 
-function props(kind: 'knowledge' | 'goals', turns: Turn[] = []) {
+function props(
+    kind: 'knowledge' | 'goals',
+    turns: Turn[] = [],
+    writeUp: { writing_up: boolean; write_up_failure: string | null } = {
+        writing_up: false,
+        write_up_failure: null,
+    },
+) {
     return {
         course: { id: 7, title: 'Beginner Spanish' },
         kind,
         turns,
         may_open: turns.length === 0,
+        ...writeUp,
         limits: { answer_characters: 2000 },
         urls: {
             stream: `/courses/7/interviews/${kind}/stream`,
@@ -130,10 +138,9 @@ test('the goals stream is requested after a client-side visit from the knowledge
 /**
  * Spec 8.12.3 — Done is pressed once.
  *
- * The write-up is a model call made inside this POST, so the press is followed
- * by a wait a student reads as nothing having happened. A second press while
- * the first is out spends a second call on the same transcript. The button
- * disables and says what is being made until the visit finishes.
+ * The POST asks the queue for the write-up (11.4), and a second press while
+ * the first is out asks again. The button disables and says what is being made
+ * until the visit lands on `writing_up`, which the next test takes from there.
  */
 test('Done disables itself and names the write-up, and cannot be pressed twice', () => {
     render(<InterviewScreen {...props('knowledge')} />);
@@ -305,4 +312,55 @@ test('10.5 — an opening that never arrived offers Try again, and Send waits fo
         '/courses/7/interviews/knowledge/stream',
         '/courses/7/interviews/knowledge/stream',
     ]);
+});
+
+/**
+ * Spec 11.6 — while the write-up is on the queue the screen says what is being
+ * written, takes nothing more, and looks again until the course moves.
+ */
+test('11.6 — a write-up on the queue disables Done, the box and Send, and waits', () => {
+    vi.useFakeTimers();
+
+    try {
+        render(
+            <InterviewScreen
+                {...props('knowledge', ASKED, {
+                    writing_up: true,
+                    write_up_failure: null,
+                })}
+            />,
+        );
+
+        for (const control of [
+            screen.getByRole('button', { name: 'Writing up what you know…' }),
+            screen.getByRole('button', { name: 'Send' }),
+            screen.getByPlaceholderText('Answer in your own words…'),
+        ]) {
+            expect(control.hasAttribute('disabled')).toBe(true);
+        }
+
+        act(() => vi.advanceTimersByTime(5000));
+
+        expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
+test('11.4, 10.5 — a write-up that failed on the queue says so, and Done is pressable again', () => {
+    render(
+        <InterviewScreen
+            {...props('knowledge', ASKED, {
+                writing_up: false,
+                write_up_failure:
+                    'That could not be written up just now. Nothing is lost — press Done to try again.',
+            })}
+        />,
+    );
+
+    expect(screen.getByText(/press Done to try again/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Done — write it up' }));
+
+    expect(post).toHaveBeenCalledTimes(1);
 });

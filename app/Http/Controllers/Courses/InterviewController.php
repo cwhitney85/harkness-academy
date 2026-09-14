@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Courses;
 
+use App\Courses\GenerationKind;
 use App\Courses\Interviews\InterviewKind;
 use App\Courses\Interviews\Interviews;
 use App\Courses\Interviews\InterviewSession;
@@ -9,6 +10,7 @@ use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Courses\Concerns\ConductsInterview;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use App\Models\InterviewMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,6 +50,7 @@ class InterviewController extends Controller
         }
 
         $transcript = $this->transcript($course, $kind);
+        $writeUp = GenerationRequest::for($course, GenerationKind::InterviewSummary);
 
         return Inertia::render('courses/interview', [
             'course' => [
@@ -64,6 +67,12 @@ class InterviewController extends Controller
                 $transcript->lines(),
             ),
             'may_open' => ! $transcript->hasTutorTurn(),
+
+            // The write-up is queued (spec 11.4). While it is pending the
+            // screen says so and takes no answers; if it failed, the row
+            // carries the sentence that sends the student back to Done.
+            'writing_up' => $writeUp?->isPending() ?? false,
+            'write_up_failure' => $writeUp?->failure,
             'limits' => ['answer_characters' => InterviewSession::MAX_ANSWER],
             'urls' => $this->urls($course, $kind),
         ]);
