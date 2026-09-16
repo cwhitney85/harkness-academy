@@ -80,8 +80,9 @@
 | S10 | Exam result and gate | `GET /courses/{course}/final-exam` — a state of S9, after a sitting | `courses.final-exam.show` | 8.9.3 builds the state |
 | S11 | Refresher | `GET /refreshers/{refresher}` | `refreshers.show` | exists |
 | S12 | Module rollup | `GET /modules/{module}` | `modules.show` | **8.10.2 builds** |
+| S13 | Demo entry | `GET /demo` | `demo` | **[12.1](12-demo.md) builds** — no screen; it mints an account and redirects to S2 |
 
-S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a redirect and gains a rendered page (8.13). Five have no route at all (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
+S13 is the second thing a signed-out visitor can reach, and it renders nothing — spec 12's demo route mints a `demo`-plan account, signs it in and lands on S2. Otherwise S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a redirect and gains a rendered page (8.13). Five have no route at all (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
 
 ### The map
 
@@ -89,6 +90,10 @@ S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a 
   GET /            ──► signed in ──► S1; otherwise renders S0
   GET terms        ──  linked from registration
   GET install      ──  linked from the user menu: how to put Harkness Academy on a phone's home screen (spec 7.1)
+
+  S13 DEMO ENTRY                                       GET /demo   (signed out; no screen, spec 12)
+      └─ mints a `demo`-plan account, signs it in ─►    S2
+            the link is one Colin sends; S0 does not carry it (12.6.3, D46)
 
   S0  LANDING                                          GET /   (signed out only)
       ├─ "Log in" ───────────────────────────────►    the sign-in screen ──► S1

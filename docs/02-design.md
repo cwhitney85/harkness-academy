@@ -76,6 +76,8 @@
 | D47 | An answer the tutor never replied to is replaced by the next one | current |
 | D48 | A checkpoint's wait runs out, and the course's request is read as the newest section's | current |
 | D49 | Done's write-up goes to the queue with the tutor's | current |
+| D50 | The demo is the real pipeline on a shorter plan | current |
+| D51 | `plan` keys depth, and is not yet a table | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -923,3 +925,31 @@ Rejected: **waiting as long as it takes**, which is what the syllabus and the ex
 A failed write-up is kept on the request row rather than returned as a 422. The flow map's "422 summary unusable" edge becomes "write-up unusable", reached by the screen's reload.
 
 Rejected: **queueing only the answer request's write-up.** It gives the one write-up two paths, and it leaves Done exposed to the 60-second ceiling T10 is about.
+
+## D50. The demo is the real pipeline on a shorter plan (resolved 2026-09-15, spec 12, Colin)
+
+The app can only be entered with an invitation code (D45), and the people Colin most wants to show it to — recruiters, employers, investors — are strangers with a link. A gated app is not a portfolio piece.
+
+**Chosen: a public route mints an ordinary user row on a `demo` plan, and nothing past the front door knows the difference.** The `demo` plan resolves to one lesson through the depth mechanism 4.5.6 already owns, so the visitor meets the real interviews, the real syllabus, a real lesson with real checkpoints, and real graded homework. One route, one config key, one ending screen.
+
+**The entry carries no 18-or-older attestation and nothing to press** (Colin). `tos_accepted_at` is stamped at registration and read nowhere in the app, so a null on a demo row changes no behaviour. Accepted cost: a bare GET means a crawler or a link-prefetcher can mint rows, and the attestation the registration form carries is absent from an account that can hold a course. 12.5.1's sweep is what keeps the first from accumulating.
+
+**Conversion withdraws the demo course rather than growing it.** Depth is read only at syllabus generation, so a one-lesson course stays one lesson whatever the plan becomes; withdrawal is the move the app already has, and a withdrawn course keeps everything it wrote — the working knowledge especially, which is what the student's next course starts from. Rejected: **redrawing the syllabus at standard depth on conversion**, which spends another $0.157 and throws away a draft the student approved. Rejected: **leaving the course active at one lesson**, which hands a converted student a course that is finished the moment it starts.
+
+Rejected: **a `courses.is_demo` column.** It invents a third axis beside pedagogy and economics, which 1.6.2 and 4.5.6 forbid in as many words.
+
+Rejected: **shortening through skill level.** It violates skill level ⊥ price, which `config/courses.php` records as a founder correction.
+
+Rejected: **a separate `syllabus.demo` prompt.** A different prompt is a different pipeline, and the two drift; the same argument would then be had again for `lesson.section` and `homework.generate`. Size reaches the model through `depth_params`, which is the job 4.5.6.2 gives it.
+
+Rejected: **a session-only visitor with no user row.** Courses, memories, quizzes and attempts all key on `users.id`, and `users.email` and `password` are NOT NULL — so "keep this course" would have been a fresh start dressed as continuity.
+
+Rejected: **a demo-only auto-dispatch of the syllabus, or a demo-only reordering of the completion chain.** Both make the demo faster and both make the demo a second pipeline. The two moves are worth having on their own merits, for every student, and are not this package's to take.
+
+## D51. `plan` keys depth, and is not yet a table (resolved 2026-09-15, spec 12 item 12.2.1)
+
+D11 says `users.plan` becomes a `plans` table the moment a plan carries "a price, a quota, anything a row can hold that a key cannot". D50 adds the second plan value the app has ever had, so the trigger is worth reading rather than assuming.
+
+**Chosen: `demo` is a config key, and D11's trigger has not fired.** Depth is already keyed by plan in `config/courses.php` — `depth.{skill_level}.{plan}` — so `demo` adds a key to a keyed structure rather than an attribute to a plan. Nothing about `demo` is a row's worth of data; it is three integers in a file that already holds three integers per plan. `users.plan` still has exactly one production reader.
+
+Falsified if: the second non-standard plan needs anything config cannot key — a price, a quota, a per-account entitlement, an expiry. That is the day this becomes a table, as D11 says.

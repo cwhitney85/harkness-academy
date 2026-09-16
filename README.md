@@ -55,6 +55,14 @@ guessing game with feedback. Building this amends D32, which means the endpoint 
 set of answers, the disclosure moves to the hand-in, and the sheet grows the "Hand it in"
 button the artboard drew and 8.9.1 deliberately did not build.
 
+**A public demo.** Specced 2026-09-15 as [spec 12](docs/specs/12-demo.md), unbuilt. The app can only be
+entered with an invitation code ([D45](docs/02-design.md)), which makes it impossible to show to anyone
+Colin has not personally invited. A public route mints an ordinary account on a `demo` plan, that plan
+resolves to a one-lesson course through the depth mechanism package 4 already has, and the visitor meets
+the real interviews, the real syllabus, a real lesson and real graded homework before being offered an
+account that keeps the working knowledge it wrote. One route, one config key, one ending screen — and
+about $0.70 of Anthropic tokens per visit, uncapped, which [12.6.1](docs/specs/12-demo.md) argues for.
+
 **Progress reporting for long jobs.** A queued syllabus or exam generation now says only
 that it is working, and names the artefact ([8.12.2](docs/specs/08-interface.md)). Real
 progress means the job emitting the steps it is actually on and the screen reading them,
