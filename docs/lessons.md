@@ -160,3 +160,11 @@ Nothing in a desktop browser reproduces it, and no test catches it — the field
 `infer-conventions` sweeps the codebase and records what it finds as **project rules** in `.ai/rules/` — a second home for facts the ledger, the specs and this file already own. Project rules are off (`BOOST_RULES_ENABLED=false`, which also removes the `record-rule` MCP tool), but **the skill is installed regardless of that setting**. Deleting `.claude/skills/infer-conventions/` and its entry in `boost.json` does not hold: the next `php artisan boost:update` restores both. So it stays on disk, and the standing convention in `CLAUDE.md` is what keeps it from being run.
 
 **`boost.json` is what keeps `CLAUDE.md` intact.** With no `boost.json`, `boost:install` defaults to every feature — guidelines included, which writes Boost's guideline block into `CLAUDE.md` — and, run with `--no-interaction`, to every coding agent it detects on the machine. Pass `--skills --mcp` explicitly, and don't delete `boost.json`.
+
+## T13. A browser check runs in Colin's own Chrome, session and all
+
+*Found 2026-09-17, building spec 12.*
+
+The Chrome that browser automation drives is Colin's, and it keeps whatever it was last signed in as. The demo's welcome page redirected any signed-in demo account past itself. That browser was still signed in to a guest from an earlier build, so the check landed on course creation — and was reported as the browser's state rather than as the bug. Colin then hit the same redirect and never saw the page.
+
+**When a page's behaviour depends on who is signed in, a redirect in the check is a finding, not noise.** Either check the signed-in branch on purpose, or say plainly that the signed-out page was not seen. A page a stranger is meant to see should not have a signed-in branch that skips it.

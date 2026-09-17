@@ -76,7 +76,7 @@
 | D47 | An answer the tutor never replied to is replaced by the next one | current |
 | D48 | A checkpoint's wait runs out, and the course's request is read as the newest section's | current |
 | D49 | Done's write-up goes to the queue with the tutor's | current |
-| D50 | The demo is the real pipeline on a shorter plan | current |
+| D50 | The demo is the real pipeline on a shorter plan | **amended 2026-09-16 and 2026-09-17** — a welcome page with one button; the demo is lesson 1 of an ordinary course |
 | D51 | `plan` keys depth, and is not yet a table | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
