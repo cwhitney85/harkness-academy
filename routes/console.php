@@ -14,3 +14,9 @@ Artisan::command('inspire', function () {
  * document beats a stuck course.
  */
 Schedule::command('lessons:unlock-stalled')->everyFiveMinutes();
+
+/*
+ * Spec 12.5.1: a demo link can be followed by a crawler as easily as a person,
+ * so unclaimed demo accounts are cleared out once they are old enough.
+ */
+Schedule::command('demo:sweep')->daily();

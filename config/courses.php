@@ -40,6 +40,14 @@ return [
     'plans' => ['standard', 'demo'],
 
     /*
+    | How many days a `demo`-plan account is kept unclaimed before
+    | `demo:sweep` deletes it (spec 12.5.1). Conversion moves the row to
+    | `standard`, which is what takes it out of the sweep's reach.
+    */
+
+    'demo_account_days' => 7,
+
+    /*
     |--------------------------------------------------------------------------
     | Depth
     |--------------------------------------------------------------------------
