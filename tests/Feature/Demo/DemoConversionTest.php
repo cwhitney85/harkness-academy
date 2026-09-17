@@ -48,6 +48,19 @@ class DemoConversionTest extends AssessmentTestCase
     }
 
     #[Test]
+    public function a_demo_visitor_who_types_the_exam_address_gets_no_exam(): void
+    {
+        // Spec 12.6.2.
+        $course = $this->demo($this->taughtCourse());
+        $this->actingAs($course->student);
+
+        $this->get(route('courses.final-exam.show', $course))->assertRedirect(route('demo.account.create'));
+        $this->post(route('courses.final-exam.store', $course))->assertForbidden();
+
+        $this->assertDatabaseMissing('usage_events', ['feature' => 'course.final_exam']);
+    }
+
+    #[Test]
     public function a_finished_standard_course_goes_to_its_exam(): void
     {
         $course = $this->taughtCourse();

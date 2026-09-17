@@ -38,7 +38,7 @@ Three properties of the running system make this small, each confirmed by readin
 ## 12.3 The wait
 
 - **12.3.1 MUST** — The generation path is unchanged. `generation_requests` is the wait, the syllabus screen polls, and the demo meets the same states every student meets. *Falsified if: any dispatch, timeout or patience value branches on plan.*
-- **12.3.2 SHOULD** — The syllabus waiting state names what the syllabus is being written from, for every student rather than for the demo alone. **This is [8.12](08-interface.md)'s item, not this spec's** — a demo-only copy change would be a second pipeline. *Done: recorded as an amendment to 8.12.2, or dropped.*
+- **12.3.2 WONT** (dropped 2026-09-17, Colin) — The syllabus waiting state names what the syllabus is being written from, for every student rather than for the demo alone. **This is [8.12](08-interface.md)'s item, not this spec's** — a demo-only copy change would be a second pipeline. *Done: recorded as an amendment to 8.12.2, or dropped.*
 
 ## 12.4 Conversion
 
@@ -54,7 +54,7 @@ Three properties of the running system make this small, each confirmed by readin
 ## 12.6 Out of scope
 
 - **12.6.1 WONT** — No spend cap, quota or ceiling on the demo. [1.6.5](01-foundation.md) extends to it unchanged: `usage_events` records what was spent and nothing reads it back as a limit. *Falsified if: a budget check appears in the demo or generation path.*
-- **12.6.2 WONT** — No final exam in the demo. *Falsified if: `course.final_exam` writes a `usage_events` row for a `demo`-plan user.*
+- **12.6.2 WONT** — No final exam in the demo. The exam screen sends a demo visitor to sign-up, and asking for an exam is refused. *Falsified if: `course.final_exam` writes a `usage_events` row for a `demo`-plan user.*
 - **12.6.3 WONT** — No link on the landing page. [8.13.4](08-interface.md)'s "the only two things on the page that navigate are the buttons" holds and [D46](../02-design.md) is not amended. The link is one Colin sends. *Falsified if: S0 gains a third navigating element.*
 - **12.6.4 WONT** — No email capture, no social sign-in, no analytics. Social sign-in was raised with this work on 2026-09-15 and deferred by Colin as its own problem; it will need a D45 answer of its own. *Falsified if: any of the three appears.*
 - **12.6.5 WONT** — No demo branch in the lesson or completion pipelines. The chain order is untouched and homework arrives when it arrives, behind a completion screen the student already has. *Falsified if: `LessonPipelineJobs::forLesson` reads a plan.*

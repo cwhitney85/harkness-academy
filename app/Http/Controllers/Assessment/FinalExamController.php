@@ -50,6 +50,11 @@ class FinalExamController extends Controller
     {
         $this->authorize('view', $course);
 
+        // A demo has no exam (spec 12.6.2); its course ends at sign-up.
+        if ($course->student->isDemo()) {
+            return redirect()->route('demo.account.create');
+        }
+
         $exam = $exams->exam($course);
         $sitting = $exams->lastSitting($course);
 
@@ -123,6 +128,7 @@ class FinalExamController extends Controller
     public function store(Request $request, Course $course, FinalExam $exams): JsonResponse
     {
         $this->authorize('participate', $course);
+        abort_if($course->student->isDemo(), 403, 'A demo has no final exam.');
 
         // Availability is knowable without the model, so it stays a 422 in the
         // request rather than becoming a wait that ends in a refusal.
