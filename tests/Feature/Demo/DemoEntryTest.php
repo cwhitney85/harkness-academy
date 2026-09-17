@@ -51,25 +51,30 @@ class DemoEntryTest extends TestCase
     }
 
     #[Test]
-    public function a_demo_visitor_following_the_link_again_carries_on(): void
+    public function a_browser_already_in_a_demo_sees_the_welcome_page_and_starting_again_starts_fresh(): void
     {
-        $visitor = User::factory()->create(['plan' => 'demo']);
+        $earlier = User::factory()->create(['plan' => 'demo']);
 
-        $this->actingAs($visitor)->get(route('demo'))->assertRedirect(route('courses.create'));
+        $this->actingAs($earlier)
+            ->get(route('demo'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('demo'));
+
         $this->post(route('demo.store'))->assertRedirect(route('courses.create'));
 
-        $this->assertSame(1, User::query()->count());
+        $this->assertSame(2, User::query()->where('plan', 'demo')->count());
+        $this->assertNotSame($earlier->id, auth()->id());
     }
 
     #[Test]
-    public function a_full_account_keeps_itself_and_goes_to_its_dashboard(): void
+    public function a_full_account_sees_the_welcome_page_and_is_signed_out_not_changed_by_starting(): void
     {
         $student = User::factory()->create();
 
-        $this->actingAs($student)->get(route('demo'))->assertRedirect(route('dashboard'));
-        $this->post(route('demo.store'))->assertRedirect(route('dashboard'));
+        $this->actingAs($student)->get(route('demo'))->assertOk();
+        $this->post(route('demo.store'))->assertRedirect(route('courses.create'));
 
-        $this->assertAuthenticatedAs($student);
-        $this->assertSame(1, User::query()->count());
+        $this->assertSame('standard', $student->fresh()->plan);
+        $this->assertNotSame($student->id, auth()->id());
     }
 }

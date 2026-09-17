@@ -4,7 +4,8 @@ import { create } from '@/routes/demo/account';
 
 /**
  * The demo marker (spec 12.1.6): on every signed-in screen a demo visitor
- * sees, it says they are in the demo and is the way to keep what they built.
+ * sees, it says they are in the demo and links to signing up, which keeps what
+ * they built.
  * Renders nothing for any other account.
  *
  * `onRail` for the green rail and the phone bars, where it is gold; otherwise
@@ -29,7 +30,7 @@ export default function DemoMark({
     return (
         <Link
             href={create()}
-            aria-label="Demo — keep your course"
+            aria-label="Demo — sign up"
             className={[
                 'label flex min-h-11 flex-none items-center gap-2 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass',
                 onRail ? 'text-gold' : 'text-wine',
@@ -43,7 +44,7 @@ export default function DemoMark({
             >
                 Demo
             </span>
-            {!compact && <span>Keep your course</span>}
+            {!compact && <span>Sign up</span>}
         </Link>
     );
 }

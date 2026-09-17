@@ -28,11 +28,11 @@ vi.mock('@inertiajs/react', () => ({
 
 afterEach(cleanup);
 
-test('a demo visitor sees the marker, and it goes to keeping the course', () => {
+test('a demo visitor sees the marker, and it goes to signing up', () => {
     plan = 'demo';
     render(<DemoMark />);
 
-    const link = screen.getByRole('link', { name: 'Demo — keep your course' });
+    const link = screen.getByRole('link', { name: 'Demo — sign up' });
     expect(link.getAttribute('href')).toBe('/demo/account');
 });
 

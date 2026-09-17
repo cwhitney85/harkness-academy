@@ -20,12 +20,12 @@ Three properties of the running system make this small, each confirmed by readin
 
 ## 12.1 The entry
 
-- **12.1.1 MUST** — A public welcome page says what the demo is, and its one button creates a `demo`-plan user, signs them in, and lands them on course creation. Both sit outside the `auth` group, the way `home` does after [8.13.2](08-interface.md). Opening the link writes nothing, so a chat app unfurling it or a crawler following it makes no account. *Done: `GET /demo` with no session renders the page and creates no row; `POST /demo` ends at `/courses/create` with a `demo`-plan row that did not exist before it.*
+- **12.1.1 MUST** — A public welcome page says what the demo is, and its one button creates a `demo`-plan user, signs them in, and lands them on course creation. Both sit outside the `auth` group, the way `home` does after [8.13.2](08-interface.md). Opening the link writes nothing, so a chat app unfurling it or a crawler following it makes no account. *Done: `GET /demo` renders the page to every visitor, signed in or not, and creates no row; `POST /demo` ends at `/courses/create` with a `demo`-plan row that did not exist before it.*
 - **12.1.2 MUST** — The row satisfies the schema with no special-casing. `users.email` is NOT NULL and UNIQUE and `users.password` is NOT NULL, so the row carries a unique synthetic email, a random password and a name. *Done: two visits produce two rows; neither column is made nullable.*
 - **12.1.3 MUST** — Only this route mints a `demo`-plan account. *Falsified if: a registration through `CreateNewUser` produces a plan other than `standard` ([1.6.2](01-foundation.md)).*
 - **12.1.4 MUST** — The routes appear as an edge in [8.6](08-interface.md#86-flow-map)'s flow map in the same commit that adds it. `FlowMapTest` asserts both directions and fails the build otherwise. *Done: `FlowMapTest` passes.*
 - **12.1.5 WONT** — The demo carries no 18-or-older attestation and asks for nothing before it starts. `tos_accepted_at` stays null on a demo row, and the welcome page has one button and no field ([D50](../02-design.md), amended 2026-09-16). *Falsified if: a field, a checkbox or a second screen appears between the link and course creation.*
-- **12.1.6 MUST** — Every signed-in screen a demo visitor sees carries a Demo marker in its header, linking to [12.4](#124-conversion)'s offer. The course shells carry it in the rail and in the phone bar; the dashboard carries it in its header. *Done: the marker renders for a `demo`-plan user and not for a `standard` one.*
+- **12.1.6 MUST** — Every signed-in screen a demo visitor sees carries a Demo marker in its header, linking to sign-up ([12.4](#124-conversion)). The course shells carry it in the rail and in the phone bar; the dashboard carries it in its header. *Done: the marker renders for a `demo`-plan user and not for a `standard` one.*
 
 ## 12.2 The shortened course
 

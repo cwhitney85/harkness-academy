@@ -92,8 +92,8 @@ S14 is where a demo ends: the register form, onto the account the demo made. S13
   GET terms        ──  linked from registration
   GET install      ──  linked from the user menu: how to put Harkness Academy on a phone's home screen (spec 7.1)
 
-  S13 DEMO WELCOME                                     GET /demo   (signed out; signed in ──► S2 for a demo, S1 otherwise)
-      └─ "Start the demo" ──► POST /demo  (demo.store) ──► S2, signed in on a new `demo`-plan account
+  S13 DEMO WELCOME                                     GET /demo   (shown to everyone who opens the link)
+      └─ "Start the demo" ──► POST /demo  (demo.store) ──► S2, any earlier session ended, signed in on a new `demo`-plan account
             the link is one Colin sends; S0 does not carry it (12.6.3, D46)
 
   S14 KEEP THE DEMO                                    GET /demo/account   (demo plan only; anyone else ──► S1)
