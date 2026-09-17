@@ -42,7 +42,7 @@ The 2026-08-21 planning documents — [docs/00-frame.md](docs/00-frame.md), [doc
 - **Fail-open rule**: fail open only when failing closed would destroy student progress (spec 4.5.1).
 - **GUIDANCE.md is model-facing only** — no route or component may read it.
 - **A state-preserving Inertia visit does not remount the screen** (ledger D28). `router.reload()` always preserves state, and `router.post/put/patch/delete` do unless told otherwise, so a redirect landing on a *different* URL that renders the *same* page component leaves every `useState` and `useRef` holding the previous URL's answer. Key the screen on whatever its state describes. A plain `<Link>` or a GET `router.visit` remounts on its own and needs nothing.
-- **Laravel Boost's MCP tools come first** — search its docs before writing Laravel, Inertia, Tailwind or AI SDK code; read errors, logs and schema through its tools rather than by hand. Its database tool is read-only. Don't run its `infer-conventions` skill: project rules are off (`BOOST_RULES_ENABLED=false`) because facts have one owner here.
+- **Laravel Boost's MCP tools come first** — search its docs before writing Laravel, Inertia, Tailwind or AI SDK code; read errors, logs and schema through its tools rather than by hand. Its database tool is read-only. Don't run its `infer-conventions` skill ([lessons T12](docs/lessons.md)).
 - **Skill level (101/201/301) is pedagogy; plan is economics** — never couple them (spec 4.5.6).
 - Every AI call must log to `usage_events` (spec 2.2) and use a prompt key from the inventory (spec 2.3.2).
 - Anthropic-specific feature usage gets an entry in `docs/anthropic-specific.md` (spec 2.5).

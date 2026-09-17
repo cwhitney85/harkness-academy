@@ -152,3 +152,11 @@ An invitation code is matched **case-sensitively and exactly**. iOS capitalises 
 **The fix is three attributes on any field the app compares exactly:** `autoCapitalize="none" autoCorrect="off" spellCheck={false}`. Codes, slugs and identifiers all qualify; a name or a free-text answer does not.
 
 Nothing in a desktop browser reproduces it, and no test catches it — the field's value in a test is whatever the test typed.
+
+## T12. Boost puts `infer-conventions` back on every update, and its defaults write `CLAUDE.md`
+
+*Found 2026-09-16, installing `laravel/boost` 2.9.*
+
+`infer-conventions` sweeps the codebase and records what it finds as **project rules** in `.ai/rules/` — a second home for facts the ledger, the specs and this file already own. Project rules are off (`BOOST_RULES_ENABLED=false`, which also removes the `record-rule` MCP tool), but **the skill is installed regardless of that setting**. Deleting `.claude/skills/infer-conventions/` and its entry in `boost.json` does not hold: the next `php artisan boost:update` restores both. So it stays on disk, and the standing convention in `CLAUDE.md` is what keeps it from being run.
+
+**`boost.json` is what keeps `CLAUDE.md` intact.** With no `boost.json`, `boost:install` defaults to every feature — guidelines included, which writes Boost's guideline block into `CLAUDE.md` — and, run with `--no-interaction`, to every coding agent it detects on the machine. Pass `--skills --mcp` explicitly, and don't delete `boost.json`.
