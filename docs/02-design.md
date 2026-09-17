@@ -948,6 +948,8 @@ Rejected: **a session-only visitor with no user row.** Courses, memories, quizze
 
 Rejected: **a demo-only auto-dispatch of the syllabus, or a demo-only reordering of the completion chain.** Both make the demo faster and both make the demo a second pipeline. The two moves are worth having on their own merits, for every student, and are not this package's to take.
 
+**Amended 2026-09-17, package 12 build, Colin: the demo is lesson 1 of an ordinary course, not a one-lesson course.** Built as a one-lesson course, keeping it at sign-up had no good answer: withdrawing it left a short course the student could pick back up, and replacing it with a full course meant redrawing the syllabus or sitting the interviews again. Colin: "It should just be one preview lesson." So the demo draws the syllabus any student gets, and a demo visitor may take lesson 1 and nothing after it; signing up changes nothing about the course and lesson 2 opens. The gate is `LessonPolicy`, which every lesson route already asks, plus the exam controller. Superseded here: **the one-lesson depth**, and with it the conversion-withdraws-the-course paragraph above. Cost: a full syllabus ($0.157) where a one-lesson one was $0.055 — and one generation at one lesson packed 21 concepts into twenty minutes, which the preview does not risk.
+
 ## D51. `plan` keys depth, and is not yet a table (resolved 2026-09-15, spec 12 item 12.2.1)
 
 D11 says `users.plan` becomes a `plans` table the moment a plan carries "a price, a quota, anything a row can hold that a key cannot". D50 adds the second plan value the app has ever had, so the trigger is worth reading rather than assuming.

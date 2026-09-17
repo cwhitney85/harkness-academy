@@ -6,15 +6,14 @@
 
 ## The shape
 
-**A demo visitor is an ordinary user row on a `demo` plan, and nothing past the front door knows the difference.** The `demo` plan resolves to a one-lesson course through the depth mechanism [4.5.6](04-course-pipeline.md) already owns, so the visitor sits both interviews, gets a syllabus, takes a real lesson with real checkpoints, and has real homework graded — then is offered an account that keeps what they built, because it is the same row.
+**A demo visitor is an ordinary user row on a `demo` plan, and nothing past the front door knows the difference.** **A demo is lesson 1 of an ordinary course** (amended 2026-09-17): the visitor sits both interviews, gets the full syllabus any student would, takes lesson 1 with real checkpoints and has real homework graded. Lesson 2 onward asks them to sign up, and signing up opens the rest of that same course, because it is the same row.
 
 Three properties of the running system make this small, each confirmed by reading the code on 2026-09-15:
 
-- **`users.plan` has exactly one production reader** — `SyllabusGenerator::depth()`. A new plan key changes syllabus depth and nothing else.
+- **`users.plan` had exactly one production reader** — `SyllabusGenerator::depth()`. The demo adds three: the lesson policy (lesson 2 onward), the exam controller, and the sign-up link on S7 and S8.
 - **The `verified` middleware is a no-op.** `User` does not implement `MustVerifyEmail`, so `EnsureEmailIsVerified` passes any signed-in account. A demo row reaches every screen without its email being real.
-- **`SyllabusSchema` accepts a one-lesson syllabus.** `lessons` is `->min(1)`, not `->min(5)`, so `- Lessons: 1` needs no schema change.
 
-**What a demo costs.** Measured from `usage_events` on 2026-09-15, excluding the six zero-token 60-second rows the [D25](../02-design.md) incident left behind: interviews $0.08, syllabus $0.157, three sections $0.140, three checkpoints $0.022, summarize $0.064, working-knowledge update $0.151, homework $0.081 — about **$0.70 a visit**, probably less, because those figures come from eight-to-ten-lesson courses and a one-lesson syllabus is a smaller output. Nothing caps it; [12.6.1](#126-out-of-scope) says why.
+**What a demo costs.** Measured from `usage_events` on 2026-09-15, excluding the six zero-token 60-second rows the [D25](../02-design.md) incident left behind: interviews $0.08, syllabus $0.157, three sections $0.140, three checkpoints $0.022, summarize $0.064, working-knowledge update $0.151, homework $0.081 — about **$0.70 a visit**. Nothing caps it; [12.6.1](#126-out-of-scope) says why.
 
 ---
 
@@ -30,10 +29,9 @@ Three properties of the running system make this small, each confirmed by readin
 ## 12.2 The shortened course
 
 - **12.2.1 MUST** — `demo` joins `config('courses.plans')`. *Done: `CoursesConfigTest`'s assertion that a user's plan is in the configured set passes with a demo row.*
-- **12.2.2 MUST** — `depth.{101,201,301}.demo` sets `lessons` to `[1, 1]` and leaves sections and minutes at their standard values, so the one lesson is a real lesson rather than a stub. *Done: `DepthParameters::for($level, 'demo')->render()` opens with `- Lessons: 1` — `range()` already collapses `[1,1]` to `1`.*
-- **12.2.3 MUST** — Depth gains a fourth parameter distinguishing a whole short course from the opening of a long one, rendered into `depth_params` as a markdown key list in the house style [4.5.6.2](04-course-pipeline.md) sets. *Done: a golden-string test over the rendered variable at each skill level on each plan, which 4.5.6.2 already requires.*
-- **12.2.4 MUST** — No prompt file learns about the demo. Size reaches the model through `depth_params` and nowhere else, which is the job 4.5.6.2 gives it. *Falsified if: any file in `prompts/` gains a demo-conditional passage or a demo variable.*
-- **12.2.5 SHOULD** — A one-lesson syllabus is generated and read before 12.2.3's wording is fixed. The fourth parameter exists on the expectation that a bare `- Lessons: 1` produces a truncated arc rather than a whole small course; that expectation is untested, and a sentence written against a guess is worse than no sentence. *Done: one generation at `Lessons: 1` is read, and 12.2.3's wording answers what it actually got wrong — or 12.2.3 is dropped because it got nothing wrong.*
+- **12.2.2 MUST** — `depth.{101,201,301}.demo` is the standard depth, written once in config and keyed twice. *Done: `DepthParameters::for($level, 'demo')->render()` equals the standard render at every level.*
+- **12.2.3 WONT** (dropped 2026-09-16, then moot 2026-09-17) — A fourth depth parameter for a whole short course. A one-lesson syllabus read as a whole course but packed 21 concepts into one lesson against 8–12 in a standard one; the demo stopped being a short course the next day.
+- **12.2.4 MUST** — No prompt file learns about the demo. *Falsified if: any file in `prompts/` gains a demo-conditional passage or a demo variable.*
 
 ## 12.3 The wait
 
@@ -42,10 +40,10 @@ Three properties of the running system make this small, each confirmed by readin
 
 ## 12.4 Conversion
 
-- **12.4.1 MUST** — After the homework is graded, the demo offers an account. *Done: the graded-homework state of a `demo`-plan lesson renders the offer; a `standard`-plan lesson does not.*
+- **12.4.1 MUST** — After lesson 1, the demo's next move is signing up. S7 and S8 say "Sign up to carry on", and lesson 2 onward sends a demo visitor to sign-up on the screen and refuses on every other lesson route. *Done: a `demo`-plan lesson 1 carries the sign-up link and lesson 2 redirects to it; a `standard`-plan course does neither.*
 - **12.4.2 MUST** — Conversion attaches name, email and password to the existing row and moves it to `standard`. Nothing is copied, because the row does not change. *Done: the working-knowledge document's version before conversion is the version after it.*
 - **12.4.3 MUST** — Conversion requires the invitation code, exactly as registration does. [D45](../02-design.md) stands untouched. *Done: a conversion with no code, or a wrong one, leaves the row on the `demo` plan and says so on the code field ([D41](../02-design.md), [1.6.3](01-foundation.md)).*
-- **12.4.4 MUST** — The demo course is withdrawn on conversion, and its working knowledge is what carries ([D50](../02-design.md)). Depth is read only at syllabus generation, so a course already written stays one lesson whatever the plan becomes. Withdrawal is the move the app already has for this: a withdrawn course keeps everything it wrote, and the student may take that level again as a new attempt. *Done: after conversion the demo course has a `withdrawn_at`, the subtopic's `WORKING_KNOWLEDGE.md` is unchanged by the withdrawal, and a fresh course at that subtopic is creatable.*
+- **12.4.4 MUST** — The course carries on. Nothing about it changes at sign-up; lesson 2 simply opens. No interview is repeated and no syllabus is redrawn. *Done: after conversion the course has no `withdrawn_at` and lesson 2 renders.*
 
 ## 12.5 The sweep
 
@@ -68,9 +66,9 @@ Against the deployed URL, over TLS, in a browser that has never seen the app, wi
 1. Open the demo link. The welcome page says what the demo is and offers one button; no form, no code, no email. Press it — the next screen is course creation, with the Demo marker in its header.
 2. Type a subtopic. The catalog check runs and refuses what it would refuse for any student.
 3. Sit both interviews. Press Done on each; each write-up lands and the screen moves on.
-4. Ask for the syllabus. It arrives carrying **one** lesson, and reads as a whole course rather than the first eighth of one.
+4. Ask for the syllabus. It arrives as a full course.
 5. Take the lesson. Sections stream, checkpoints appear in the margin, a question answers in line.
 6. Finish it. The completion state renders immediately; the homework shows its waiting state until the chain reaches it.
-7. Answer the homework and have it graded. The offer to keep the course appears.
-8. Convert with no code, and with a wrong one: nothing changes and the code field says why. Convert with the right one: the account is `standard`, the demo course is withdrawn, and the subtopic's working knowledge is what the new course will start from.
+7. Answer the homework. "Sign up to carry on" stands where the next lesson would; opening lesson 2 goes to sign-up.
+8. Sign up with no code, and with a wrong one: nothing changes and the code field says why. Sign up with the right one: the account is `standard`, and lesson 2 of the same course opens.
 9. `select feature, sum(cost_usd) from usage_events where user_id = …` returns the whole cost of that visit in one query.

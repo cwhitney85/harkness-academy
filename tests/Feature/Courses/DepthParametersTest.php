@@ -84,16 +84,14 @@ class DepthParametersTest extends TestCase
     }
 
     #[Test]
-    public function a_demo_course_is_one_lesson_of_standard_lessons(): void
+    public function a_demo_draws_an_ordinary_course(): void
     {
-        // Spec 12.2.2: only the lesson count shrinks, so the lesson is real.
+        // Spec 12.2.2: the demo is lesson 1 of the course a student would get.
         foreach (SkillLevel::cases() as $level) {
-            $standard = DepthParameters::for($level, 'standard');
-            $demo = DepthParameters::for($level, 'demo');
-
-            $this->assertStringStartsWith("- Lessons: 1\n", $demo->render());
-            $this->assertSame($standard->sectionsPerLesson, $demo->sectionsPerLesson);
-            $this->assertSame($standard->minutesPerLesson, $demo->minutesPerLesson);
+            $this->assertSame(
+                DepthParameters::for($level, 'standard')->render(),
+                DepthParameters::for($level, 'demo')->render(),
+            );
         }
     }
 }

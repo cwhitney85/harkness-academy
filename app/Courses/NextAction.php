@@ -55,7 +55,7 @@ final class NextAction
     }
 
     /**
-     * The lowest lesson still owed, or what follows the last one (spec 8.6).
+     * The lowest lesson still owed, or the exam if none remain (spec 8.6).
      */
     private static function activeCourse(Course $course): string
     {
@@ -65,19 +65,6 @@ final class NextAction
 
         return $lesson instanceof Lesson
             ? route('lessons.show', $lesson)
-            : self::afterLastLesson($course);
-    }
-
-    /**
-     * Where a course goes once its last lesson is done: the final exam -- or,
-     * for a demo course, the offer to keep it, because the demo ends there and
-     * has no exam (spec 12.4.1, 12.6.2). S7, S8 and the dashboard all read it
-     * here, so the three cannot point different ways.
-     */
-    public static function afterLastLesson(Course $course): string
-    {
-        return $course->student->isDemo()
-            ? route('demo.account.create')
             : route('courses.final-exam.show', $course);
     }
 }

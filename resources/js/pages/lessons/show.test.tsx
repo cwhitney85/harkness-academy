@@ -137,8 +137,8 @@ function props(
             refresher: '/lessons/19/refreshers',
             homework: '/lessons/19/homework',
             exam: '/courses/3/exam',
+            sign_up: null,
         },
-        demo: false,
     };
 }
 

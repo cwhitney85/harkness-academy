@@ -34,13 +34,14 @@ export default function Demo() {
 
                 <p className="mt-6 text-[17px] leading-[1.58] lg:text-[19px]">
                     Name any subject. The tutor asks what you already know and
-                    what you want from it, writes a one-lesson syllabus for you
-                    to approve, teaches the lesson, and sets homework on it.
+                    what you want from it, writes a whole course around that for
+                    you to approve, then teaches you the first lesson and sets
+                    homework on it.
                 </p>
 
                 <p className="mt-3.5 text-[15.5px] leading-[1.6] text-muted-ink lg:text-[17px]">
                     The lesson takes twenty to thirty minutes. Nothing to fill
-                    in first. When you finish, you can keep what you built; that
+                    in first. To carry on past the first lesson, sign up; that
                     needs an invitation code.
                 </p>
 

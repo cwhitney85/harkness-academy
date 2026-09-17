@@ -24,9 +24,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | The set of values `users.plan` may hold. `standard` is every invited
-    | account; `demo` is minted only by the public demo route and differs in
-    | depth alone (spec 12, ledger D50). Neither carries a price, limit or
-    | entitlement.
+    | account; `demo` is minted only by the public demo route, and may take
+    | lesson 1 and no further until it signs up (spec 12, ledger D50).
     |
     | These stay config keys until a plan carries its first real attribute --
     | a price, a quota, anything a row can hold that a key cannot. That is the
@@ -59,48 +58,31 @@ return [
     |
     */
 
-    'depth' => [
-
-        101 => [
-            'standard' => [
+    'depth' => array_map(
+        // A demo is lesson 1 of an ordinary course, so it draws the same
+        // syllabus; signing up only opens the lessons after it (spec 12.2,
+        // ledger D50 as amended 2026-09-17).
+        fn (array $depth): array => ['standard' => $depth, 'demo' => $depth],
+        [
+            101 => [
                 'lessons' => [8, 10],
                 'sections_per_lesson' => [3, 4],
                 'minutes_per_lesson' => 20,
             ],
-            'demo' => [
-                'lessons' => [1, 1],
-                'sections_per_lesson' => [3, 4],
-                'minutes_per_lesson' => 20,
-            ],
-        ],
 
-        201 => [
-            'standard' => [
+            201 => [
                 'lessons' => [6, 8],
                 'sections_per_lesson' => [3, 4],
                 'minutes_per_lesson' => 25,
             ],
-            'demo' => [
-                'lessons' => [1, 1],
-                'sections_per_lesson' => [3, 4],
-                'minutes_per_lesson' => 25,
-            ],
-        ],
 
-        301 => [
-            'standard' => [
+            301 => [
                 'lessons' => [5, 7],
                 'sections_per_lesson' => [4, 5],
                 'minutes_per_lesson' => 30,
             ],
-            'demo' => [
-                'lessons' => [1, 1],
-                'sections_per_lesson' => [4, 5],
-                'minutes_per_lesson' => 30,
-            ],
         ],
-
-    ],
+    ),
 
     /*
     |--------------------------------------------------------------------------

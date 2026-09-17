@@ -6,12 +6,9 @@ use App\Auth\PasswordRequirements;
 use App\Concerns\InvitationValidationRules;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
-use App\Courses\CourseTransitions;
 use App\Http\Controllers\Controller;
-use App\Models\Course;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,15 +22,14 @@ use Inertia\Response;
  * student's (12.4.2). The door is the one registration has -- the attestation
  * and the invitation code (12.4.3, ledger D45).
  *
- * The demo course is set aside rather than carried on. Its syllabus was drawn
- * at one lesson and depth is read only when a syllabus is drawn, so the course
- * the student starts next is the full one, built on the working knowledge the
- * demo left (12.4.4, ledger D50).
+ * The course carries on. A demo is lesson 1 of an ordinary course (12.2), so
+ * signing up changes nothing about it -- the lessons after the first simply
+ * open (12.4.4).
  *
  * Pre:  the student is signed in on the `demo` plan. Anyone else has no demo
  *       to keep and is sent to the dashboard.
- * Post: on success, a `standard` account with no open course, on course
- *       creation. On a validation failure, the row is unchanged.
+ * Post: on success, a `standard` account on its dashboard, every course as it
+ *       was. On a validation failure, the row is unchanged.
  */
 class DemoConversionController extends Controller
 {
@@ -51,7 +47,7 @@ class DemoConversionController extends Controller
         ]);
     }
 
-    public function store(Request $request, CourseTransitions $transitions): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $student = $request->user();
 
@@ -65,22 +61,14 @@ class DemoConversionController extends Controller
             ...$this->invitationRules(),
         ], $this->invitationMessages());
 
-        DB::transaction(function () use ($student, $validated, $transitions): void {
-            Course::query()
-                ->where('user_id', $student->id)
-                ->get()
-                ->filter(fn (Course $course): bool => $course->isOpen())
-                ->each(fn (Course $course) => $transitions->withdraw($course));
+        $student->forceFill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+            'tos_accepted_at' => now(),
+            'plan' => 'standard',
+        ])->save();
 
-            $student->forceFill([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-                'tos_accepted_at' => now(),
-                'plan' => 'standard',
-            ])->save();
-        });
-
-        return redirect()->route('courses.create');
+        return redirect()->route('dashboard');
     }
 }

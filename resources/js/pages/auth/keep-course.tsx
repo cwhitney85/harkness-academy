@@ -17,11 +17,11 @@ type Props = {
 };
 
 /**
- * Screen S14 — keeping the demo (spec 12.4).
+ * Screen S14 — signing up from the demo (spec 12.4).
  *
  * The register form, onto the account the demo already made: the same fields,
- * the same attestation and the same invitation code (12.4.3), so the course and
- * the working knowledge behind it stay where they are.
+ * the same attestation and the same invitation code (12.4.3). The course stays
+ * as it is and the lessons after the first open.
  */
 export default function KeepCourse({
     passwordRules,
@@ -29,7 +29,7 @@ export default function KeepCourse({
 }: Props) {
     return (
         <>
-            <Head title="Keep your course" />
+            <Head title="Sign up" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
@@ -156,7 +156,7 @@ export default function KeepCourse({
                                 data-test="keep-course-button"
                             >
                                 {processing && <Spinner />}
-                                Keep my course
+                                Sign up
                             </Button>
                         </div>
                     </>
@@ -167,7 +167,7 @@ export default function KeepCourse({
 }
 
 KeepCourse.layout = {
-    title: 'Keep your course',
+    title: 'Sign up to carry on',
     description:
-        'Make this an account of your own. What the tutor has learned about you comes with it, and your next course is a full one.',
+        'Your course stays exactly as it is, and the rest of its lessons open.',
 };

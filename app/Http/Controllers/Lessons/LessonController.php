@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Lessons;
 
 use App\Courses\LessonRail;
-use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Lessons\LessonState;
 use App\Models\Lesson;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,8 +34,13 @@ use Inertia\Response;
  */
 class LessonController extends Controller
 {
-    public function show(Lesson $lesson): Response
+    public function show(Request $request, Lesson $lesson): Response|RedirectResponse
     {
+        // Lesson 2 onward is what signing up opens (spec 12.4.1).
+        if ($lesson->isBeyondDemo() && $lesson->course->user_id === $request->user()->id) {
+            return redirect()->route('demo.account.create');
+        }
+
         $this->authorize('view', $lesson);
 
         $state = LessonState::of($lesson)->toArray();
@@ -56,9 +62,10 @@ class LessonController extends Controller
                 'complete' => route('lessons.complete', $lesson),
                 'refresher' => route('lessons.refreshers.store', $lesson),
                 'homework' => route('lessons.homework.show', $lesson),
-                'exam' => NextAction::afterLastLesson($lesson->course),
+                'exam' => route('courses.final-exam.show', $lesson->course),
+                // A demo's next move is signing up, whatever lesson follows.
+                'sign_up' => $lesson->course->student->isDemo() ? route('demo.account.create') : null,
             ],
-            'demo' => $lesson->course->student->isDemo(),
         ]);
     }
 

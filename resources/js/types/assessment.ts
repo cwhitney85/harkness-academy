@@ -67,10 +67,10 @@ export type HomeworkScreen = {
         lesson: string;
         /** Null when this was the last lesson — the exam is the move then. */
         next: string | null;
-        /** The final exam, or for a demo the offer to keep the course (12.4.1). */
         exam: string;
+        /** For a demo, signing up: the move after lesson 1 (spec 12.4.1). */
+        sign_up: string | null;
     };
-    demo: boolean;
 };
 
 /** One whole sitting of the exam, marked (spec 6.3). No answer key: D20. */

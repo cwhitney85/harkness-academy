@@ -123,6 +123,16 @@ class Lesson extends Model
         return $this->summary_json === null ? null : LessonSummary::of($this->summary_json);
     }
 
+    /**
+     * Whether this lesson is past what a demo visitor may take: the demo is
+     * lesson 1 of an ordinary course, and signing up opens the rest (spec
+     * 12.4.1).
+     */
+    public function isBeyondDemo(): bool
+    {
+        return $this->position > 1 && $this->course->student->isDemo();
+    }
+
     public function isCompleted(): bool
     {
         return $this->completed_at !== null;

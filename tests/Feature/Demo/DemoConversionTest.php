@@ -2,18 +2,14 @@
 
 namespace Tests\Feature\Demo;
 
-use App\Courses\CreateCourse;
 use App\Memory\MemoryTree;
 use App\Models\Course;
-use App\Models\Module;
-use Database\Seeders\CourseCatalogSeeder;
-use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Assessment\AssessmentTestCase;
 
 /**
- * Spec 12.4 -- the demo ends at the offer to keep it, and keeping it is
- * registration onto the row the demo already made.
+ * Spec 12.4 -- a demo is lesson 1 of an ordinary course, and signing up opens
+ * the rest.
  */
 class DemoConversionTest extends AssessmentTestCase
 {
@@ -27,66 +23,48 @@ class DemoConversionTest extends AssessmentTestCase
     }
 
     #[Test]
-    public function a_finished_demo_course_offers_to_keep_it_where_the_exam_would_be(): void
+    public function after_lesson_one_a_demo_is_asked_to_sign_up(): void
     {
-        $course = $this->demo($this->taughtCourse());
-        $last = $course->lessons->last();
-        $offer = route('demo.account.create');
+        $course = $this->demo();
+        [$first, $second] = [$this->lesson($course, 1), $this->lesson($course, 2)];
+        $signUp = route('demo.account.create');
 
         $this->actingAs($course->student);
 
-        $homework = $this->inertiaProps($this->get(route('lessons.homework.show', $last))->assertOk());
-        $this->assertTrue($homework['demo']);
-        $this->assertSame($offer, $homework['urls']['exam']);
+        $this->assertSame($signUp, $this->inertiaProps($this->get(route('lessons.show', $first)))['urls']['sign_up']);
+        $this->assertSame($signUp, $this->inertiaProps($this->get(route('lessons.homework.show', $first)))['urls']['sign_up']);
 
-        $lesson = $this->inertiaProps($this->get(route('lessons.show', $last))->assertOk());
-        $this->assertSame($offer, $lesson['urls']['exam']);
-
-        $dashboard = $this->inertiaProps($this->get(route('dashboard'))->assertOk());
-        $this->assertSame($offer, $dashboard['in_progress'][0]['url']);
-        $this->assertSame('Every lesson done — keep your course', $dashboard['in_progress'][0]['detail']);
+        // Lesson 2 is open to the chain but not to the visitor, on every route.
+        $this->get(route('lessons.show', $second))->assertRedirect($signUp);
+        $this->get(route('lessons.sections.stream', [$second, 1]))->assertForbidden();
+        $this->get(route('lessons.homework.show', $second))->assertForbidden();
     }
 
     #[Test]
-    public function a_demo_visitor_who_types_the_exam_address_gets_no_exam(): void
+    public function a_standard_course_offers_no_sign_up(): void
     {
-        // Spec 12.6.2.
-        $course = $this->demo($this->taughtCourse());
+        $course = $this->activeCourse();
+        $first = $this->completeLesson($this->lesson($course, 1));
+
         $this->actingAs($course->student);
 
-        $this->get(route('courses.final-exam.show', $course))->assertRedirect(route('demo.account.create'));
-        $this->post(route('courses.final-exam.store', $course))->assertForbidden();
-
-        $this->assertDatabaseMissing('usage_events', ['feature' => 'course.final_exam']);
+        $this->assertNull($this->inertiaProps($this->get(route('lessons.homework.show', $first)))['urls']['sign_up']);
+        $this->get(route('lessons.show', $this->lesson($course, 2)))->assertOk();
     }
 
     #[Test]
-    public function a_finished_standard_course_goes_to_its_exam(): void
+    public function signing_up_opens_the_rest_of_the_same_course(): void
     {
-        $course = $this->taughtCourse();
-        $last = $course->lessons->last();
-
-        $homework = $this->inertiaProps($this->actingAs($course->student)->get(route('lessons.homework.show', $last)));
-
-        $this->assertFalse($homework['demo']);
-        $this->assertSame(route('courses.final-exam.show', $course), $homework['urls']['exam']);
-    }
-
-    #[Test]
-    public function keeping_the_demo_makes_it_a_standard_account_with_the_same_working_knowledge(): void
-    {
-        $course = $this->demo($this->taughtCourse());
+        $course = $this->demo();
         $student = $course->student;
         $tree = app(MemoryTree::class);
         $before = $tree->document($student, $course->workingKnowledgePath())->versionId;
 
-        $this->actingAs($student)
-            ->get(route('demo.account.create'))
-            ->assertInertia(fn (AssertableInertia $page) => $page->component('auth/keep-course'));
+        $this->actingAs($student)->get(route('demo.account.create'))->assertOk();
 
         $this->post(route('demo.account.store'), $this->submission())
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('courses.create'));
+            ->assertRedirect(route('dashboard'));
 
         $student->refresh();
         $this->assertSame('standard', $student->plan);
@@ -94,24 +72,16 @@ class DemoConversionTest extends AssessmentTestCase
         $this->assertNotNull($student->tos_accepted_at);
         $this->assertAuthenticatedAs($student);
 
-        // 12.4.4: set aside, and the working knowledge untouched by it.
-        $this->assertNotNull($course->refresh()->withdrawn_at);
+        // 12.4.4: the course carries on as it was.
+        $this->assertNull($course->refresh()->withdrawn_at);
         $this->assertSame($before, $tree->document($student, $course->workingKnowledgePath())->versionId);
-
-        $this->seed(CourseCatalogSeeder::class);
-        $fresh = app(CreateCourse::class)->fromFreeText(
-            $student,
-            Module::query()->where('slug', $course->module_slug)->firstOrFail(),
-            $course->subtopic_title,
-            $course->skill_level,
-        );
-        $this->assertSame($course->attempt + 1, $fresh->attempt);
+        $this->get(route('lessons.show', $this->lesson($course, 2)))->assertOk();
     }
 
     #[Test]
     public function no_code_or_a_wrong_one_leaves_the_account_a_demo_and_says_so_on_the_code_field(): void
     {
-        $course = $this->demo($this->taughtCourse());
+        $course = $this->demo();
         $this->actingAs($course->student);
 
         foreach (['', 'not-the-code'] as $code) {
@@ -123,13 +93,25 @@ class DemoConversionTest extends AssessmentTestCase
             ->assertSessionHasErrors('tos_accepted');
 
         $this->assertTrue($course->student->refresh()->isDemo());
-        $this->assertNull($course->refresh()->withdrawn_at);
+    }
+
+    #[Test]
+    public function a_demo_visitor_who_types_the_exam_address_gets_no_exam(): void
+    {
+        // Spec 12.6.2.
+        $course = $this->demo();
+        $this->actingAs($course->student);
+
+        $this->get(route('courses.final-exam.show', $course))->assertRedirect(route('demo.account.create'));
+        $this->post(route('courses.final-exam.store', $course))->assertForbidden();
+
+        $this->assertDatabaseMissing('usage_events', ['feature' => 'course.final_exam']);
     }
 
     #[Test]
     public function a_standard_account_has_no_demo_to_keep(): void
     {
-        $course = $this->taughtCourse();
+        $course = $this->activeCourse();
 
         $this->actingAs($course->student)->get(route('demo.account.create'))->assertRedirect(route('dashboard'));
         $this->post(route('demo.account.store'), $this->submission())->assertRedirect(route('dashboard'));
@@ -137,8 +119,13 @@ class DemoConversionTest extends AssessmentTestCase
         $this->assertNotSame('kept@example.com', $course->student->refresh()->email);
     }
 
-    private function demo(Course $course): Course
+    /**
+     * An ordinary two-lesson course, on the demo plan, with lesson 1 finished.
+     */
+    private function demo(): Course
     {
+        $course = $this->activeCourse();
+        $this->completeLesson($this->lesson($course, 1));
         $course->student->forceFill(['plan' => 'demo'])->save();
 
         return $course->refresh();
