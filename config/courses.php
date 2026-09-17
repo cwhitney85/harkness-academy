@@ -23,9 +23,10 @@ return [
     | Plans
     |--------------------------------------------------------------------------
     |
-    | The set of values `users.plan` may hold. One entry in v1: the column
-    | ships with a single value and no price, limit or entitlement attached,
-    | the same way `courses.style` ships with one persona (decision R1).
+    | The set of values `users.plan` may hold. `standard` is every invited
+    | account; `demo` is minted only by the public demo route and differs in
+    | depth alone (spec 12, ledger D50). Neither carries a price, limit or
+    | entitlement.
     |
     | These stay config keys until a plan carries its first real attribute --
     | a price, a quota, anything a row can hold that a key cannot. That is the
@@ -36,7 +37,7 @@ return [
 
     'default_plan' => 'standard',
 
-    'plans' => ['standard'],
+    'plans' => ['standard', 'demo'],
 
     /*
     |--------------------------------------------------------------------------
@@ -58,6 +59,11 @@ return [
                 'sections_per_lesson' => [3, 4],
                 'minutes_per_lesson' => 20,
             ],
+            'demo' => [
+                'lessons' => [1, 1],
+                'sections_per_lesson' => [3, 4],
+                'minutes_per_lesson' => 20,
+            ],
         ],
 
         201 => [
@@ -66,11 +72,21 @@ return [
                 'sections_per_lesson' => [3, 4],
                 'minutes_per_lesson' => 25,
             ],
+            'demo' => [
+                'lessons' => [1, 1],
+                'sections_per_lesson' => [3, 4],
+                'minutes_per_lesson' => 25,
+            ],
         ],
 
         301 => [
             'standard' => [
                 'lessons' => [5, 7],
+                'sections_per_lesson' => [4, 5],
+                'minutes_per_lesson' => 30,
+            ],
+            'demo' => [
+                'lessons' => [1, 1],
                 'sections_per_lesson' => [4, 5],
                 'minutes_per_lesson' => 30,
             ],

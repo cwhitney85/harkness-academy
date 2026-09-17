@@ -49,6 +49,13 @@ class CoursesConfigTest extends TestCase
     }
 
     #[Test]
+    public function a_demo_visitor_is_on_a_configured_plan(): void
+    {
+        // Spec 12.2.1.
+        $this->assertContains(User::factory()->create(['plan' => 'demo'])->plan, config('courses.plans'));
+    }
+
+    #[Test]
     public function the_default_plan_is_one_of_the_configured_plans(): void
     {
         $this->assertContains(config('courses.default_plan'), config('courses.plans'));
