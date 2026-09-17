@@ -29,6 +29,9 @@ createInertiaApp({
             // D30 allows no fourth shell.
             case name === 'landing':
                 return null;
+            // The demo's welcome page is a front door of the same kind (12.1).
+            case name === 'demo':
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

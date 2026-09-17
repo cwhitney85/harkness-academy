@@ -4,6 +4,8 @@ export type User = {
     email: string;
     avatar?: string;
     email_verified_at: string | null;
+    /** `standard`, or `demo` for an account the demo link made (spec 12). */
+    plan: string;
     /* @chisel-2fa */
     two_factor_enabled?: boolean;
     /* @end-chisel-2fa */

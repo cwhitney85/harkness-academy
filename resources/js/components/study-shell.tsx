@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import DemoMark from '@/components/demo-mark';
 import { railControl as control, RailHead } from '@/components/rail';
 import {
     Sheet,
@@ -235,6 +236,7 @@ function PhoneBar({
                 </div>
             </div>
 
+            <DemoMark onRail compact />
             <Ticks section={section} onRail />
         </div>
     );

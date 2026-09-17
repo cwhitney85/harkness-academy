@@ -57,7 +57,9 @@ vi.mock('@inertiajs/react', () => ({
         </a>
     ),
     router: { reload: vi.fn(), visit: vi.fn() },
-    usePage: () => ({ props: { name: 'Harkness Academy' } }),
+    usePage: () => ({
+        props: { name: 'Harkness Academy', auth: { user: null } },
+    }),
 }));
 
 vi.hoisted(() => {

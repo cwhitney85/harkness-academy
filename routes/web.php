@@ -19,9 +19,11 @@ Route::get('/', fn () => Auth::check()
     ? redirect()->route('dashboard')
     : Inertia::render('landing'))->name('home');
 
-// Screen S13 (spec 12.1): mints a `demo`-plan account and lands on S2. Outside
-// the auth group for the reason `home` is -- the visitor has no account yet.
-Route::get('demo', DemoEntryController::class)->name('demo');
+// Screen S13 (spec 12.1): the demo's welcome page, and the press that mints a
+// `demo`-plan account and lands on S2. Outside the auth group for the reason
+// `home` is -- the visitor has no account yet.
+Route::get('demo', [DemoEntryController::class, 'show'])->name('demo');
+Route::post('demo', [DemoEntryController::class, 'store'])->name('demo.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Screen S1 (spec 8.10.1). No longer `Route::inertia`: the dashboard is

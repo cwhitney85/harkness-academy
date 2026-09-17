@@ -20,11 +20,12 @@ Three properties of the running system make this small, each confirmed by readin
 
 ## 12.1 The entry
 
-- **12.1.1 MUST** — A public route creates a `demo`-plan user, signs them in, and lands them on course creation. It sits outside the `auth` group, the way `home` does after [8.13.2](08-interface.md). *Done: a request carrying no session ends at `/courses/create`, with a `demo`-plan row that did not exist before it.*
+- **12.1.1 MUST** — A public welcome page says what the demo is, and its one button creates a `demo`-plan user, signs them in, and lands them on course creation. Both sit outside the `auth` group, the way `home` does after [8.13.2](08-interface.md). Opening the link writes nothing, so a chat app unfurling it or a crawler following it makes no account. *Done: `GET /demo` with no session renders the page and creates no row; `POST /demo` ends at `/courses/create` with a `demo`-plan row that did not exist before it.*
 - **12.1.2 MUST** — The row satisfies the schema with no special-casing. `users.email` is NOT NULL and UNIQUE and `users.password` is NOT NULL, so the row carries a unique synthetic email, a random password and a name. *Done: two visits produce two rows; neither column is made nullable.*
 - **12.1.3 MUST** — Only this route mints a `demo`-plan account. *Falsified if: a registration through `CreateNewUser` produces a plan other than `standard` ([1.6.2](01-foundation.md)).*
-- **12.1.4 MUST** — The route appears as an edge in [8.6](08-interface.md#86-flow-map)'s flow map in the same commit that adds it. `FlowMapTest` asserts both directions and fails the build otherwise. *Done: `FlowMapTest` passes.*
-- **12.1.5 WONT** — The demo carries no 18-or-older attestation and no interstitial. `tos_accepted_at` stays null on a demo row, and the entry is a bare GET with nothing to press ([D50](../02-design.md)). *Falsified if: the demo grows a screen between the link and course creation.*
+- **12.1.4 MUST** — The routes appear as an edge in [8.6](08-interface.md#86-flow-map)'s flow map in the same commit that adds it. `FlowMapTest` asserts both directions and fails the build otherwise. *Done: `FlowMapTest` passes.*
+- **12.1.5 WONT** — The demo carries no 18-or-older attestation and asks for nothing before it starts. `tos_accepted_at` stays null on a demo row, and the welcome page has one button and no field ([D50](../02-design.md), amended 2026-09-16). *Falsified if: a field, a checkbox or a second screen appears between the link and course creation.*
+- **12.1.6 MUST** — Every signed-in screen a demo visitor sees carries a Demo marker in its header, linking to [12.4](#124-conversion)'s offer. The course shells carry it in the rail and in the phone bar; the dashboard carries it in its header. *Done: the marker renders for a `demo`-plan user and not for a `standard` one.*
 
 ## 12.2 The shortened course
 
@@ -64,7 +65,7 @@ Three properties of the running system make this small, each confirmed by readin
 
 Against the deployed URL, over TLS, in a browser that has never seen the app, with a queue worker running:
 
-1. Open the demo link. No form, no code, no email, nothing to press — the next screen is course creation.
+1. Open the demo link. The welcome page says what the demo is and offers one button; no form, no code, no email. Press it — the next screen is course creation, with the Demo marker in its header.
 2. Type a subtopic. The catalog check runs and refuses what it would refuse for any student.
 3. Sit both interviews. Press Done on each; each write-up lands and the screen moves on.
 4. Ask for the syllabus. It arrives carrying **one** lesson, and reads as a whole course rather than the first eighth of one.

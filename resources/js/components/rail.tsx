@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 
 import Crest from '@/components/crest';
+import DemoMark from '@/components/demo-mark';
 import Wordmark from '@/components/wordmark';
 import { dashboard } from '@/routes';
 
@@ -54,6 +55,7 @@ export function RailHead({ subtitle }: { subtitle: string }) {
             <div className="label truncate border-t border-field-green pt-[11px] text-[10px] text-brass">
                 {subtitle}
             </div>
+            <DemoMark onRail />
         </div>
     );
 }

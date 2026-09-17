@@ -68,7 +68,9 @@ vi.mock('@inertiajs/react', () => ({
     },
     // The rail head draws the wordmark from Inertia's shared props, which is
     // where `config('app.name')` reaches the client.
-    usePage: () => ({ props: { name: 'Harkness Academy' } }),
+    usePage: () => ({
+        props: { name: 'Harkness Academy', auth: { user: null } },
+    }),
 }));
 
 // Hoisted above the imports: jsdom has neither of these, the screen uses both

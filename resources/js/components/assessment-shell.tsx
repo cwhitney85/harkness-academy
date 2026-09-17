@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import DemoMark from '@/components/demo-mark';
 import { railControl, RailHead } from '@/components/rail';
 import {
     Sheet,
@@ -209,6 +210,8 @@ function PhoneBar({
                     {heading}
                 </div>
             </div>
+
+            <DemoMark onRail compact />
         </div>
     );
 }

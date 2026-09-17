@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import DemoMark from '@/components/demo-mark';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
@@ -17,6 +18,8 @@ export function AppSidebarHeader({
                 <SidebarTrigger className="-ml-2 size-11" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
+            <span className="grow" />
+            <DemoMark />
         </header>
     );
 }
