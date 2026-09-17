@@ -6,6 +6,7 @@ use App\Assessment\Homework;
 use App\Assessment\QuizKind;
 use App\Assessment\Quizzes;
 use App\Courses\LessonStatus;
+use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Lessons\LessonSections;
 use App\Models\Lesson;
@@ -65,8 +66,9 @@ class HomeworkController extends Controller
                 'answers' => route('lessons.homework.answers.store', $lesson),
                 'lesson' => route('lessons.show', $lesson),
                 'next' => $this->next($lesson),
-                'exam' => route('courses.final-exam.show', $course),
+                'exam' => NextAction::afterLastLesson($course),
             ],
+            'demo' => $course->student->isDemo(),
         ]);
     }
 

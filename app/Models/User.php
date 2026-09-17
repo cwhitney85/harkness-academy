@@ -52,6 +52,17 @@ class User extends Authenticatable implements PasskeyUser
     ];
 
     /**
+     * Whether this account came in through the demo link and has not been kept
+     * (spec 12). Its only effects are the one-lesson depth and, once that
+     * lesson is done, the offer to keep the course standing where the exam
+     * would (12.4.1).
+     */
+    public function isDemo(): bool
+    {
+        return $this->plan === 'demo';
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

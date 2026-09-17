@@ -29,6 +29,7 @@ export default function HomeworkPage({
     state,
     homework,
     urls,
+    demo,
 }: HomeworkScreen) {
     const rows: RailRow[] = [
         ...lesson.sections.map((title) => ({ label: title })),
@@ -68,7 +69,7 @@ export default function HomeworkPage({
                         progress={homework.progress}
                         answersUrl={urls.answers}
                     >
-                        <Onward urls={urls} />
+                        <Onward urls={urls} demo={demo} />
                     </Worksheet>
                 </div>
             )}
@@ -117,14 +118,27 @@ function Pending({
     );
 }
 
-/** S8's "done" edge: the next lesson, or the exam when none remain (8.6). */
-function Onward({ urls }: { urls: HomeworkScreen['urls'] }) {
+/**
+ * S8's "done" edge: the next lesson, or the exam when none remain (8.6) — and
+ * for a demo, whose one lesson this was, the offer to keep the course (12.4.1).
+ */
+function Onward({
+    urls,
+    demo,
+}: {
+    urls: HomeworkScreen['urls'];
+    demo: boolean;
+}) {
     return (
         <Link
             href={urls.next ?? urls.exam}
             className="label flex min-h-11 items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
         >
-            {urls.next ? 'The next lesson' : 'The final exam'}
+            {urls.next
+                ? 'The next lesson'
+                : demo
+                  ? 'Keep your course'
+                  : 'The final exam'}
         </Link>
     );
 }

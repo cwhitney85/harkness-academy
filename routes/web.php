@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Demo\DemoConversionController;
 use App\Http\Controllers\Demo\DemoEntryController;
 use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // `terms` is; signed in, because it is reached from the user menu and set
     // in the same `AppLayout` the dashboard is.
     Route::inertia('install', 'install')->name('install');
+
+    // Screen S14 (spec 12.4): a demo visitor keeps what they built.
+    Route::get('demo/account', [DemoConversionController::class, 'create'])->name('demo.account.create');
+    Route::post('demo/account', [DemoConversionController::class, 'store'])->name('demo.account.store');
 });
 
 require __DIR__.'/settings.php';

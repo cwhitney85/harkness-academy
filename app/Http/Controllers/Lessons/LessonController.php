@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Lessons;
 
 use App\Courses\LessonRail;
+use App\Courses\NextAction;
 use App\Http\Controllers\Controller;
 use App\Lessons\LessonState;
 use App\Models\Lesson;
@@ -55,8 +56,9 @@ class LessonController extends Controller
                 'complete' => route('lessons.complete', $lesson),
                 'refresher' => route('lessons.refreshers.store', $lesson),
                 'homework' => route('lessons.homework.show', $lesson),
-                'exam' => route('courses.final-exam.show', $lesson->course),
+                'exam' => NextAction::afterLastLesson($lesson->course),
             ],
+            'demo' => $lesson->course->student->isDemo(),
         ]);
     }
 

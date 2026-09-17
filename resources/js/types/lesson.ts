@@ -81,6 +81,8 @@ export type LessonScreen = {
         complete: string;
         refresher: string;
         homework: string;
+        /** The final exam, or for a demo the offer to keep the course (12.4.1). */
         exam: string;
     };
+    demo: boolean;
 };

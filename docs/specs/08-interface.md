@@ -81,8 +81,9 @@
 | S11 | Refresher | `GET /refreshers/{refresher}` | `refreshers.show` | exists |
 | S12 | Module rollup | `GET /modules/{module}` | `modules.show` | **8.10.2 builds** |
 | S13 | Demo entry | `GET /demo` | `demo` | **[12.1](12-demo.md) builds** — no screen; it mints an account and redirects to S2 |
+| S14 | Keep the demo | `GET /demo/account` | `demo.account.create` | **[12.4](12-demo.md) builds** |
 
-S13 is the second thing a signed-out visitor can reach, and it renders nothing — spec 12's demo route mints a `demo`-plan account, signs it in and lands on S2. Otherwise S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a redirect and gains a rendered page (8.13). Five have no route at all (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
+S14 is where a demo ends: the register form, onto the account the demo made. S13 is the second thing a signed-out visitor can reach, and it renders nothing — spec 12's demo route mints a `demo`-plan account, signs it in and lands on S2. Otherwise S0 is the only screen a signed-out visitor can reach; `GET /` exists today as a redirect and gains a rendered page (8.13). Five have no route at all (S2, S3, S4, S5, S12) — that is 8.7's and 8.10.2's work. Of the seven that do, every one answers JSON today, because packages 5 and 6 shipped the wire and left the screen: 8.8 and 8.9 turn them into Inertia pages at the same URLs. Two pairs share a URL by design — a completed lesson and a sat exam are states of the screen the student is already on, not places they navigate to.
 
 ### The map
 
@@ -94,6 +95,11 @@ S13 is the second thing a signed-out visitor can reach, and it renders nothing �
   S13 DEMO ENTRY                                       GET /demo   (signed out; no screen, spec 12)
       └─ mints a `demo`-plan account, signs it in ─►    S2
             the link is one Colin sends; S0 does not carry it (12.6.3, D46)
+
+  S14 KEEP THE DEMO                                    GET /demo/account   (demo plan only; anyone else ──► S1)
+      │   reached from S1, S7 and S8 where a standard course's next move is S9 — a demo has no exam (12.4.1, 12.6.2)
+      ├─ POST /demo/account  (demo.account.store) ──► S2, the account standard and the demo course set aside (12.4.2, 12.4.4)
+      └─ 422 no code, a wrong one, or no attestation ──► S14, the error on the field; the row still demo (12.4.3)
 
   S0  LANDING                                          GET /   (signed out only)
       ├─ "Log in" ───────────────────────────────►    the sign-in screen ──► S1

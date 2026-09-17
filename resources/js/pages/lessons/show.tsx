@@ -49,6 +49,7 @@ export default function LessonScreenPage({
     limits,
     course,
     urls,
+    demo,
 }: LessonScreen) {
     /** Turns that finished while the student was on this screen. */
     const [added, setAdded] = useState<LessonTurn[]>([]);
@@ -426,6 +427,7 @@ export default function LessonScreenPage({
                     lesson={lesson}
                     course={course}
                     urls={urls}
+                    demo={demo}
                     busy={busy}
                     onPractise={practise}
                 />
@@ -852,7 +854,8 @@ function Complete({
     urls,
     busy,
     onPractise,
-}: Pick<LessonScreen, 'lesson' | 'course' | 'urls'> & {
+    demo,
+}: Pick<LessonScreen, 'lesson' | 'course' | 'urls' | 'demo'> & {
     busy: boolean;
     onPractise: () => void;
 }) {
@@ -887,7 +890,7 @@ function Complete({
                         href={urls.exam}
                         className="label flex min-h-11 items-center text-wine underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
                     >
-                        The final exam
+                        {demo ? 'Keep your course' : 'The final exam'}
                     </Link>
                 ) : (
                     <span className="label flex min-h-11 items-center">

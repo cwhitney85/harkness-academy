@@ -136,6 +136,7 @@ function props(
             homework: '/lessons/19/homework',
             exam: '/courses/3/exam',
         },
+        demo: false,
     };
 }
 

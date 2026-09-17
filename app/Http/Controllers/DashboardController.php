@@ -37,8 +37,9 @@ class DashboardController extends Controller
             // NextAction reads the lessons of an active course and the card
             // counts them; a completed card names its module and NextAction
             // resolves the rollup from the same row. One load rather than
-            // three queries per card.
-            ->with(['lessons', 'module'])
+            // three queries per card. The student is what tells NextAction
+            // whether a finished course ends at its exam or its offer (12.4.1).
+            ->with(['lessons', 'module', 'student'])
             ->orderByDesc('updated_at')
             ->get();
 
@@ -152,6 +153,7 @@ class DashboardController extends Controller
             ->count();
 
         return match (true) {
+            $done === $total && $course->student->isDemo() => 'Every lesson done — keep your course',
             $done === $total => 'Every lesson done — the exam is next',
             $done === 0 => 'Lesson 1 is waiting',
             default => "{$done} of {$total} lessons done",
