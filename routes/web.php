@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Demo\DemoEntryController;
 use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,10 @@ Route::inertia('terms', 'terms')->name('terms');
 Route::get('/', fn () => Auth::check()
     ? redirect()->route('dashboard')
     : Inertia::render('landing'))->name('home');
+
+// Screen S13 (spec 12.1): mints a `demo`-plan account and lands on S2. Outside
+// the auth group for the reason `home` is -- the visitor has no account yet.
+Route::get('demo', DemoEntryController::class)->name('demo');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Screen S1 (spec 8.10.1). No longer `Route::inertia`: the dashboard is
