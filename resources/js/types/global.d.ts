@@ -13,6 +13,11 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            /** Set while an admin views as a student (spec 13.4.4). */
+            viewingAs: {
+                mode: 'preview' | 'act_as';
+                reason: string | null;
+            } | null;
             [key: string]: unknown;
         };
     }

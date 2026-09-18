@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Lessons;
 
+use App\Admin\ViewingAs;
 use App\Courses\Exceptions\CourseNotOpen;
 use App\Http\Controllers\Controller;
 use App\Lessons\Exceptions\LessonNotOpenable;
@@ -9,6 +10,7 @@ use App\Lessons\Exceptions\NoSuchSection;
 use App\Lessons\LessonProgress;
 use App\Lessons\LessonSections;
 use App\Lessons\LessonSessions;
+use App\Lessons\LessonTranscript;
 use App\Lessons\Streaming\EventStream;
 use App\Lessons\Streaming\StreamError;
 use App\Models\Lesson;
@@ -57,6 +59,15 @@ class SectionStreamController extends Controller
         } catch (LessonNotOpenable|CourseNotOpen $e) {
             abort(422, $e->getMessage());
         }
+
+        // An admin's preview replays what was taught and teaches nothing new:
+        // teaching a section moves the student into it before the call is
+        // even made (spec 13.4.1).
+        abort_if(
+            ViewingAs::previewing() && (new LessonTranscript($lesson))->section($index) === null,
+            403,
+            'Preview shows only what has been taught.',
+        );
 
         $session = $sessions->for($lesson);
 

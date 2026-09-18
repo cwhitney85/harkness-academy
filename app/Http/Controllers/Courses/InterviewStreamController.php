@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Courses;
 
+use App\Admin\ViewingAs;
 use App\Courses\Exceptions\CourseNotOpen;
 use App\Courses\Exceptions\IllegalTransition;
 use App\Courses\Exceptions\InterviewAlreadyUnderway;
@@ -33,6 +34,10 @@ class InterviewStreamController extends Controller
     public function __invoke(Request $request, Course $course, Interviews $interviews): StreamedResponse
     {
         $this->authorize('participate', $course);
+
+        // The stream only ever opens an interview, which writes its first
+        // turn -- nothing an admin's preview may do (spec 13.4.1).
+        abort_if(ViewingAs::previewing(), 403, 'Preview is read-only.');
 
         $kind = $this->kind($request);
         $session = $this->session($interviews, $course, $kind);

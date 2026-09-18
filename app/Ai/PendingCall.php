@@ -2,6 +2,7 @@
 
 namespace App\Ai;
 
+use App\Admin\ViewingAs;
 use App\Ai\Prompts\PromptDefinition;
 use App\Ai\Prompts\PromptOutput;
 use App\Models\UsageEvent;
@@ -15,6 +16,7 @@ use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use LogicException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Throwable;
 
 /**
@@ -26,6 +28,7 @@ use Throwable;
  *   - `feature` is set, so the usage row can be attributed (2.2)
  *   - the tier resolves to a model (2.1.1)
  *   - a schema is supplied if and only if the prompt declares json output
+ *   - the request is not an admin's preview of a student (spec 13.4.1)
  *
  * Postcondition: exactly one usage_events row per attempt, written even when
  * the provider throws.
@@ -340,6 +343,10 @@ final class PendingCall
                     "Call to prompt [{$this->prompt->key}] supplies an empty user turn; there is nothing to answer."
                 );
             }
+        }
+
+        if (ViewingAs::previewing()) {
+            throw new AccessDeniedHttpException('Preview is read-only: no AI call starts while an admin previews a student.');
         }
 
         if ($this->feature === '') {

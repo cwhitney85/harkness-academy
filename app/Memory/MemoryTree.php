@@ -2,6 +2,7 @@
 
 namespace App\Memory;
 
+use App\Admin\ViewingAs;
 use App\Memory\Exceptions\InvalidMemoryPath;
 use App\Models\Memory;
 use App\Models\MemoryVersion;
@@ -108,6 +109,8 @@ final class MemoryTree
                 'memory_id' => $memory->id,
                 'version' => $version,
                 'content' => $content,
+                // The admin acting as this student, if one is (spec 13.4.3).
+                'acting_user_id' => ViewingAs::actingUserId(),
                 'created_at' => now(),
             ]);
         });

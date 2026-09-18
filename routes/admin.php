@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActionLogController;
 use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\ViewAsController;
 use App\Http\Middleware\RequireSecondFactor;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,11 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('/', [StudentController::class, 'index'])->name('admin.home');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
+
+        // Viewing as a student (13.4). Step-up and Exit are the only two
+        // `/admin*` routes reachable while viewing (13.4.6); `ViewAsStudent`
+        // names them.
+        Route::post('users/{user}/view-as', [ViewAsController::class, 'store'])->name('admin.users.view-as');
+        Route::post('view-as/step-up', [ViewAsController::class, 'update'])->name('admin.view-as.step-up');
+        Route::delete('view-as', [ViewAsController::class, 'destroy'])->name('admin.view-as.exit');
     });

@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $memory_id
  * @property int $version
  * @property string $content
+ * @property int|null $acting_user_id the admin acting as the student (spec 13.4.3)
  * @property Carbon $created_at
  */
 class MemoryVersion extends Model

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import DemoMark from '@/components/demo-mark';
 import { railControl, RailHead } from '@/components/rail';
+import ViewingBanner from '@/components/viewing-banner';
 import {
     Sheet,
     SheetContent,
@@ -84,6 +85,7 @@ export default function PipelineShell({
             )}
 
             <main className="flex min-w-0 grow flex-col">
+                <ViewingBanner />
                 {phone ? (
                     <PhoneBar current={index} subtitle={subtitle} />
                 ) : (

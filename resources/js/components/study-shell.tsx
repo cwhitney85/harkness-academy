@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import DemoMark from '@/components/demo-mark';
 import { railControl as control, RailHead } from '@/components/rail';
+import ViewingBanner from '@/components/viewing-banner';
 import {
     Sheet,
     SheetContent,
@@ -101,6 +102,7 @@ export default function StudyShell({
             )}
 
             <main className="flex min-w-0 grow flex-col">
+                <ViewingBanner />
                 {phone ? (
                     <PhoneBar
                         course={course}

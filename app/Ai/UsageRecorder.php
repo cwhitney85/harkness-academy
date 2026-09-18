@@ -2,6 +2,7 @@
 
 namespace App\Ai;
 
+use App\Admin\ViewingAs;
 use App\Models\UsageEvent;
 use Laravel\Ai\Responses\Data\Usage;
 
@@ -27,6 +28,7 @@ final class UsageRecorder
     ): UsageEvent {
         return UsageEvent::create([
             'user_id' => $userId,
+            'acting_user_id' => ViewingAs::actingUserId(),
             'feature' => $feature,
             'prompt_key' => $promptKey,
             'provider' => $provider,
