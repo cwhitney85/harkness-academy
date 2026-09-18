@@ -33,3 +33,4 @@
 ## Log
 
 - `design` skill is not available this session: the artboard source lands in `docs/design/canvas/`, the published canvas still needs re-seeding.
+- **Trap (→ lessons):** `migrate:fresh` (and so `RefreshDatabase`) drops tables and views but not Postgres functions. The append-only trigger's `CREATE FUNCTION` failed on every test run after the first; it is `CREATE OR REPLACE` now.

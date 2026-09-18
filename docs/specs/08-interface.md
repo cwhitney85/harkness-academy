@@ -197,6 +197,11 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       GET settings ──► GET settings/profile ⇄ GET settings/security
       GET settings/appearance is unreachable from the UI (8.5.6) and stays so until dark mode ships
       GET .well-known/passkey-endpoints answers password managers, never a student
+
+  ADMIN (outside the thirteen; spec 13, the admin shell; reached from the user menu for an admin only)
+      GET admin ──► the students an admin may view as (17.1 replaces it with Users)
+      GET admin/log ──► Admin → Log (13.2.3)
+      no second factor ──► GET settings/security (13.1.5); a student ──► 403 (13.1.2)
 ```
 
 ### Where a resume lands
@@ -282,6 +287,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `security.edit` · `user-password.update` | settings, outside the twelve |
 | `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
 | `well-known.passkeys` | machine endpoint; no student edge |
+| `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
 
 Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
 

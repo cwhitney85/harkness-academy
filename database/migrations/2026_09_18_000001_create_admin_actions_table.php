@@ -34,8 +34,10 @@ return new class extends Migration
             $table->index(['action', 'created_at']);
         });
 
+        // OR REPLACE: `migrate:fresh` drops tables but not functions, so the
+        // test suite's second run would find this one still there.
         DB::unprepared(<<<'SQL'
-            CREATE FUNCTION admin_actions_append_only() RETURNS trigger AS $$
+            CREATE OR REPLACE FUNCTION admin_actions_append_only() RETURNS trigger AS $$
             BEGIN
                 RAISE EXCEPTION 'admin_actions is append-only (spec 13.2.1)';
             END;

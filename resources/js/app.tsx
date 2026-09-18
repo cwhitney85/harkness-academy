@@ -32,6 +32,10 @@ createInertiaApp({
             // The demo's welcome page is a front door of the same kind (12.1).
             case name === 'demo':
                 return null;
+            // The admin screens are set in AdminShell, the fourth shell
+            // (spec 13.3, ledger D61, which amends the D30 note above).
+            case name.startsWith('admin/'):
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

@@ -1,0 +1,93 @@
+<?php
+
+namespace Tests\Feature\Admin;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route as Router;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+/** Spec 13.1.2, 13.1.5 -- one gate on every `/admin*` route, and a second factor. */
+class AdminAccessTest extends TestCase
+{
+    use RefreshDatabase;
+
+    #[Test]
+    public function the_admin_gate_is_on_every_admin_route(): void
+    {
+        $routes = $this->adminRoutes();
+
+        $this->assertNotEmpty($routes);
+
+        foreach ($routes as $route) {
+            $this->assertContains('can:admin', $route->gatherMiddleware(), "[{$route->uri()}] has no admin gate.");
+        }
+    }
+
+    #[Test]
+    public function a_student_is_refused_every_admin_route(): void
+    {
+        $student = User::factory()->withTwoFactor()->create();
+
+        foreach ($this->adminRoutes() as $route) {
+            $method = $route->methods()[0];
+            $uri = '/'.preg_replace('/\{[^}]+\}/', (string) $student->id, $route->uri());
+
+            $this->actingAs($student)->call($method, $uri)
+                ->assertForbidden();
+        }
+    }
+
+    #[Test]
+    public function an_admin_without_a_second_factor_is_sent_to_set_one_up(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->get('/admin')->assertRedirect(route('security.edit'));
+    }
+
+    #[Test]
+    public function an_admin_with_a_confirmed_two_factor_code_gets_in(): void
+    {
+        $this->actingAs(User::factory()->admin()->create())->get('/admin')->assertOk();
+    }
+
+    #[Test]
+    public function an_unconfirmed_two_factor_code_is_not_a_second_factor(): void
+    {
+        $admin = User::factory()->admin()->create(['two_factor_confirmed_at' => null]);
+
+        $this->actingAs($admin)->get('/admin')->assertRedirect(route('security.edit'));
+    }
+
+    #[Test]
+    public function an_admin_with_a_passkey_gets_in(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        DB::table('passkeys')->insert([
+            'user_id' => $admin->id,
+            'name' => 'Laptop',
+            'credential_id' => 'credential-1',
+            'credential' => '{}',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get('/admin')->assertOk();
+    }
+
+    /**
+     * @return list<Route>
+     */
+    private function adminRoutes(): array
+    {
+        return array_values(array_filter(
+            Router::getRoutes()->getRoutes(),
+            fn (Route $route): bool => $route->uri() === 'admin' || str_starts_with($route->uri(), 'admin/'),
+        ));
+    }
+}
