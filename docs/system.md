@@ -74,11 +74,15 @@ Two pairs share a URL by design: a completed lesson and a sat exam are *states o
 
 **The demo is the first lesson of an ordinary course** ([spec 12](specs/12-demo.md), [D50](02-design.md)). It is how someone with no invitation code sees the app. The demo link opens a welcome page that says what the demo is, with one button; opening the link creates nothing. Pressing the button ends any session the browser had, creates a guest account on the `demo` plan, and lands on course creation. From there the visitor meets exactly what a student meets — both interviews, a full syllabus, lesson 1, its homework — with a Demo marker in every header linking to sign-up. Lesson 2 onward and the final exam send them to sign-up instead. Signing up is the register form onto the same account, invitation code and 18-or-older attestation included: the account moves to the standard plan and the course carries on, lesson 2 now open. Guest accounts nobody signed up are deleted after seven days by a daily command; what they cost stays recorded.
 
-**Three shells, plus the starter kit's app layout** ([D30](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured. The dashboard and the module rollup are not any of those and are set in the app layout. All three shells draw the same crest at the head of their rail, and it is the link back to the dashboard — the only way out of a course that is not the browser's address bar (8.5.7). Settings, auth and the install page sit outside the fifteen and use the starter kit's own chrome, and the landing page is framed by nothing at all.
+**Four shells, plus the starter kit's app layout** ([D30](02-design.md), [D61](02-design.md)). The pipeline shell frames a course being set up, the study shell frames being taught, the assessment shell frames being measured, and the admin shell frames administering. The dashboard and the module rollup are not any of those and are set in the app layout. Every shell draws the same crest at the head of its rail, and it is the link back to the dashboard — the only way out of a course that is not the browser's address bar (8.5.7). Settings, auth and the install page sit outside the fifteen and use the starter kit's own chrome, and the landing page is framed by nothing at all.
+
+**The admin area** ([spec 13](specs/13-admin-foundation.md)) is for accounts whose role is `admin`, and is reached from the user menu. Role is granted only from the server's command line, and never reads plan or skill level: an admin is also a student. `/admin` asks for a second factor, a passkey or a confirmed two-factor code, and sends an admin who has neither to set one up. Its screens are listed in the admin shell's rail as they land. So far that is **Log**: every admin write, newest first, filterable by who, what and about whom, and not editable by any path. The admin's home, `/admin`, lists the students they can view as. The Users screen replaces it ([17.1.4](specs/17-admin-screens.md)).
+
+**Viewing as a student** ([D60](02-design.md)) starts as a **preview**. The admin sees every screen exactly as the student would, under a green banner naming them. Nothing can be written: every press that would save something is refused, no AI call starts, and a lesson shows only what was already taught. **Stepping up** asks for a reason and turns the banner wine. From then on, answers and AI calls go through as the student's, and each usage row and memory version they cause records the admin, queued work included. The admin screens are closed until Exit. Start, step-up and exit are each logged. A view ends at Exit, at logout, or after an hour.
 
 ## 4. The routes, by subsystem
 
-Four route files, each owning one subsystem. Every route below appears as an edge in 8.6's flow map, and a test holds the two to each other — a route added without an edge fails the build.
+Five route files, each owning one subsystem. Every route below appears as an edge in 8.6's flow map, and a test holds the two to each other — a route added without an edge fails the build.
 
 **[`routes/courses.php`](../routes/courses.php)** — the pipeline. Create a course; withdraw and resume one; both interviews (each is a screen, a stream that opens the conversation, an endpoint per answer, and a completion); the syllabus screen, its generation, its revisions and its approval. The two generation POSTs are throttled, because each spends a `top`-tier call.
 
@@ -86,13 +90,15 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 
 **[`routes/assessment.php`](../routes/assessment.php)** — everything graded outside a lesson. Homework and its answers; the final exam, opening it, saving a sitting in progress, and handing one in; the three doors that create a refresher (lesson, subtopic, module) and the refresher screen and its answers.
 
-**[`routes/web.php`](../routes/web.php)** — the entry route, which renders the landing page for a signed-out visitor and redirects a member to the dashboard; the demo's welcome page, the button that starts it, and its sign-up; the dashboard, the module rollup, the terms page and the install-instructions page. It requires the other three files, plus **[`routes/settings.php`](../routes/settings.php)**, which holds profile, password, security and the passkey endpoint password managers read. **[`routes/console.php`](../routes/console.php)** defines no routes.
+**[`routes/admin.php`](../routes/admin.php)** — the admin area: the student list, the log, and starting, stepping up and leaving a view of a student. One gate and the second-factor check guard all of it, and every write it takes leaves one log row.
+
+**[`routes/web.php`](../routes/web.php)** — the entry route, which renders the landing page for a signed-out visitor and redirects a member to the dashboard; the demo's welcome page, the button that starts it, and its sign-up; the dashboard, the module rollup, the terms page and the install-instructions page. It requires the other four files, plus **[`routes/settings.php`](../routes/settings.php)**, which holds profile, password, security and the passkey endpoint password managers read. **[`routes/console.php`](../routes/console.php)** defines no routes.
 
 ## 5. The records
 
 | Table | Holds |
 |---|---|
-| `users` | the account, its plan (`standard`, or `demo` until a demo visitor signs up), and two-factor/passkey credentials |
+| `users` | the account, its plan (`standard`, or `demo` until a demo visitor signs up), its role (`student` or `admin`), and two-factor/passkey credentials |
 | `modules`, `subtopics` | the catalog a course is created against |
 | `courses` | one row per (user, subtopic, level, attempt): position, the two ending dates, the style |
 | `interview_messages` | both interview transcripts |
@@ -103,8 +109,9 @@ Four route files, each owning one subsystem. Every route below appears as an edg
 | `quizzes`, `quiz_attempts` | all four kinds — checkpoint, homework, final, refresher — through one service |
 | `exam_answer_sheets` | a sitting in progress ([6.3.4](specs/06-assessment.md)) |
 | `generation_requests` | one row per (course, kind) — the wait for a queued generation |
-| `memories`, `memory_versions` | the memory tree and a version on every write |
-| `usage_events` | one row per AI call: feature, tier, model, tokens in/cached/out, latency, cost |
+| `memories`, `memory_versions` | the memory tree and a version on every write, naming the admin if one was acting as the student |
+| `usage_events` | one row per AI call: feature, tier, model, tokens in/cached/out, latency, cost, and the acting admin if there was one |
+| `admin_actions` | one row per admin write: who, what, about whom, why. Nothing can update or delete a row |
 
 Every question a student meets offers four options, and where the correct one sits is decided as the quiz is written rather than by the model, which keys A or B far more often than chance ([6.6](specs/06-assessment.md)). The order is stored, so a reload does not move an option out from under an answer.
 

@@ -26,12 +26,12 @@ final class ViewingAs
     private const SESSION_KEY = 'viewing_as';
 
     /** How long a session lasts before it ends on its own (13.4.5). */
-    public const MINUTES = 60;
+    private const MINUTES = 60;
 
     private function __construct(
         public readonly int $adminId,
-        public readonly int $studentId,
-        public readonly CarbonImmutable $startedAt,
+        private readonly int $studentId,
+        private readonly CarbonImmutable $startedAt,
         /** Why the admin stepped up; null while previewing. */
         public readonly ?string $reason = null,
     ) {}
@@ -121,7 +121,7 @@ final class ViewingAs
         return Context::get('acting_user_id');
     }
 
-    public function admin(): User
+    private function admin(): User
     {
         return User::query()->findOrFail($this->adminId);
     }

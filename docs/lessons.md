@@ -168,3 +168,19 @@ Nothing in a desktop browser reproduces it, and no test catches it — the field
 The Chrome that browser automation drives is Colin's, and it keeps whatever it was last signed in as. The demo's welcome page redirected any signed-in demo account past itself. That browser was still signed in to a guest from an earlier build, so the check landed on course creation — and was reported as the browser's state rather than as the bug. Colin then hit the same redirect and never saw the page.
 
 **When a page's behaviour depends on who is signed in, a redirect in the check is a finding, not noise.** Either check the signed-in branch on purpose, or say plainly that the signed-out page was not seen. A page a stranger is meant to see should not have a signed-in branch that skips it.
+
+## T14. `migrate:fresh` drops tables, not functions
+
+*Found 2026-09-18, building spec 13.*
+
+`RefreshDatabase` rebuilds the test database with `migrate:fresh`, which drops every table and view — and leaves Postgres functions where they are. The append-only trigger on `admin_actions` needs a function, and a plain `CREATE FUNCTION` passed on the first test run and failed every run after it, on every test in the suite.
+
+**A migration that creates a function says `CREATE OR REPLACE FUNCTION`.** The same holds for anything else `migrate:fresh` leaves behind: types, extensions, sequences made by hand.
+
+## T15. A user set on the guard outlives the request, in tests
+
+*Found 2026-09-18, building spec 13.4.*
+
+Viewing as a student sets the student as the request's user, leaving the session signed in as the admin. In production that lasts one request, because the next one reads its user from the session again. The test client reuses one application, so the auth guard kept the student, and the next request in the test arrived as the student. Every view-as check after the first then read as a mismatch. Octane keeps the application alive between requests in the same way.
+
+**Middleware that swaps the user puts the original back in a `finally`.** Context is the exception: a streamed response does its work after the middleware returns, and what it reads from Context must still be there.

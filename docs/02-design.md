@@ -87,7 +87,7 @@
 | D57 | A removal is a record that marks everything it hides | current |
 | D58 | Documents have an owner, and each attempt its own folder | current |
 | D59 | One subtopics table holds catalog and student subtopics | current |
-| D60 | Viewing as a student is read-only until you step up with a reason | current |
+| D60 | Viewing as a student is read-only until you step up with a reason | **amended 2026-09-18** — preview also refuses a stream that would teach something new |
 | D61 | Role is a column, apart from plan and skill level; admin is a fourth shell | current |
 | D62 | Admin changes a user's plan; billing waits for a price | current |
 | D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
@@ -1045,6 +1045,8 @@ Rejected: a separate `custom_subtopics` table (two ideas of a subtopic) · deriv
 Colin wants to act fully as a student without corrupting the audit trail. **Chosen: preview by default — GET only, no AI calls — and act-as as a second step that requires a reason.** The acting admin rides in Laravel `Context` into queued jobs and is stamped on usage rows, memory versions and the action log, so cost reports can exclude the session.
 
 Rejected: preview only (cannot reproduce a write-path bug) · act-as with no step-up (every glance becomes a potential write to a real record).
+
+**Amended 2026-09-18 (package 13, item 13.4.1, Colin).** "GET only" was not read-only: the section stream is a GET, and teaching a section moves the student into it before the AI call that preview refuses. **Chosen: in preview, a section stream answers only by replaying a section already taught, and the interview stream — which only ever opens a new turn — is refused.** Colin: preview must not affect the course. Rejected: leaving streams to the gateway's refusal (the student's position would still move).
 
 ## D61. Role is a column, apart from plan and skill level; admin is a fourth shell (resolved 2026-09-18, spec 13 items 13.1, 13.3)
 

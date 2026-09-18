@@ -39,7 +39,7 @@
 
 ## 14.3 The fuller usage row
 
-- **14.3.1 MUST** — `usage_events` gains `course_id` and `lesson_id` (null on delete), `ai_model_id`, `prompt_version_id` and `experiment_variant_id` (filled by 15), `reasoning_tokens`, `outcome` (`ok` | `failed` | `failed_over`), `acting_user_id`, and `plan`. Additive. *Done: the migration runs on the dev database and every existing row survives.*
+- **14.3.1 MUST** — `usage_events` gains `course_id` and `lesson_id` (null on delete), `ai_model_id`, `prompt_version_id` and `experiment_variant_id` (filled by 15), `reasoning_tokens`, `outcome` (`ok` | `failed` | `failed_over`), `acting_user_id` (already added by [13.4.3](13-admin-foundation.md)), and `plan`. Additive. *Done: the migration runs on the dev database and every existing row survives.*
 - **14.3.2 SHOULD** — Existing rows get an outcome: `failed` where input and output tokens are both zero, `ok` otherwise. (Probable: that is how v1 records a failure.) *Done: the `failed` count equals the zero-token count before the migration.*
 - **14.3.3 MUST** — `PendingCall::about(Course|Lesson)` attaches the course or lesson; every call site except `subtopic.check` uses it. *Done: in the acceptance journey, every row but `subtopic.check`'s has a `course_id`.*
 - **14.3.4 MUST** — `plan` is copied onto the row when written. *Done: after the demo sweep, `sum(cost_usd) where plan = 'demo'` is unchanged.*

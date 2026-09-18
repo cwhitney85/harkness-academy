@@ -11,7 +11,7 @@
 - **17.1.1 MUST** — The list shows name, email, plan, role, joined, course count and cost to date excluding act-as rows, with search and a plan filter. *Done: figures match SQL on a fixture.*
 - **17.1.2 MUST** — The detail shows the profile; courses, removed ones marked; cost by feature; and the memory tree read-only, each document's history naming the writing course and any acting admin ([16.3.4](16-catalog-removal-ownership.md)). *Done: renders Colin's account from the dev database.*
 - **17.1.3 MUST** — Changing a plan offers only the plans in config, and is logged. *Done: feature test; a plan not in config is refused.*
-- **17.1.4 MUST** — Preview and act-as start here ([13.4](13-admin-foundation.md)).
+- **17.1.4 MUST** — Preview and act-as start here ([13.4](13-admin-foundation.md)). This replaces the stand-in student list 13 ships at `/admin` and its rail link, "View as a student".
 - **17.1.5 WONT** — Editing memories or a student's profile.
 
 ## 17.2 Courses

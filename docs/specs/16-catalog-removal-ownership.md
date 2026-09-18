@@ -43,7 +43,7 @@
 
 ## 16.3 Memory ownership
 
-- **16.3.1 MUST** — `memories.course_id` (null for working knowledge and the module rollup); `memory_versions.course_id` and `acting_user_id`. *Done: migrations.*
+- **16.3.1 MUST** — `memories.course_id` (null for working knowledge and the module rollup); `memory_versions.course_id` and `acting_user_id` (the latter already added by [13.4.3](13-admin-foundation.md)). *Done: migrations.*
 - **16.3.2 MUST** — Course documents move to `{module}/{subtopic}/{level}/a{attempt}/…`. A data migration rewrites existing paths, every path stays within 255 characters, and [docs/deploy.md](../deploy.md) gains a `db:backup` step before it. *Done: every course's documents resolve under its attempt folder; `course_syllabi`'s pinned versions still resolve.*
 - **16.3.3 MUST** — `MemoryTree::put` takes an owner — a course, or none — and every version records the course that wrote it. Sixteen call sites (confirmed) pass it. *Done: every working-knowledge version names its writing course.*
 - **16.3.4 MUST** — Admin reads memory read-only, through a path-API method that can include removed documents. [3.2](03-memory.md)'s "no other door" test extends to admin controllers. *Done: the architecture test passes.*
