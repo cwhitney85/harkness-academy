@@ -15,6 +15,10 @@
     {
       "id": "page-4",
       "name": "B \u00b7 brand"
+    },
+    {
+      "id": "page-5",
+      "name": "C \u00b7 admin"
     }
   ],
   "artboards": [
@@ -251,6 +255,24 @@
       "w": 1440,
       "h": 900,
       "title": "Ground study \u00b7 G3 on --desk \u2014 step CHOSEN, this value REJECTED (invisible full-bleed)"
+    },
+    {
+      "file": "AdminLog.dc.html",
+      "page": "page-5",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Admin shell, Log \u2014 CHOSEN"
+    },
+    {
+      "file": "ViewAsBanner.dc.html",
+      "page": "page-5",
+      "x": 0,
+      "y": 1020,
+      "w": 1440,
+      "h": 420,
+      "title": "View-as banner \u2014 CHOSEN"
     }
   ],
   "annotations": [
