@@ -29,8 +29,9 @@
 | W1 | Planning docs live in-repo under `docs/`, committed | current |
 | W2 | Build workflow — per-package specs, worktree lanes late | **amended by D27** — PLAN.md is no longer the tracker half |
 | W3 | Default branch — `master` | current |
-| W4 | Branching — hybrid trunk-based | current |
+| W4 | Branching — hybrid trunk-based | **amended by W6** — a multi-package unit has its own branch |
 | W5 | Session start — the `/package <n>` command | **amended by spec 9.6.2** — `/unit` is its companion for cross-cutting work |
+| W6 | A multi-package unit is built on a unit branch; each package branches off it and merges back | current |
 | D10 | The syllabus is rows, and four smaller things 4.5 forced | current |
 | D10.1 | Syllabus drafts are their own table, pinned to the inputs they saw | current |
 | D10.2 | Concept slugs stay in the JSON; there is no concepts table | current |
@@ -261,6 +262,16 @@ Commit messages carry no signing, co-author trailers, or attribution lines (foun
 
 Scope + boundaries + commit rules + exit ritual, versioned in-repo. Rejected: minimal prompt (scope discipline implicit only), pasted template (drifts outside the repo).
 
+
+## W6. A multi-package unit is built on a unit branch — **amends W4** (resolved 2026-09-18, admin-and-performance unit, Colin)
+
+A unit that spans packages gets one branch off `master`, `unit/<name>`, holding its specs and ledger entries. Each package branches off the unit branch as `pkg/<n>-<slug>` and merges back into it; Colin reviews and merges every package. The unit branch merges into `master` once its last package lands. If `master` moves mid-unit, it is merged into the unit branch.
+
+W2's lane rule reads against the base branch: a package may branch only once every interface it consumes has merged into the unit branch — or into `master`, for work outside a unit. Side-by-side packages run as worktrees, each with its own copies of the development and test databases, because both of those are shared by every checkout and the development one holds real work.
+
+W4 still governs work outside a unit: serial solo work commits to `master`.
+
+Rejected: packages merging straight to `master` (a half-built unit ships its first packages alone — the admin role without the screens that use it).
 ## Corrections during spec phase
 
 - **GUIDANCE.md is model-facing only** — read by exactly one consumer (lesson engine). User-facing syllabus view renders from the same frozen syllabus JSON; consistency by construction. CI check: no route/component reads GUIDANCE.md.

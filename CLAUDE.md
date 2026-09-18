@@ -64,6 +64,7 @@ Don’t optimize for fewer lines. Optimize for the least new structure required 
 ## Git conventions
 
 - Default branch is `master`. Serial solo work commits directly to `master`; branches only for worktree lanes and risky spikes (ledger W4).
+- A multi-package unit is built on `unit/<name>`. Each package branches off it as `pkg/<n>-<slug>` and merges back; the unit branch merges into `master` when its last package lands (ledger W6).
 - Commit at done-condition granularity: one spec item (or small cluster) per commit, spec item number in the message (e.g. `2.4: caching spike — workaround for laravel/ai#119`).
 - No signing, co-author trailers, or attribution lines in commit messages.
 
@@ -75,4 +76,4 @@ End of session: report which done-conditions now pass, and triage the plan file 
 
 ## Parallel lanes (worktrees)
 
-A lane may open only when every interface it consumes has landed on master. Colin reviews and merges every lane — never auto-merge.
+A lane may open only when every interface it consumes has landed on its base branch — the unit branch inside a unit, `master` otherwise. Colin reviews and merges every lane — never auto-merge. Each lane gets its own copies of the development and test databases (ledger W6).
