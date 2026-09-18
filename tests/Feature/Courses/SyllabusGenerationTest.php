@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Courses;
 
+use App\Admin\Role;
 use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
+use App\Courses\DepthParameters;
 use App\Courses\Exceptions\CourseNotOpen;
 use App\Courses\Exceptions\MissingCourseDocument;
 use App\Courses\Exceptions\SyllabusNotDraftable;
@@ -100,6 +102,27 @@ class SyllabusGenerationTest extends TestCase
         $this->assertStringContainsString('Reads graphs confidently', $prompt);
         $this->assertStringContainsString('help my daughter', strtolower($prompt));
         $this->assertStringContainsString('- Lessons: 8-10', $prompt);
+    }
+
+    #[Test]
+    public function an_admin_on_the_demo_plan_gets_demo_depth(): void
+    {
+        // Spec 13.1.4: role reads neither plan nor skill level. A demo draws
+        // standard depth today (D50), so the test gives it its own.
+        config()->set('courses.depth.101.demo', [
+            'lessons' => [1, 1],
+            'sections_per_lesson' => [2, 2],
+            'minutes_per_lesson' => 5,
+        ]);
+        $this->scriptModel([CourseSyllabusFactory::exampleSyllabus()]);
+        $course = $this->course();
+        $course->student->forceFill(['role' => Role::Admin, 'plan' => 'demo'])->save();
+
+        $this->generator()->first($course->refresh());
+
+        $demo = DepthParameters::for($course->skill_level, 'demo')->render();
+
+        $this->assertStringContainsString($demo, $this->sent[0]);
     }
 
     #[Test]

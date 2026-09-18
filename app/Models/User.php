@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Admin\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -26,6 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property string $plan
+ * @property Role $role
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -49,6 +51,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     protected $attributes = [
         'plan' => 'standard',
+        'role' => 'student',
     ];
 
     /**
@@ -63,6 +66,15 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Whether this person may reach `/admin` (spec 13.1). Reads neither plan
+     * nor skill level (13.1.4).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === Role::Admin;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -73,6 +85,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'tos_accepted_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
             /* @chisel-2fa */
             'two_factor_confirmed_at' => 'datetime',
             /* @end-chisel-2fa */
