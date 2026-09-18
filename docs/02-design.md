@@ -17,7 +17,7 @@
 | D6 | The v1 cut — what ships and what waits | current |
 | D7 | Data model — the approved tables | current |
 | D7a | Course exclusivity and exit — one open course per subtopic; exit deletes the row | **superseded by D7d** (exit-deletes first amended by D7b) |
-| D7b | Withdrawal replaces deletion; attempts replace lockout | **superseded by D7d** |
+| D7b | Withdrawal replaces deletion; attempts replace lockout | **superseded by D7d**; its highest-attempt rider superseded by D64 |
 | D7c | Both endings are dates, not statuses | **superseded by D7d** |
 | D7d | One status vocabulary; `withdrawn` and `completed` are derived | current |
 | D8 | WORKING_KNOWLEDGE scope — subtopic, not level | current |
@@ -56,7 +56,7 @@
 | D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
 | D28 | The mounted-component defect is a class, and is fixed at the boundary | **amended 2026-09-08** — the class is narrower than stated, and its fourth instance is not one |
 | D29 | An acceptance test lives in a spec, one per package | current |
-| D30 | Three shells, not one, and the two things all of them share | current |
+| D30 | Three shells, not one, and the two things all of them share | **amended by D61** — admin is a fourth shell |
 | D31 | The resume table is code — `NextAction` — and a refusal speaks twice | current |
 | D32 | The worksheet has one disclosure path, and choosing an option is the hand-in | current |
 | D33 | The exam screen's three states are decided on the server | current |
@@ -78,6 +78,19 @@
 | D49 | Done's write-up goes to the queue with the tutor's | current |
 | D50 | The demo is the real pipeline on a shorter plan | **amended 2026-09-16 and 2026-09-17** — a welcome page with one button; the demo is lesson 1 of an ordinary course |
 | D51 | `plan` keys depth, and is not yet a table | current |
+| D52 | Tasks reach models through a database catalog; tiers are rows with backup models | current |
+| D53 | Prices belong to a model; token counting and cache markers belong to a provider class | current |
+| D54 | Prompt files are the reviewed baseline; the database is what runs | current |
+| D55 | An experiment's variant sticks to a course | current |
+| D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
+| D57 | A removal is a record that marks everything it hides | current |
+| D58 | Documents have an owner, and each attempt its own folder | current |
+| D59 | One subtopics table holds catalog and student subtopics | current |
+| D60 | Viewing as a student is read-only until you step up with a reason | current |
+| D61 | Role is a column, apart from plan and skill level; admin is a fourth shell | current |
+| D62 | Admin changes a user's plan; billing waits for a price | current |
+| D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
+| D64 | Any withdrawn attempt may be resumed | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -957,3 +970,91 @@ D11 says `users.plan` becomes a `plans` table the moment a plan carries "a price
 **Chosen: `demo` is a config key, and D11's trigger has not fired.** Depth is already keyed by plan in `config/courses.php` — `depth.{skill_level}.{plan}` — so `demo` adds a key to a keyed structure rather than an attribute to a plan. Nothing about `demo` is a row's worth of data; it is three integers in a file that already holds three integers per plan. `users.plan` still has exactly one production reader.
 
 Falsified if: the second non-standard plan needs anything config cannot key — a price, a quota, a per-account entitlement, an expiry. That is the day this becomes a table, as D11 says.
+
+## D52. Tasks reach models through a database catalog; tiers are rows with backup models (resolved 2026-09-18, spec 14 items 14.1.1–14.1.6, Colin)
+
+D1 chose Anthropic-direct as the v1 step toward multiple providers, and said the SDK would make the move "a config change". Reading the v1 code on 2026-09-18 found that untrue: `PendingCall` never passes a provider, and tier, price and timeout all resolve from one config block. This entry is the move D1 planned, not a reversal of it.
+
+**Chosen: `ai_models` (provider, model id, prices) and `ai_tiers` (primary model, ordered backups, timeout).** A call names a task, the task a tier, the tier a catalog row. The SDK's own failover walks the backups. `cheap`/`mid`/`top` survive as vocabulary; a `session` prompt runs on the model its session started on.
+
+Rejected: a provider per tier in config (switching still needs a deploy) · tasks naming models directly (loses the tier vocabulary every call site uses) · an outside router such as OpenRouter or a LiteLLM proxy owning routing (usage and cost split across two systems; OpenRouter stays available as one catalog provider).
+
+Falsified if: a task needs a model choice the tier → model chain cannot express. Per-variant model pins (D55) are the one exception already allowed.
+
+## D53. Prices belong to a model; token counting and cache markers belong to a provider class (resolved 2026-09-18, spec 14 items 14.2.1–14.2.4)
+
+The SDK's drivers disagree on what `promptTokens` means (confirmed 2026-09-18): Anthropic, OpenAI, Gemini, DeepSeek, xAI and Azure subtract cached tokens; OpenRouter, Groq and the OpenAI-compatible driver do not. v1's cost formula adds cache reads on top, so it would double-count on the second group, and it priced by tier with Anthropic's cache multipliers applied to everything.
+
+**Chosen: one class per provider normalises tokens (input means uncached input), places cache markers, and prices from the serving model's catalog prices.** A model cannot be activated without a class for its provider. `PromptCaching` moves into the Anthropic class.
+
+Rejected: importing LiteLLM's price file now (deferred to the model-switching unit, when the catalog grows) · trusting provider-reported cost (only OpenRouter reports one).
+
+## D54. Prompt files are the reviewed baseline; the database is what runs (resolved 2026-09-18, spec 15 items 15.1.1–15.2.5, Colin)
+
+Colin wants prompts editable live, variants per module eventually, and A/B tests, without losing git history. **Chosen: `prompt_versions`, immutable.** Deploy syncs each changed file into a new version; an admin edit makes a new version; one is active. A file version activates only if the active one came from a file, so a deploy never overrides a live edit. `prompts:pull` writes live versions back to files. `output` and `vars` — the contract with calling code — come only from files; live edits change body and tier.
+
+Rejected: files only, read-only in admin (no live tuning) · database only (live edits never reach git; repo and production drift) · a hosted registry such as Langfuse (an outside service and bill, and text near student data leaves the app). The chosen shape is the pull/push hybrid Braintrust uses.
+
+Amends 2.3.1: git is the history of file versions; `prompt_versions` is the history of what ran.
+
+## D55. An experiment's variant sticks to a course (resolved 2026-09-18, spec 15 item 15.3)
+
+A variant is a prompt version plus an optional model, with a weight. Assignment is a deterministic hash of experiment and course — user when there is no course — because a course that switched model mid-way would throw away its cached prefix and compare nothing cleanly. `lesson.section` and `lesson.qa` follow their `lesson.system`'s variant. Without quality scores (a later unit), an experiment compares cost, latency and failure rate.
+
+Rejected: Laravel Pennant for assignment (a package for what a hash does).
+
+## D56. A usage row knows its course, lesson, prompt version, model, outcome and actor (resolved 2026-09-18, spec 14 item 14.3)
+
+v1's row named a prompt key and a model string: no prompt version, no course, and a `user_id` the demo sweep nulls. **Chosen: add `course_id`, `lesson_id`, `ai_model_id`, `prompt_version_id`, `experiment_variant_id`, `reasoning_tokens`, `outcome` (`ok` | `failed` | `failed_over`), `acting_user_id` and `plan` to the row itself.** Every comparison the admin makes is a `group by` on one table, and demo cost survives the sweep through `plan`.
+
+Rejected: a separate context table joined to each row (a join on every report).
+
+## D57. A removal is a record that marks everything it hides (resolved 2026-09-18, spec 16 item 16.2, Colin)
+
+Colin's rules: removing a module or subtopic hides everything under it; removing a course hides that course; restore brings it back; a course restored while a newer one is open stays removed. **Chosen: a `removals` row, tied to its `admin_actions` row, and `deleted_at` + `removal_id` stamped on every hidden row.** Laravel's soft deletes hide them by default; restore unstamps exactly one removal's rows, so a child removed on its own stays removed when its parent is restored.
+
+Rejected: marking only the removed row and hiding descendants by joining up the tree (every query needs the join; one missed join shows hidden data) · hard delete with a backup.
+
+A removed subtopic's name cannot be typed back in as a student subtopic (16.2.7), which is what keeps a subtopic restore from ever colliding with a course started meanwhile.
+
+## D58. Documents have an owner, and each attempt its own folder (resolved 2026-09-18, spec 16 item 16.3, Colin)
+
+v1 memories are keyed by user and path; nothing records which course wrote what, and a later attempt overwrites an earlier one's guidance and criteria at the same paths (D7b's rider). **Chosen: course documents carry `course_id` and live under `{module}/{subtopic}/{level}/a{attempt}/`; working knowledge stays subtopic-owned (D8), and every version records the course that wrote it.** Removing a course hides its documents and keeps working knowledge, because what the student knows is still true.
+
+Rejected: rolling working knowledge back when a course is removed (can discard real learning, and is an admin-triggered memory write) · per-course working knowledge (breaks D8: 201 builds on 101).
+
+## D59. One subtopics table holds catalog and student subtopics (resolved 2026-09-18, spec 16 item 16.1, Colin)
+
+Colin wants to see which free-text subtopics students start and promote the popular ones. **Chosen: `subtopics` gains `origin` (`catalog` | `student`), `listed` and `created_by`; promotion lists a row.** Two students typing the same name share one row through the existing (module, slug) key. Courses gain `subtopic_id` beside their frozen slugs. Refusals keep their own table — they never became a subtopic.
+
+Rejected: a separate `custom_subtopics` table (two ideas of a subtopic) · deriving demand from courses on read (cannot record a promotion or a removal).
+
+## D60. Viewing as a student is read-only until you step up with a reason (resolved 2026-09-18, spec 13 item 13.4, Colin)
+
+Colin wants to act fully as a student without corrupting the audit trail. **Chosen: preview by default — GET only, no AI calls — and act-as as a second step that requires a reason.** The acting admin rides in Laravel `Context` into queued jobs and is stamped on usage rows, memory versions and the action log, so cost reports can exclude the session.
+
+Rejected: preview only (cannot reproduce a write-path bug) · act-as with no step-up (every glance becomes a potential write to a real record).
+
+## D61. Role is a column, apart from plan and skill level; admin is a fourth shell (resolved 2026-09-18, spec 13 items 13.1, 13.3)
+
+**Chosen: `users.role` (`student` | `admin`) behind one gate, granted only by an artisan command, with a second factor required for `/admin`.** Role never reads plan or skill level, as 4.5.6 already keeps those two apart. The admin area is a fourth shell beside D30's three, drawn on the canvas first.
+
+Rejected: an `is_admin` boolean (one level forever) · a roles-and-permissions package (structure for one admin).
+
+## D62. Admin changes a user's plan; billing waits for a price (resolved 2026-09-18, spec 17 item 17.1.3, Colin)
+
+Colin asked why billing should not be in admin. There is nothing to bill: no price, no checkout, no receipt exists. **Chosen: admin changes `users.plan` among config keys, logged.** D51's trigger for a `plans` table — a price, a quota, an expiry — has still not fired; charging money is its own unit when it does.
+
+## D63. Streamed generation moves to the queue in its own unit, before model switching (resolved 2026-09-18, admin-and-performance framing, Colin)
+
+The host cuts a response silent for 60 seconds (T10, spec 11). A slower model — a `top` tier or a reasoning model thinking before its first token — could exceed that before streaming anything (probable; unmeasured). Colin proposed Reverb. The SDK broadcasts a queued stream (`broadcastOnQueue`, confirmed) and Laravel Cloud offers managed Reverb. **Chosen: every streamed generation runs on the queue and broadcasts over Reverb, as its own unit, landing before the unit that switches models.** 11.8's reason — the student watching the tutor write is the product — survives; its rule does not.
+
+Until it lands, a prompt streaming inside the request may move only between `cheap` and `mid` (15.2.3).
+
+Rejected: queueing only slow models (two delivery paths forever).
+
+## D64. Any withdrawn attempt may be resumed (resolved 2026-09-18, spec 16 item 16.4, Colin) — **supersedes D7b's highest-attempt rider**
+
+D7b allowed resuming only the highest attempt because attempts shared document paths. D58 gives each attempt its own folder, removing the reason. Colin chose to lift the rule: a withdrawn attempt resumes while no other course on its subtopic is open — the open-course index already enforces that — and the return prompt asks which attempt when there is more than one.
+
+Rejected: keeping the rule (a restored older attempt would be a record, not a course) · lifting it only for restored courses (two rules for one thing).

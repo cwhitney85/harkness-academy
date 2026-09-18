@@ -39,6 +39,19 @@ v1 shipped on 2026-09-07: one student took one honest course cycle end to end, i
 browser and again on a phone, with no developer touching the database
 ([docs/system.md §8](docs/system.md)). What comes next, in the order it is worth doing:
 
+**Admin and performance.** Specced 2026-09-18 as the `admin-and-performance` unit, specs
+[13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md), unbuilt. An admin role and
+shell with view-as, a model catalog and per-model cost behind every AI call, prompts editable live with
+A/B experiments, removal and restore of modules, subtopics and courses, and screens for users, courses and
+usage. It lays the ground for the two units after it.
+
+**Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
+and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.
+
+**Model switching.** The move to multiple providers that Anthropic-direct was always the first step of
+([D1](docs/02-design.md)): provider classes beyond Anthropic, changing a tier's model from admin, and
+importing prices for a larger catalog.
+
 **Explicit teaching style, and personas the student picks.** A course already carries a
 style column and the persona is already a prompt file, but exactly one style ships and
 nothing chooses it. What is missing is the choice: a student says how they want to be
@@ -72,4 +85,4 @@ which is a job-instrumentation change and not a copy change.
 pad in the design canvas is drawn and reserved for it) · a refresher drawn at random across
 everything the student knows · questions per lesson as a student input, 1–5 · email nudges
 · dark mode · essay and project homework · a model selector · bring-your-own-key · billing
-and plan tiers · an admin surface beyond `memory:show` · accounts for under-18s.
+and plan tiers · accounts for under-18s.
