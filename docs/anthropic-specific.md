@@ -8,7 +8,7 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 |---|---|---|---|
 | 1 | Prompt-caching breakpoints, and the workaround that gets them onto the wire | `app/Ai/Providers/AnthropicProvider.php` | Low — the class goes with the provider (spec 14.2.1) |
 | 2 | Cache-cost multipliers used to price a call | `config/ai.php` → `prompt_caching.read_multiplier` / `write_multiplier` | Low — numbers only |
-| 3 | Behaviour tuned against Claude: prompts, structured replies, tool calls, cache floors | `prompts/`, the json schemas, `app/Ai/Tools/SignalComplete.php` | Medium — no code, but a trial course per model |
+| 3 | Behaviour tuned against Claude: prompt fixes, the interview opener, structured replies, tool calls, cache floors | `prompts/`, the json schemas, `app/Ai/Tools/SignalComplete.php` | Medium — no code, but a trial course per model |
 
 ---
 
@@ -149,7 +149,13 @@ Cost to leave: two config values.
 
 **Status:** live, recorded 2026-09-19 at the close of spec 14.2. The provider classes (14.2.1) make another provider callable, not equivalent. What follows is what a code change does not carry.
 
-- **Prompts.** Every file in `prompts/` was written and tuned against Claude. Another model can follow the same brief differently: tone, length, how closely it holds the pedagogy.
+- **Prompts.** The wording is portable: plain English in markdown, nothing Claude-specific. What is untested is the fixes — rules added after watching Claude get something wrong on a real course:
+  - `checkpoint.generate` wrote about "the tutor" in the third person while being the one asking, so it is told to speak as "we talked about" (5.7).
+  - Correct answers clustered on A and B, so the app now deals each key a position and the question prompts ask for four options that each stand alone (6.6.1).
+  - One line asking an interview to finish faded under a growing transcript, so the `pacing` variable repeats the wrap-up on every turn once the budget is spent (4.3.1, 4.4.1, ledger D38).
+
+  Another model may not need these, which is harmless. It may have habits of its own — length, persona drift, skipping `signal_complete` — that no rule covers, because Claude never showed them. No prompt has yet run on another model.
+- **The interview opener.** The Messages API takes no assistant message first, so the opener is assembled in code and never stored (ledger D36). That is Anthropic's API shape, not the prompt's; another provider may allow it.
 - **Structured replies.** The syllabus (4.5.1), checkpoint (5.2.1) and quiz (6.1) need JSON that matches a schema exactly. Providers support schema-constrained output unevenly, and laravel/ai reaches it by a different mechanism per driver.
 - **Tool calls.** An interview ends when the model calls `SignalComplete`. A model without reliable tool use never ends the interview on its own; the Done button (`app/Ai/Interviews/DoneButton.php`) is the only exit left.
 - **Cache floors.** Each model has its own minimum cacheable prefix (#1's table). A new model can silently take no cache discount, so check its `cache_read_input_tokens` on a real lesson.
