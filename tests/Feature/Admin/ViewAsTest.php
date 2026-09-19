@@ -225,9 +225,10 @@ class ViewAsTest extends SectionStreamTestCase
     {
         $this->preview();
 
-        $this->get('/admin')->assertForbidden();
-        $this->get('/admin/log')->assertForbidden();
-        $this->post("/admin/users/{$this->student->id}/view-as")->assertForbidden();
+        $this->get('/admin')->assertRedirect(route('dashboard'));
+        $this->get('/admin/log')->assertRedirect(route('dashboard'));
+        $this->post("/admin/users/{$this->student->id}/view-as")->assertRedirect(route('dashboard'));
+        $this->assertSame(1, AdminAction::query()->count(), 'Only the start was logged.');
 
         $this->delete('/admin/view-as')->assertRedirect(route('admin.home'));
         $this->get('/admin/log')->assertOk();

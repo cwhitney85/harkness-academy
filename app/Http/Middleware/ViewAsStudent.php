@@ -6,6 +6,7 @@ use App\Admin\ViewingAs;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -19,7 +20,8 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * What is refused, in order:
  *   - an expired session ends, logged, back to `/admin` (13.4.5);
- *   - `/admin*` is unreachable except step-up and Exit (13.4.6);
+ *   - `/admin*` is unreachable except step-up and Exit: it sends the admin
+ *     back to the student's dashboard, banner and all (13.4.6);
  *   - in preview, every non-GET request except logout (13.4.1).
  * Logout ends the session, logged, and signs the admin out (13.4.5).
  */
@@ -52,7 +54,14 @@ class ViewAsStudent
             return $next($request);
         }
 
-        abort_if($request->is('admin', 'admin/*'), 403, 'Exit viewing as a student to use the admin screens.');
+        // Back to the student's screens, where the banner's Exit is, rather
+        // than a bare 403 with no way out.
+        if ($request->is('admin', 'admin/*')) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => 'Exit viewing as a student to use the admin screens.']);
+
+            return redirect()->route('dashboard');
+        }
+
         abort_if($viewing->isPreview() && ! $request->isMethodSafe(), 403, 'Preview is read-only. Step up to act as this student.');
 
         $admin = $request->user();

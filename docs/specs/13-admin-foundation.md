@@ -38,7 +38,7 @@
 - **13.4.3 MUST** — The acting admin's id rides in Laravel `Context`, which reaches queued jobs, and is stamped on `usage_events.acting_user_id` ([14.3.1](14-routing-and-usage.md)), `memory_versions.acting_user_id` ([16.3.1](16-catalog-removal-ownership.md)) and `admin_actions` (as its actor). 13 adds both `acting_user_id` columns, since 14 and 16 open only after it lands. *Done: an act-as lesson turn stamps the admin on its usage row, and on the version the queued `UpdateWorkingKnowledge` writes.*
 - **13.4.4 MUST** — A banner naming the student and the mode, with Exit, stands on every screen during preview or act-as. *Done: jsdom test renders it in each student shell.*
 - **13.4.5 MUST** — Start, step-up and exit are each logged. The session ends at admin logout or after 60 minutes. *Done: three log rows; a clock-advanced test ends the session.*
-- **13.4.6 MUST** — While viewing as a student, `/admin*` is unreachable except step-up and Exit. *Done: feature test.*
+- **13.4.6 MUST** — While viewing as a student, `/admin*` is unreachable except step-up and Exit; any other `/admin*` URL sends the admin back to the student's dashboard, where the banner's Exit is. *Done: feature test.*
 - **13.4.7 WONT** — Viewing another admin.
 
 ## Acceptance test
