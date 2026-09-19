@@ -103,14 +103,15 @@ Five route files, each owning one subsystem. Every route below appears as an edg
 | `courses` | one row per (user, subtopic, level, attempt): position, the two ending dates, the style |
 | `interview_messages` | both interview transcripts |
 | `course_syllabi` | one row per generation, pinned to the memory versions it was written from; one approved row per course |
-| `lessons` | position, status, and the path of the guidance document — nothing the syllabus already says |
+| `lessons` | position, status, the path of the guidance document, and the model its session started on — nothing the syllabus already says |
 | `lesson_messages` | the lesson transcript, including checkpoint turns |
 | `lesson_pipeline_steps` | which post-completion steps have run for a lesson |
 | `quizzes`, `quiz_attempts` | all four kinds — checkpoint, homework, final, refresher — through one service |
 | `exam_answer_sheets` | a sitting in progress ([6.3.4](specs/06-assessment.md)) |
 | `generation_requests` | one row per (course, kind) — the wait for a queued generation |
 | `memories`, `memory_versions` | the memory tree and a version on every write, naming the admin if one was acting as the student |
-| `usage_events` | one row per AI call: feature, tier, model, tokens in/cached/out, latency, cost, and the acting admin if there was one |
+| `usage_events` | one row per AI call: feature, tier, the catalog model that served it, tokens in/cached/out/reasoning, latency, cost, outcome (`ok`, `failed`, `failed_over`), and the acting admin if there was one |
+| `ai_models`, `ai_tiers` | the model catalog with each model's prices, and `cheap`/`mid`/`top` as rows: a primary, ordered backups, a timeout |
 | `admin_actions` | one row per admin write: who, what, about whom, why. Nothing can update or delete a row |
 
 Every question a student meets offers four options, and where the correct one sits is decided as the quiz is written rather than by the model, which keys A or B far more often than chance ([6.6](specs/06-assessment.md)). The order is stored, so a reload does not move an option out from under an answer.
@@ -131,7 +132,7 @@ Every job is idempotent, because a managed queue delivers at least once.
 
 ## 7. Cost
 
-Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID anywhere outside `config/ai.php` — call sites name a tier (`cheap`, `mid`, `top`) and the config decides what that is. The total cost of a course is therefore one SQL query.
+Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID in code — call sites name a tier (`cheap`, `mid`, `top`), the tier's row names a model in the catalog, and the call is priced at that model's prices when its row is written. A lesson stays on the model it started on, even if its tier is moved to another one partway through. The total cost of a course is therefore one SQL query.
 
 ## 8. The working cycle, and that it has been run
 

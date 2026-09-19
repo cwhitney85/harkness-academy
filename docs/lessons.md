@@ -184,3 +184,11 @@ The Chrome that browser automation drives is Colin's, and it keeps whatever it w
 Viewing as a student sets the student as the request's user, leaving the session signed in as the admin. In production that lasts one request, because the next one reads its user from the session again. The test client reuses one application, so the auth guard kept the student, and the next request in the test arrived as the student. Every view-as check after the first then read as a mismatch. Octane keeps the application alive between requests in the same way.
 
 **Middleware that swaps the user puts the original back in a `finally`.** Context is the exception: a streamed response does its work after the middleware returns, and what it reads from Context must still be there.
+
+## T16. The cache will not hand back an object
+
+*Found 2026-09-19, building spec 14.1.*
+
+`config/cache.php` sets `serializable_classes` to `false`, so the cache refuses to unserialize any object. An Eloquent model or collection put in the cache is written without complaint and comes back broken on the next read. With the array store the tests use, the value never gets serialized, so the tests pass anyway.
+
+**Cache plain arrays.** `App\Ai\Catalog` is the example: it maps its rows to arrays before it caches them.

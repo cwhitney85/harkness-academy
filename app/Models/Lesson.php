@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $section_index
  * @property string $guidance_path
  * @property Carbon|null $started_at
+ * @property int|null $ai_model_id
  * @property Carbon|null $completed_at
  * @property array<string, mixed>|null $summary_json
  * @property Carbon|null $pipeline_parked_at

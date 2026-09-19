@@ -18,61 +18,17 @@
 | full (`php artisan vendor:publish --tag=ai-config`) rather than adding a
 | partial block here.
 |
-| THIS IS THE ONLY FILE IN THE REPOSITORY THAT MAY NAME A MODEL. Call sites
-| name a capability tier (cheap / mid / top) through the AI gateway. Both
-| plan-based routing and provider migration are edits to the `tiers` block
-| alone -- see tests/Unit/Ai/NoModelIdsOutsideConfigTest.php, which fails the
-| build if a model ID leaks anywhere else.
+| Models, tiers and prices are not here: they are rows in `ai_models` and
+| `ai_tiers` (spec 14.1, ledger D52), read through App\Ai\Catalog. Call sites
+| name a capability tier (cheap / mid / top) through the AI gateway, and
+| tests/Unit/Ai/NoModelIdsInCodeTest.php fails the build if a model ID
+| appears in code.
 |
 */
 
 return [
 
     'default' => env('AI_PROVIDER', 'anthropic'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Capability Tiers
-    |--------------------------------------------------------------------------
-    |
-    | Prices are US dollars per million tokens, taken from Anthropic's list
-    | rates, and are what usage_events (spec 2.2) costs a call at. Anthropic
-    | bills a cache read at 0.1x the input rate and a 5-minute cache write at
-    | 1.25x; those multipliers live in `caching` below.
-    |
-    | `timeout` is how long a call at this tier may take, in seconds. It is a
-    | property of the tier for the same reason the model is: a bigger model
-    | asked for a whole syllabus in one structured reply takes minutes, and
-    | laravel/ai's own default is 60 seconds for every call it makes. Under
-    | that default no `top` call could ever finish -- the client hung up at
-    | exactly 60s, Anthropic billed the generation it had already started, and
-    | the student was told to ask again (found on the first live run,
-    | 2026-09-02). Streaming calls were unaffected: the first token arrives
-    | long before the minute is up.
-    |
-    */
-
-    'tiers' => [
-
-        'cheap' => [
-            'model' => 'claude-haiku-4-5',
-            'pricing' => ['input' => 1.00, 'output' => 5.00],
-            'timeout' => 60,
-        ],
-
-        'mid' => [
-            'model' => 'claude-sonnet-5',
-            'pricing' => ['input' => 3.00, 'output' => 15.00],
-            'timeout' => 120,
-        ],
-
-        'top' => [
-            'model' => 'claude-opus-5',
-            'pricing' => ['input' => 5.00, 'output' => 25.00],
-            'timeout' => 300,
-        ],
-
-    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -94,10 +50,6 @@ return [
         'breakpoints' => ['system', 'tail'],
 
         'ttl' => '5m',
-
-        // Cost multipliers applied to a tier's input rate.
-        'read_multiplier' => 0.1,
-        'write_multiplier' => 1.25,
 
     ],
 

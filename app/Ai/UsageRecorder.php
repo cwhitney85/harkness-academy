@@ -7,21 +7,27 @@ use App\Models\UsageEvent;
 use Laravel\Ai\Responses\Data\Usage;
 
 /**
- * Writes the usage_events row for a call (spec 2.2).
+ * Writes the usage_events row for a call (spec 2.2, 14.3.1).
  *
  * Postcondition: exactly one row per call reaching a provider, whether the
- * call succeeded or threw. Cost is priced here, at write time, from the tier
- * rates in config/ai.php -- so a later price change never silently rewrites
- * what a past call actually cost.
+ * call succeeded or threw. Cost is priced here, at write time, from the
+ * catalog prices of the model that served -- so a later price change never
+ * silently rewrites what a past call actually cost.
+ *
+ * @phpstan-import-type ModelRow from Catalog
  */
 final class UsageRecorder
 {
+    /**
+     * @param  ModelRow  $model
+     * @param  'ok'|'failed'|'failed_over'  $outcome
+     */
     public function record(
         string $feature,
         string $promptKey,
-        string $provider,
         Tier $tier,
-        string $model,
+        array $model,
+        string $outcome,
         Usage $usage,
         int $latencyMs,
         ?int $userId = null,
@@ -31,39 +37,34 @@ final class UsageRecorder
             'acting_user_id' => ViewingAs::actingUserId(),
             'feature' => $feature,
             'prompt_key' => $promptKey,
-            'provider' => $provider,
+            'provider' => $model['provider'],
             'tier' => $tier->value,
-            'model' => $model,
+            'model' => $model['model'],
+            'ai_model_id' => $model['id'],
+            'outcome' => $outcome,
             'input_tokens' => $usage->promptTokens,
             'cached_input_tokens' => $usage->cacheReadInputTokens,
             'cache_write_tokens' => $usage->cacheWriteInputTokens,
             'output_tokens' => $usage->completionTokens,
+            'reasoning_tokens' => $usage->reasoningTokens,
             'latency_ms' => $latencyMs,
-            'cost_usd' => $this->cost($tier, $usage),
+            'cost_usd' => $this->cost($model, $usage),
             'created_at' => now(),
         ]);
     }
 
     /**
-     * Price a call in US dollars.
+     * Price a call in US dollars from a model's per-million-token prices.
      *
-     * Anthropic bills a cache read and a cache write as multiples of the input
-     * rate; both multipliers live alongside the tier rates in config/ai.php.
+     * @param  ModelRow  $model
      */
-    public function cost(Tier $tier, Usage $usage): float
+    public function cost(array $model, Usage $usage): float
     {
-        $pricing = $tier->pricing();
-
-        $read = (float) config('ai.prompt_caching.read_multiplier', 0.1);
-        $write = (float) config('ai.prompt_caching.write_multiplier', 1.25);
-
-        $inputUnits = $usage->promptTokens
-            + ($usage->cacheReadInputTokens * $read)
-            + ($usage->cacheWriteInputTokens * $write);
-
-        return round(
-            ($inputUnits * $pricing['input'] + $usage->completionTokens * $pricing['output']) / 1_000_000,
-            8,
-        );
+        return round((
+            $usage->promptTokens * $model['input']
+            + $usage->cacheReadInputTokens * $model['cache_read']
+            + $usage->cacheWriteInputTokens * $model['cache_write']
+            + $usage->completionTokens * $model['output']
+        ) / 1_000_000, 8);
     }
 }

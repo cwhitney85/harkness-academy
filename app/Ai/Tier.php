@@ -7,9 +7,12 @@ use InvalidArgumentException;
 /**
  * A capability tier (spec 2.1.1).
  *
- * Call sites name a tier; only config/ai.php names a model. `Session` is not a
- * tier of its own -- it marks a prompt that runs at whatever tier the session
- * it belongs to is already using (`lesson.section` in the 2.3.2 inventory).
+ * Call sites name a tier; the tier names a model in the catalog (spec 14.1.2,
+ * ledger D52). `Session` is not a tier of its own -- it marks a prompt that
+ * runs on the model its session started on (`lesson.section` in the 2.3.2
+ * inventory, spec 14.1.6).
+ *
+ * @phpstan-import-type ModelRow from Catalog
  */
 enum Tier: string
 {
@@ -20,37 +23,26 @@ enum Tier: string
     case None = 'none';
 
     /**
-     * The model this tier resolves to.
+     * The model id of this tier's primary.
      *
      * @throws InvalidArgumentException if the tier does not name a model.
      */
     public function model(): string
     {
-        $model = config("ai.tiers.{$this->value}.model");
-
-        if (! is_string($model) || $model === '') {
-            throw new InvalidArgumentException(
-                "Tier [{$this->value}] does not resolve to a model. Only cheap, mid and top are billable tiers."
-            );
-        }
-
-        return $model;
+        return $this->primary()['model'];
     }
 
     /**
-     * The US dollars-per-million-token rates for this tier.
+     * The catalog row of this tier's primary model.
      *
-     * @return array{input: float, output: float}
+     * @return ModelRow
+     *
+     * @throws InvalidArgumentException if the tier does not name a model.
      */
-    public function pricing(): array
+    public function primary(): array
     {
-        $pricing = config("ai.tiers.{$this->value}.pricing");
-
-        if (! is_array($pricing)) {
-            throw new InvalidArgumentException("Tier [{$this->value}] has no pricing configured.");
-        }
-
-        return ['input' => (float) $pricing['input'], 'output' => (float) $pricing['output']];
+        return Catalog::model($this->row()['model'])
+            ?? throw new InvalidArgumentException("Tier [{$this->value}] names a model the catalog does not hold.");
     }
 
     /**
@@ -61,17 +53,42 @@ enum Tier: string
      * longer it needs. laravel/ai's own default is 60 seconds for every call
      * it makes, which no `top` structured generation can meet.
      *
-     * @throws InvalidArgumentException if the tier does not name one.
+     * @throws InvalidArgumentException if the tier does not name a model.
      */
     public function timeout(): int
     {
-        $timeout = config("ai.tiers.{$this->value}.timeout");
+        return $this->row()['timeout'];
+    }
 
-        if (! is_int($timeout) || $timeout <= 0) {
-            throw new InvalidArgumentException("Tier [{$this->value}] has no timeout configured.");
+    /**
+     * The catalog rows laravel/ai fails over through, keyed by provider, in
+     * order: the primary -- or the model a session started on -- then the
+     * backups.
+     *
+     * laravel/ai keys its failover list by provider, so it cannot fall back
+     * from one model to another on the same provider; a backup whose provider
+     * is already in the list is dropped (ledger D52's 2026-09-19 note).
+     *
+     * @return non-empty-array<string, ModelRow>
+     *
+     * @throws InvalidArgumentException if the tier does not name a model.
+     */
+    public function failover(?int $startedOn = null): array
+    {
+        $first = $startedOn === null ? $this->primary() : (Catalog::model($startedOn)
+            ?? throw new InvalidArgumentException("The session's model [{$startedOn}] is not in the catalog."));
+
+        $models = [$first['provider'] => $first];
+
+        foreach ($this->row()['backups'] as $id) {
+            $model = Catalog::model($id);
+
+            if ($model !== null) {
+                $models[$model['provider']] ??= $model;
+            }
         }
 
-        return $timeout;
+        return $models;
     }
 
     /**
@@ -98,5 +115,17 @@ enum Tier: string
         }
 
         return $sessionTier;
+    }
+
+    /**
+     * @return array{model: int, backups: list<int>, timeout: int}
+     *
+     * @throws InvalidArgumentException if the tier does not name a model.
+     */
+    private function row(): array
+    {
+        return Catalog::tier($this->value) ?? throw new InvalidArgumentException(
+            "Tier [{$this->value}] does not resolve to a model. Only cheap, mid and top are billable tiers."
+        );
     }
 }

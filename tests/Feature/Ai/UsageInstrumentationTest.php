@@ -81,33 +81,15 @@ class UsageInstrumentationTest extends TestCase
     }
 
     #[Test]
-    public function cost_prices_cache_reads_and_writes_against_the_tier_rate(): void
+    public function cost_prices_each_kind_of_token_at_the_models_own_rate(): void
     {
         $recorder = new UsageRecorder;
+        $model = ['id' => 0, 'provider' => 'anthropic', 'model' => 'm', 'input' => 3.0, 'output' => 15.0, 'cache_read' => 0.3, 'cache_write' => 3.75];
 
-        // 1M uncached input tokens at the cheap tier's input rate.
-        $this->assertSame(
-            Tier::Cheap->pricing()['input'],
-            $recorder->cost(Tier::Cheap, new Usage(promptTokens: 1_000_000)),
-        );
-
-        // A cache read costs a tenth of that.
-        $this->assertSame(
-            round(Tier::Cheap->pricing()['input'] * 0.1, 8),
-            $recorder->cost(Tier::Cheap, new Usage(cacheReadInputTokens: 1_000_000)),
-        );
-
-        // A cache write costs a quarter more than an uncached token.
-        $this->assertSame(
-            round(Tier::Cheap->pricing()['input'] * 1.25, 8),
-            $recorder->cost(Tier::Cheap, new Usage(cacheWriteInputTokens: 1_000_000)),
-        );
-
-        // Output is billed at the output rate.
-        $this->assertSame(
-            Tier::Top->pricing()['output'],
-            $recorder->cost(Tier::Top, new Usage(completionTokens: 1_000_000)),
-        );
+        $this->assertSame(3.0, $recorder->cost($model, new Usage(promptTokens: 1_000_000)));
+        $this->assertSame(0.3, $recorder->cost($model, new Usage(cacheReadInputTokens: 1_000_000)));
+        $this->assertSame(3.75, $recorder->cost($model, new Usage(cacheWriteInputTokens: 1_000_000)));
+        $this->assertSame(15.0, $recorder->cost($model, new Usage(completionTokens: 1_000_000)));
     }
 
     #[Test]
@@ -127,7 +109,7 @@ class UsageInstrumentationTest extends TestCase
         $recorder = new UsageRecorder;
 
         foreach ($cycle as [$feature, $promptKey, $tier, $usage]) {
-            $recorder->record($feature, $promptKey, 'anthropic', $tier, $tier->model(), $usage, 1_200, $user->id);
+            $recorder->record($feature, $promptKey, $tier, $tier->primary(), 'ok', $usage, 1_200, $user->id);
         }
 
         $report = DB::table('usage_events')
@@ -149,7 +131,7 @@ class UsageInstrumentationTest extends TestCase
 
         $this->assertEqualsWithDelta(
             array_sum(array_map(
-                fn (array $call): float => $recorder->cost($call[2], $call[3]),
+                fn (array $call): float => $recorder->cost($call[2]->primary(), $call[3]),
                 $cycle,
             )),
             $total,

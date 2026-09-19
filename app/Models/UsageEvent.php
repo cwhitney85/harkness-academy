@@ -31,6 +31,7 @@ class UsageEvent extends Model
             'cached_input_tokens' => 'integer',
             'cache_write_tokens' => 'integer',
             'output_tokens' => 'integer',
+            'reasoning_tokens' => 'integer',
             'latency_ms' => 'integer',
             'cost_usd' => 'decimal:8',
             'created_at' => 'datetime',

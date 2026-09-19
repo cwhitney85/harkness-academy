@@ -37,7 +37,7 @@
 | D10.2 | Concept slugs stay in the JSON; there is no concepts table | current |
 | D10.3 | GUIDANCE.md renders from a PHP class, not a Blade template | current |
 | D10.4 | A failed generation writes nothing and moves nothing | current |
-| D10.5 | `lessons` carries exactly what D7 listed | current |
+| D10.5 | `lessons` carries exactly what D7 listed | **amended 2026-09-19** — `ai_model_id`, the model a lesson's session started on |
 | D11 | Plan is a string on `users`; the plans table is deferred | current |
 | D12 | The quiz tables land in package 5; 6.1 lands the service over them | current |
 | D13 | `wk.update`'s erosion guard reports and does not block | current |
@@ -79,7 +79,7 @@
 | D49 | Done's write-up goes to the queue with the tutor's | current |
 | D50 | The demo is the real pipeline on a shorter plan | **amended 2026-09-16 and 2026-09-17** — a welcome page with one button; the demo is lesson 1 of an ordinary course |
 | D51 | `plan` keys depth, and is not yet a table | current |
-| D52 | Tasks reach models through a database catalog; tiers are rows with backup models | current |
+| D52 | Tasks reach models through a database catalog; tiers are rows with backup models | **amended 2026-09-19** — the SDK's failover cannot reach a backup on the primary's own provider |
 | D53 | Prices belong to a model; token counting and cache markers belong to a provider class | current |
 | D54 | Prompt files are the reviewed baseline; the database is what runs | current |
 | D55 | An experiment's variant sticks to a course | current |
@@ -352,6 +352,8 @@ D7's organising rule decides it: the app queries position and status, and the mo
 
 Rejected: denormalising title, objective and slug onto the row — convenient for a lesson list, but the row and the JSON then drift, and a regenerated syllabus has two places to fix.
 Rejected: denormalising the whole lesson JSON — model-facing material in relational columns, against D7 outright.
+
+**Amended 2026-09-19 (spec 14.1.6, Colin).** `lessons.ai_model_id` holds the catalog model the lesson's session started on, stamped at its first call. It is app-queried state, not syllabus material, so D7's rule puts it on the row; the alternative, reading it back from the lesson's first usage row, would have made teaching depend on a billing log.
 
 Revisit if a lesson list needs to sort or paginate by title. Same shape as D7d's deferred generated column, and the same answer for now.
 
@@ -991,6 +993,8 @@ D1 chose Anthropic-direct as the v1 step toward multiple providers, and said the
 Rejected: a provider per tier in config (switching still needs a deploy) · tasks naming models directly (loses the tier vocabulary every call site uses) · an outside router such as OpenRouter or a LiteLLM proxy owning routing (usage and cost split across two systems; OpenRouter stays available as one catalog provider).
 
 Falsified if: a task needs a model choice the tier → model chain cannot express. Per-variant model pins (D55) are the one exception already allowed.
+
+**Amended 2026-09-19 (spec 14.1.5, Colin).** laravel/ai keys its failover list by provider (`['anthropic' => model]`), so it cannot fall back from one model to another on the same provider. With Anthropic the only provider class (14.6.1), no backup a tier can hold today is reachable: `Tier::failover()` drops a backup whose provider is already in the list. Colin chose to keep the SDK's failover as it is rather than have the gateway walk the list itself. **Same-provider fallback is a priority for the model-switching unit.**
 
 ## D53. Prices belong to a model; token counting and cache markers belong to a provider class (resolved 2026-09-18, spec 14 items 14.2.1–14.2.4)
 

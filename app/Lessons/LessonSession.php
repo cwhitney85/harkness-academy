@@ -234,7 +234,7 @@ final class LessonSession
     ): ?LessonMessage {
         $message = null;
 
-        $call->sessionTier($this->context->tier())
+        $call->sessionTier($this->context->tier(), $this->context->modelFor($this->lesson))
             ->stream()
             ->then(function (AgentResponse $response) use (&$message, $kind, $index, $turnId): void {
                 if (trim($response->text) === '') {

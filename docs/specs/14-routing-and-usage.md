@@ -24,10 +24,10 @@
 ## 14.1 Catalog and tiers
 
 - **14.1.1 MUST** — `ai_models`: provider (SDK driver key), model id, display name, active, and per-million-token prices for input, output, cache read and cache write. The migration seeds today's three models at today's prices. *Done: the dev database gains three rows and nothing else changes.*
-- **14.1.2 MUST** — `ai_tiers`: `cheap`, `mid`, `top`, each with a primary model, an ordered list of backup models, and a timeout. `Tier::model()`, `pricing()` and `timeout()` read it. *Done: three tiers resolve to three distinct models; changing a row changes the lesson fixture's model with no code diff.*
+- **14.1.2 MUST** — `ai_tiers`: `cheap`, `mid`, `top`, each with a primary model, an ordered list of backup models, and a timeout. `Tier::model()` and `timeout()` read it; a price is read from the serving model's row, so `Tier::pricing()` is gone (2026-09-19). *Done: three tiers resolve to three distinct models; changing a row changes the lesson fixture's model with no code diff.*
 - **14.1.3 MUST** — Tier resolution is cached and cleared on write. *Done: a query-count test sees zero catalog queries across ten calls.*
 - **14.1.4 MUST** — `NoModelIdsOutsideConfigTest` becomes `NoModelIdsInCodeTest`; the seeding migration and test fixtures are the only exceptions. The `tiers` block leaves `config/ai.php`. *Done: the test passes; `config/ai.php` has no `tiers` key.*
-- **14.1.5 MUST** — A call hands the SDK the tier's primary and backups, and the SDK fails over in order. The usage row records the model that served. *Done: a fake rate-limits the primary; the row names the backup, outcome `failed_over`.*
+- **14.1.5 MUST** — A call hands the SDK the tier's primary and backups, and the SDK fails over in order. The usage row records the model that served. *Done: a fake rate-limits the primary; the row names the backup, outcome `failed_over`.* The SDK keys failover by provider, so only a backup on another provider is reachable ([D52](../02-design.md)'s 2026-09-19 note).
 - **14.1.6 MUST** — A `tier: session` prompt runs on the model its session started on. *Done: changing `mid`'s model mid-lesson leaves that lesson's `lesson.section` rows on the original model.*
 
 ## 14.2 A class per provider
@@ -67,5 +67,5 @@ All three are the next unit's.
 
 1. Run one course's interviews and lesson 1.
 2. Every usage row has `ai_model_id`, `outcome` and `plan`; every row after `subtopic.check` has `course_id`.
-3. Change `mid`'s primary model by SQL. The next interview turn records the new model; the lesson already open stays on the old one.
+3. Change `mid`'s primary model — through `AiTier`, or by SQL followed by `php artisan cache:clear`, since the catalog is cached until a model write clears it (14.1.3). The next interview turn records the new model; the lesson already open stays on the old one.
 4. Admin → Models shows both models with their calls.

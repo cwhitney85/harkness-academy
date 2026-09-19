@@ -78,6 +78,23 @@ final class LessonContext
     }
 
     /**
+     * The catalog id of the model this lesson's session runs on (spec 14.1.6).
+     *
+     * The session tier's model when the lesson first calls one, stamped on the
+     * lesson and kept from then on: Anthropic's cache is keyed per model, so a
+     * lesson moved to another model mid-way would pay to rewrite its whole
+     * prefix, and its transcript would be two tutors'.
+     */
+    public function modelFor(Lesson $lesson): int
+    {
+        if ($lesson->ai_model_id === null) {
+            $lesson->forceFill(['ai_model_id' => $this->tier()->primary()['id']])->save();
+        }
+
+        return $lesson->ai_model_id;
+    }
+
+    /**
      * @throws MissingCourseDocument
      */
     private function read(Lesson $lesson, string $path): string

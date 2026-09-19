@@ -3,15 +3,20 @@
 namespace Tests\Unit\Ai;
 
 use App\Ai\Tier;
+use App\Models\AiModel;
+use App\Models\AiTier;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 2.1.1 -- the tier to model map.
+ * Spec 14.1.2 -- tiers are rows, and each names a model in the catalog.
  */
 class TierTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Test]
     public function three_tiers_resolve_to_three_distinct_models(): void
     {
@@ -26,12 +31,19 @@ class TierTest extends TestCase
     }
 
     #[Test]
-    public function changing_the_config_changes_the_model_a_tier_resolves_to(): void
+    public function changing_a_tier_row_changes_the_model_it_resolves_to(): void
     {
-        config()->set('ai.tiers.mid.model', 'a-different-model');
+        $other = AiModel::create([
+            'provider' => 'anthropic', 'model' => 'a-different-model', 'display_name' => 'Different',
+            'input_per_mtok' => 1, 'output_per_mtok' => 1, 'cache_read_per_mtok' => 1, 'cache_write_per_mtok' => 1,
+        ]);
+
+        $top = Tier::Top->model();
+
+        AiTier::query()->where('name', 'mid')->sole()->update(['ai_model_id' => $other->id]);
 
         $this->assertSame('a-different-model', Tier::Mid->model());
-        $this->assertNotSame('a-different-model', Tier::Top->model());
+        $this->assertSame($top, Tier::Top->model());
     }
 
     /**
@@ -55,9 +67,9 @@ class TierTest extends TestCase
     }
 
     #[Test]
-    public function a_tier_with_no_timeout_configured_is_a_wiring_bug(): void
+    public function a_tier_with_no_row_is_a_wiring_bug(): void
     {
-        config()->set('ai.tiers.top.timeout', null);
+        AiTier::query()->where('name', 'top')->sole()->delete();
 
         $this->expectException(InvalidArgumentException::class);
 
