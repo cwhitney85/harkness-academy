@@ -8,6 +8,7 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 |---|---|---|---|
 | 1 | Prompt-caching breakpoints, and the workaround that gets them onto the wire | `app/Ai/Providers/AnthropicProvider.php` | Low — the class goes with the provider (spec 14.2.1) |
 | 2 | Cache-cost multipliers used to price a call | `config/ai.php` → `prompt_caching.read_multiplier` / `write_multiplier` | Low — numbers only |
+| 3 | Behaviour tuned against Claude: prompts, structured replies, tool calls, cache floors | `prompts/`, the json schemas, `app/Ai/Tools/SignalComplete.php` | Medium — no code, but a trial course per model |
 
 ---
 
@@ -141,3 +142,19 @@ The markers live in `AnthropicProvider`, which also counts Anthropic's tokens an
 Anthropic prices a cache read at 0.1x the input rate and a 5-minute cache write at 1.25x. `App\Ai\UsageRecorder::cost()` uses those two numbers to price the `usage_events` row required by spec 2.2. Another provider with a different cache-pricing shape — or none — changes these two numbers, or drops them to `0.1`/`1.0` where reads are free and writes are not billed separately.
 
 Cost to leave: two config values.
+
+---
+
+## 3. Behaviour tuned against Claude
+
+**Status:** live, recorded 2026-09-19 at the close of spec 14.2. The provider classes (14.2.1) make another provider callable, not equivalent. What follows is what a code change does not carry.
+
+- **Prompts.** Every file in `prompts/` was written and tuned against Claude. Another model can follow the same brief differently: tone, length, how closely it holds the pedagogy.
+- **Structured replies.** The syllabus (4.5.1), checkpoint (5.2.1) and quiz (6.1) need JSON that matches a schema exactly. Providers support schema-constrained output unevenly, and laravel/ai reaches it by a different mechanism per driver.
+- **Tool calls.** An interview ends when the model calls `SignalComplete`. A model without reliable tool use never ends the interview on its own; the Done button (`app/Ai/Interviews/DoneButton.php`) is the only exit left.
+- **Cache floors.** Each model has its own minimum cacheable prefix (#1's table). A new model can silently take no cache discount, so check its `cache_read_input_tokens` on a real lesson.
+
+### Cost to leave
+
+No code. Before a tier points at a new model: run one course's interviews and first lesson on it, compare the Models screen's cost and failure columns (14.4), and read the transcripts. A tier row switches back in one step.
+
