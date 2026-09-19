@@ -2,7 +2,7 @@
 
 *Disposable. Delete this file in the commit that lands the unit.*
 
-**Scope:** [14.1](../specs/14-routing-and-usage.md) (14.1.1–14.1.6), plus [14.3.1](../specs/14-routing-and-usage.md) pulled forward because 14.1.5's done-condition reads its columns.
+**Scope:** [14.1](../specs/14-routing-and-usage.md) (14.1.1–14.1.6), plus [14.3.1](../specs/14-routing-and-usage.md) pulled forward because 14.1.5's done-condition reads its columns. Then [14.2](../specs/14-routing-and-usage.md) (14.2.1–14.2.4), session of 2026-09-19.
 
 ## Items
 
@@ -13,6 +13,10 @@
 - [x] **14.1.5** — primary + backups handed to the SDK; row names the serving model, outcome `failed_over`.
 - [x] **14.1.6** — a `tier: session` prompt runs on the model its lesson started on.
 - [x] **14.3.1** — the fuller usage row, additive.
+- [x] **14.2.1** — `App\Ai\Providers\AnthropicProvider` owns markers, token counting, pricing; `PromptCaching` folded into it.
+- [x] **14.2.2** — `AiModel` refuses `active` on a provider with no class.
+- [x] **14.2.3** — Anthropic token-counting test against a response with cached tokens.
+- [x] **14.2.4** — equal tokens on two models cost differently; a price edit leaves past rows alone.
 
 ## Questions and answers (Colin, 2026-09-19)
 
@@ -31,3 +35,10 @@
 - Dev db: backed up to `storage/backups/opentutor-2026-09-19-133951.sql`, then `migrate` (additive). 3 models, 3 tiers; all 261 usage rows and 49 lessons survived.
 - The full suite took 235s on one run, against 80s before. It was slow, not hung; the likely cause is contention on the local Postgres.
 - The prompt-caching TTL is still configurable (`1h` is allowed), but the catalog's cache-write price assumes `5m` (1.25x). v1's multiplier had the same assumption. 14.2 should handle it.
+- 14.2: the provider map is `config('ai.provider_classes')`, not a hard-coded list, so a test can stand a class in for `openai` (14.1.5's failover tests need an active second-provider backup, which 14.2.2 now refuses without a class). The next unit adds OpenRouter as one line there.
+- 14.2.1 byte-identity: request bodies captured through `GatewayAgent` before and after the move, for five caching configs (default, empty instructions, caching off, `system` only, `1h`), were identical. The 2.4 wire tests' assertions are unchanged; only the class name in the direct-call tests changed.
+- 14.2.1: `GatewayAgent::providerOptions()` for a provider with no class now throws instead of returning `[]`, so a classless model fails before a request is sent.
+- 14.2.1 closes the TTL item above: under `ttl: 1h`, `AnthropicProvider::cost()` prices a cache write at 2x input instead of the catalog's five-minute price. `docs/anthropic-specific.md` #1 says so.
+- 14.2.3's fixture is not a captured body: it is call 2 of the 2026-08-23 cache spike's measured usage (3 / 11 / 4,742 / 4) inside the documented Messages response shape. A live `ai:cache-spike` could replace it with a real capture.
+- Open for later: `Tier::failover()` does not check `active`, so an inactive backup would still be tried. 14.2.2 guards activation, not use.
+- `docs/anthropic-specific.md` #2 still names the retired multipliers and `UsageRecorder::cost()`; its retirement is 14.5.1.

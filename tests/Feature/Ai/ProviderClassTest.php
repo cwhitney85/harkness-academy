@@ -11,6 +11,7 @@ use App\Models\AiTier;
 use App\Models\UsageEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\TextResponse;
@@ -70,6 +71,31 @@ class ProviderClassTest extends TestCase
         config()->set('ai.prompt_caching.ttl', '1h');
 
         $this->assertSame(6.0, $anthropic->cost($model, new Usage(cacheWriteInputTokens: 1_000_000)), 'An hour-long cache write is 2x input.');
+    }
+
+    #[Test]
+    public function a_model_cannot_be_active_while_its_provider_has_no_class(): void
+    {
+        $model = AiModel::create([
+            'provider' => 'openrouter', 'model' => 'some/model', 'display_name' => 'Some model', 'active' => false,
+            'input_per_mtok' => 1, 'output_per_mtok' => 2, 'cache_read_per_mtok' => 0.1, 'cache_write_per_mtok' => 1,
+        ]);
+
+        try {
+            $model->update(['active' => true]);
+            $this->fail('Activating an openrouter model should be refused.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('active', $e->errors());
+        }
+
+        $this->assertFalse($model->fresh()->active);
+
+        $this->expectException(ValidationException::class);
+
+        AiModel::create([
+            'provider' => 'openrouter', 'model' => 'other/model', 'display_name' => 'Other model',
+            'input_per_mtok' => 1, 'output_per_mtok' => 2, 'cache_read_per_mtok' => 0.1, 'cache_write_per_mtok' => 1,
+        ]);
     }
 
     #[Test]
