@@ -46,7 +46,7 @@
 
 ## 14.4 Models screen
 
-- **14.4.1 MUST** — Admin → Models lists the catalog, and the three tiers with their backups, with calls and cost per model over seven days. *Done: renders the fixture.*
+- **14.4.1 MUST** — Admin → Models lists the catalog, and the three tiers with their backups, with calls and cost per model over seven days. If it reads models through `App\Ai\Catalog`, the catalog hydrates them from its cached arrays ([lessons T16](../lessons.md)). *Done: renders the fixture.*
 - **14.4.2 MUST** — Editing a model's prices is logged and applies only to later calls. *Done: feature test.*
 
 ## 14.5 Documents

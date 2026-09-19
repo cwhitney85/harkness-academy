@@ -192,3 +192,5 @@ Viewing as a student sets the student as the request's user, leaving the session
 `config/cache.php` sets `serializable_classes` to `false`, so the cache refuses to unserialize any object. An Eloquent model or collection put in the cache is written without complaint and comes back broken on the next read. With the array store the tests use, the value never gets serialized, so the tests pass anyway.
 
 **Cache plain arrays.** `App\Ai\Catalog` is the example: it maps its rows to arrays before it caches them.
+
+**When a reader needs models, rebuild them on the way out: `AiModel::hydrate($rows)`.** That gives real models with their casts, no query, and a cache that still holds only plain data. Don't turn `serializable_classes` on instead: it loosens the gadget-chain guard for the whole app, and a cached object breaks when a deploy changes its class. `(object) $row` is no substitute — a bare object with no casts or methods.
