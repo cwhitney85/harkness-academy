@@ -98,7 +98,7 @@ class UsageInstrumentationTest extends TestCase
         $recorder = new UsageRecorder;
 
         foreach ($cycle as [$feature, $promptKey, $tier, $usage]) {
-            $recorder->record($feature, $promptKey, $tier, $tier->primary(), 'ok', $usage, 1_200, $user->id);
+            $recorder->record($feature, $promptKey, $tier, $tier->primary(), 'ok', $usage, 1_200, $user);
         }
 
         $report = DB::table('usage_events')

@@ -408,7 +408,7 @@ final class FinalExam
                 $response = $this->gateway
                     ->prompt('exam.final', $vars)
                     ->feature(self::FEATURE)
-                    ->for($course->user_id)
+                    ->about($course)
                     ->schema(QuizSchema::definition($length))
                     ->generate();
 

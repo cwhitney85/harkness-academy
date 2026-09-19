@@ -108,7 +108,7 @@ final class CheckpointGenerator
                 $response = $this->gateway
                     ->prompt('checkpoint.generate', $vars)
                     ->feature(self::FEATURE)
-                    ->for($lesson->course->user_id)
+                    ->about($lesson)
                     ->schema(CheckpointSchema::definition())
                     ->generate();
 

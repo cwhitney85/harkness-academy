@@ -11,6 +11,8 @@ use App\Ai\Prompts\PromptRepository;
 use App\Ai\StructuredGatewayAgent;
 use App\Ai\Tier;
 use App\Ai\UsageRecorder;
+use App\Models\Course;
+use App\Models\Lesson;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -320,6 +322,41 @@ class GatewayTest extends TestCase
         $this->assertSame($user->id, $event->user_id);
         $this->assertSame('lesson.explainer', $event->feature);
         $this->assertSame('explainer.select', $event->prompt_key);
+    }
+
+    #[Test]
+    public function a_call_about_a_lesson_records_the_lesson_its_course_and_its_students_plan(): void
+    {
+        $lesson = Lesson::factory()->create();
+        $lesson->course->student->forceFill(['plan' => 'demo'])->save();
+        GatewayAgent::fake(['Explained.', 'Explained.']);
+
+        $this->explainAbout($lesson);
+        $this->explainAbout($lesson->course);
+
+        [$aboutLesson, $aboutCourse] = UsageEvent::query()->orderBy('id')->get()->all();
+
+        $this->assertSame($lesson->id, $aboutLesson->lesson_id);
+        $this->assertSame($lesson->course_id, $aboutLesson->course_id);
+        $this->assertSame($lesson->course->user_id, $aboutLesson->user_id);
+        $this->assertSame('demo', $aboutLesson->plan);
+
+        $this->assertNull($aboutCourse->lesson_id);
+        $this->assertSame($lesson->course_id, $aboutCourse->course_id);
+    }
+
+    private function explainAbout(Course|Lesson $subject): void
+    {
+        $this->gateway()
+            ->prompt('explainer.select', [
+                'selection' => 'a phrase',
+                'surrounding_chunk' => 'a paragraph',
+                'subtopic' => 'Intro',
+                'skill_level' => '101',
+            ])
+            ->feature('lesson.explainer')
+            ->about($subject)
+            ->generate();
     }
 
     private function section(): PendingCall

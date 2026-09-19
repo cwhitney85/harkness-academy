@@ -5,6 +5,8 @@ namespace App\Ai;
 use App\Admin\ViewingAs;
 use App\Ai\Prompts\PromptDefinition;
 use App\Ai\Prompts\PromptOutput;
+use App\Models\Course;
+use App\Models\Lesson;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Closure;
@@ -39,7 +41,11 @@ final class PendingCall
 {
     private string $feature = '';
 
-    private ?int $userId = null;
+    private ?User $user = null;
+
+    private ?int $courseId = null;
+
+    private ?int $lessonId = null;
 
     private string $instructions = '';
 
@@ -79,9 +85,30 @@ final class PendingCall
         return $this;
     }
 
-    public function for(User|int|null $user): self
+    public function for(User $user): self
     {
-        $this->userId = $user instanceof User ? $user->id : $user;
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * Attach the course or lesson this call serves to its usage row (spec
+     * 14.3.3). A lesson brings its course and a course brings its student, so
+     * a call that names one needs no `for()`. Null attaches nothing: a module
+     * refresher belongs to no one course.
+     */
+    public function about(Course|Lesson|null $subject): self
+    {
+        $course = $subject instanceof Lesson ? $subject->course : $subject;
+
+        if ($course === null) {
+            return $this;
+        }
+
+        $this->lessonId = $subject instanceof Lesson ? $subject->id : null;
+        $this->courseId = $course->id;
+        $this->user = $course->student;
 
         return $this;
     }
@@ -304,7 +331,9 @@ final class PendingCall
             outcome: $served['id'] === $first['id'] ? 'ok' : 'failed_over',
             usage: $response->usage,
             latencyMs: $this->elapsedMs($startedAt),
-            userId: $this->userId,
+            user: $this->user,
+            courseId: $this->courseId,
+            lessonId: $this->lessonId,
         );
     }
 
@@ -321,7 +350,9 @@ final class PendingCall
             outcome: 'failed',
             usage: new Usage,
             latencyMs: $this->elapsedMs($startedAt),
-            userId: $this->userId,
+            user: $this->user,
+            courseId: $this->courseId,
+            lessonId: $this->lessonId,
         );
     }
 

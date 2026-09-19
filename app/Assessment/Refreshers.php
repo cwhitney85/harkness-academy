@@ -238,6 +238,7 @@ final class Refreshers
                     ->prompt('quiz.refresher', $scope->promptVars())
                     ->feature(self::FEATURE)
                     ->for($scope->student)
+                    ->about($scope->quizzable instanceof Lesson ? $scope->quizzable : $scope->course)
                     ->schema(QuizSchema::definition(QuizLength::refresher()))
                     ->generate();
 

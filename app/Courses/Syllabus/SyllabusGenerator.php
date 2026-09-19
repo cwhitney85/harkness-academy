@@ -188,7 +188,7 @@ final class SyllabusGenerator
         $response = $this->gateway
             ->prompt($promptKey, $vars)
             ->feature(self::FEATURE)
-            ->for($course->user_id)
+            ->about($course)
             ->schema(SyllabusSchema::definition())
             ->generate();
 

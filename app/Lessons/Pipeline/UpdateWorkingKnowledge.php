@@ -60,7 +60,7 @@ final class UpdateWorkingKnowledge extends PipelineJob
                 'homework_results' => HomeworkResults::forSubtopicOf($lesson)->render(),
             ])
             ->feature('lesson.wk_update')
-            ->for($lesson->course->user_id)
+            ->about($lesson)
             ->generate();
 
         $updated = trim($response->text);

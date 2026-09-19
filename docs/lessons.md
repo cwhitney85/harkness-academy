@@ -194,3 +194,11 @@ Viewing as a student sets the student as the request's user, leaving the session
 **Cache plain arrays.** `App\Ai\Catalog` is the example: it maps its rows to arrays before it caches them.
 
 **When a reader needs models, rebuild them on the way out: `AiModel::hydrate($rows)`.** That gives real models with their casts, no query, and a cache that still holds only plain data. Don't turn `serializable_classes` on instead: it loosens the gadget-chain guard for the whole app, and a cached object breaks when a deploy changes its class. `(object) $row` is no substitute — a bare object with no casts or methods.
+
+## T17. A set-null foreign key can fail inside the transaction that wrote the row
+
+*Found 2026-09-19, building spec 14.3.3.*
+
+Deleting a user cascades to their courses and lessons, and each of those sets a `usage_events` row's `course_id` or `lesson_id` null. If the usage row was written in the same transaction as the delete, Postgres re-checks every foreign key on it whenever any one of those set-nulls updates it, and it may do so after the course is gone but before the course's own set-null has reached the row. The delete then fails with a foreign-key violation on `usage_events`. A row written in an earlier transaction skips that re-check, so the nightly sweep never trips it. Every `RefreshDatabase` test does, because the whole test is one transaction.
+
+**A nullable foreign key whose parent can be deleted through a cascade that also reaches the same row is `deferrable initially deferred`.** The check then runs at commit, after every set-null. `usage_events.course_id` and `lesson_id` are the examples.

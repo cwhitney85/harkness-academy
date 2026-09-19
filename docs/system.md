@@ -110,7 +110,7 @@ Five route files, each owning one subsystem. Every route below appears as an edg
 | `exam_answer_sheets` | a sitting in progress ([6.3.4](specs/06-assessment.md)) |
 | `generation_requests` | one row per (course, kind) — the wait for a queued generation |
 | `memories`, `memory_versions` | the memory tree and a version on every write, naming the admin if one was acting as the student |
-| `usage_events` | one row per AI call: feature, tier, the catalog model that served it, tokens in/cached/out/reasoning, latency, cost, outcome (`ok`, `failed`, `failed_over`), and the acting admin if there was one |
+| `usage_events` | one row per AI call: feature, tier, the catalog model that served it, tokens in/cached/out/reasoning, latency, cost, outcome (`ok`, `failed`, `failed_over`), the course and lesson it served, the student's plan at the time, and the acting admin if there was one |
 | `ai_models`, `ai_tiers` | the model catalog with each model's prices, and `cheap`/`mid`/`top` as rows: a primary, ordered backups, a timeout |
 | `admin_actions` | one row per admin write: who, what, about whom, why. Nothing can update or delete a row |
 
@@ -132,7 +132,7 @@ Every job is idempotent, because a managed queue delivers at least once.
 
 ## 7. Cost
 
-Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID in code — call sites name a tier (`cheap`, `mid`, `top`), the tier's row names a model in the catalog, and the call is priced at that model's prices when its row is written. A lesson stays on the model it started on, even if its tier is moved to another one partway through. The total cost of a course is therefore one SQL query.
+Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID in code — call sites name a tier (`cheap`, `mid`, `top`), the tier's row names a model in the catalog, and the call is priced at that model's prices when its row is written. A lesson stays on the model it started on, even if its tier is moved to another one partway through. The total cost of a course is therefore one SQL query. Every call names the course or lesson it serves, except the subtopic check, which runs before a course exists. The row keeps the student's plan, so what demo accounts cost can still be counted after the sweep deletes them.
 
 ## 8. The working cycle, and that it has been run
 

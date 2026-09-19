@@ -251,7 +251,7 @@ final class InterviewSession implements CompletionListener
                 'pacing' => $this->budgetSpent ? self::WRAP_UP : self::KEEP_GOING,
             ])
             ->feature($this->interview->feature())
-            ->for($this->course->user_id)
+            ->about($this->course)
             ->messages($history)
             ->userTurn((string) $turn->content)
             ->tools([new SignalComplete($this)])
@@ -306,7 +306,7 @@ final class InterviewSession implements CompletionListener
                 $this->interview->summaryVars($this->course, $this->transcript->render()),
             )
             ->feature($this->interview->feature())
-            ->for($this->course->user_id)
+            ->about($this->course)
             ->generate();
 
         $document = trim($summary->text);

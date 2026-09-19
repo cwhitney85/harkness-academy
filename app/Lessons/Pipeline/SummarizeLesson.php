@@ -58,7 +58,7 @@ final class SummarizeLesson extends PipelineJob
                 'checkpoint_results' => CheckpointResults::for($lesson)->render(),
             ])
             ->feature('lesson.summarize')
-            ->for($lesson->course->user_id)
+            ->about($lesson)
             ->schema(LessonSummarySchema::definition())
             ->generate();
 
