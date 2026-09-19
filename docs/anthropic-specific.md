@@ -6,7 +6,7 @@ The rule: **if a change is made because the provider is Anthropic, it gets an en
 
 | # | What | Where | Cost to leave |
 |---|---|---|---|
-| 1 | Prompt-caching breakpoints, and the workaround that gets them onto the wire | `app/Ai/PromptCaching.php` | Low — delete the class and the two config keys |
+| 1 | Prompt-caching breakpoints, and the workaround that gets them onto the wire | `app/Ai/Providers/AnthropicProvider.php` | Low — the class goes with the provider (spec 14.2.1) |
 | 2 | Cache-cost multipliers used to price a call | `config/ai.php` → `prompt_caching.read_multiplier` / `write_multiplier` | Low — numbers only |
 
 ---
@@ -41,7 +41,7 @@ Within a single conversation the `system` breakpoint adds nothing — the top-le
 
 **Keep it anyway: it is close to free.** Anthropic bills a cached region once regardless of how many breakpoints subdivide it, so adding the `system` breakpoint cost roughly nothing on the measured call (4,753 written with both). The real cost is not tokens but the merge-order fragility described below, which the wire test contains.
 
-If real usage shows students doing back-to-back lessons, `ai.prompt_caching.ttl` accepts `1h`. Anthropic charges 2x to write an hour-long cache against 1.25x for five minutes, so that is a change to make with usage data, not before.
+If real usage shows students doing back-to-back lessons, `ai.prompt_caching.ttl` accepts `1h`. Anthropic charges 2x to write an hour-long cache against 1.25x for five minutes, so that is a change to make with usage data, not before. The catalog's `cache_write_per_mtok` is the five-minute price; under `1h`, `AnthropicProvider::cost()` prices a write at 2x input instead.
 
 **Minimum cacheable length is higher than the commonly-cited 1,024**, and it is not monotonic across model generations. At 40 paragraphs (~2,370 tokens) the prefix did not cache; at 80 (~4,742) it did. The spike's default is 80 paragraphs for that reason. A short prefix fails silently — no error, no warning, `cache_creation_input_tokens: 0`, and a bill.
 
@@ -89,7 +89,7 @@ The same method ends with:
 return array_merge($body, $providerOptions);
 ```
 
-Provider options are merged **last**, so they can replace any key the builder set — including `system`. `App\Ai\PromptCaching` returns provider options that carry the system prompt back as a content-block array with an explicit breakpoint, plus the top-level field:
+Provider options are merged **last**, so they can replace any key the builder set — including `system`. `App\Ai\Providers\AnthropicProvider::providerOptions()` returns options that carry the system prompt back as a content-block array with an explicit breakpoint, plus the top-level field:
 
 ```php
 [
@@ -112,7 +112,7 @@ return ['prompt_cache' => [PromptCacheTarget::System]];
 
 It emits the system prompt in block form with `cache_control`, stamps the last tool definition so the tool list is covered too, supports per-target TTLs, and does the equivalent thing on Bedrock with `cachePoint`. It composes with the top-level form rather than replacing it.
 
-**When #869 merges, delete the `system` half of `PromptCaching` and pass `prompt_cache` instead.** The `tail` half stays as it is — that is the supported top-level form and #869 leaves it untouched. Watch #869; nothing else here changes.
+**When #869 merges, delete the `system` half of `AnthropicProvider::providerOptions()` and pass `prompt_cache` instead.** The `tail` half stays as it is — that is the supported top-level form and #869 leaves it untouched. Watch #869; nothing else here changes.
 
 Until then the per-block half is unsupported API surface riding on merge order.
 
@@ -123,14 +123,14 @@ It fails **silently**. If laravel/ai ever merges provider options before the bod
 ### Also worth knowing
 
 - **Minimum cacheable prefix is model-specific, 512–4,096 tokens** — per-tier table above. A shorter prefix silently does not cache. First thing to check when `ai:cache-spike` reports a miss, and before assuming a small prompt is cached at all.
-- **Two cache lifetimes exist, `5m` and `1h`** — a fixed pair, not a duration. The clock is idle time and resets on every hit, so continuous traffic keeps a 5m entry alive indefinitely. Writing a 1h entry costs 2x against 1.25x, so it needs three reads to break even where 5m needs two. `PromptCaching::cacheControl()` rejects anything else rather than letting the API do it.
+- **Two cache lifetimes exist, `5m` and `1h`** — a fixed pair, not a duration. The clock is idle time and resets on every hit, so continuous traffic keeps a 5m entry alive indefinitely. Writing a 1h entry costs 2x against 1.25x, so it needs three reads to break even where 5m needs two. `AnthropicProvider::cacheControl()` rejects anything else rather than letting the API do it.
 - **Any byte change anywhere in the prefix invalidates everything after it.** Spec 2.3.1 already accepts that a prompt edit invalidates that prompt's cache prefix on deploy. The thing to watch for is accidental invalidation: a timestamp, a UUID, or a non-deterministically ordered document rendered into the prefix. `ai:cache-spike` builds a deliberately deterministic prefix so it can catch that class of bug.
 - **Max 4 breakpoints per request.** We use 2.
 - **Scripted calls send no system prompt**, so they get the `tail` breakpoint only. The gateway puts a rendered prompt in as the user message; `instructions` is set separately and today only the lesson session sets it. A scripted call therefore shares no prefix with anything, which is correct — each one is a different prompt with different inputs. Interviews are the case worth revisiting when package 4 lands: they are conversations, and their instructions may belong in `system` rather than in the first user message.
 
 ### Cost to leave
 
-Delete `app/Ai/PromptCaching.php` and the `prompt_caching` block in `config/ai.php`; `GatewayAgent::providerOptions()` then returns `[]` and everything else is unchanged. No call site, prompt, or schema is involved. The equivalent feature on another provider is a different mechanism (OpenAI caches automatically and needs no opt-in at all), so this is a deletion, not a port.
+The markers live in `AnthropicProvider`, which also counts Anthropic's tokens and prices them (spec 14.2.1). Another provider gets its own class in `ai.provider_classes`; the `prompt_caching` block in `config/ai.php` is Anthropic's alone. No call site, prompt, or schema is involved. The equivalent feature on another provider is a different mechanism (OpenAI caches automatically and needs no opt-in at all), so this is a deletion, not a port.
 
 ---
 

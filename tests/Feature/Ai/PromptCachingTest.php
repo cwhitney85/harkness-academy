@@ -3,7 +3,7 @@
 namespace Tests\Feature\Ai;
 
 use App\Ai\GatewayAgent;
-use App\Ai\PromptCaching;
+use App\Ai\Providers\AnthropicProvider;
 use App\Ai\Tier;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -73,16 +73,9 @@ class PromptCachingTest extends TestCase
     }
 
     #[Test]
-    public function a_non_anthropic_provider_gets_no_anthropic_options(): void
-    {
-        $this->assertSame([], PromptCaching::providerOptions('openai', 'You are a tutor.'));
-        $this->assertSame([], PromptCaching::providerOptions('gemini', 'You are a tutor.'));
-    }
-
-    #[Test]
     public function an_empty_system_prompt_gets_no_system_breakpoint(): void
     {
-        $options = PromptCaching::providerOptions('anthropic', '');
+        $options = (new AnthropicProvider)->providerOptions('');
 
         $this->assertArrayNotHasKey('system', $options);
         $this->assertSame(['type' => 'ephemeral'], $options['cache_control']);
@@ -91,11 +84,11 @@ class PromptCachingTest extends TestCase
     #[Test]
     public function a_non_default_ttl_is_sent_and_the_default_one_is_not(): void
     {
-        $this->assertSame(['type' => 'ephemeral'], PromptCaching::cacheControl());
+        $this->assertSame(['type' => 'ephemeral'], AnthropicProvider::cacheControl());
 
         config()->set('ai.prompt_caching.ttl', '1h');
 
-        $this->assertSame(['type' => 'ephemeral', 'ttl' => '1h'], PromptCaching::cacheControl());
+        $this->assertSame(['type' => 'ephemeral', 'ttl' => '1h'], AnthropicProvider::cacheControl());
     }
 
     #[Test]
@@ -106,7 +99,7 @@ class PromptCachingTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('must be one of [5m, 1h]');
 
-        PromptCaching::cacheControl();
+        AnthropicProvider::cacheControl();
     }
 
     /**

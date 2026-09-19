@@ -1,5 +1,7 @@
 <?php
 
+use App\Ai\Providers\AnthropicProvider;
+
 /*
 |--------------------------------------------------------------------------
 | AI Configuration (spec 2.1.1)
@@ -29,6 +31,21 @@
 return [
 
     'default' => env('AI_PROVIDER', 'anthropic'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Provider classes (spec 14.2, ledger D53)
+    |--------------------------------------------------------------------------
+    |
+    | laravel/ai driver key => the class that owns that provider's cache
+    | markers, token counting and pricing. A catalog model on a provider not
+    | listed here cannot be active.
+    |
+    */
+
+    'provider_classes' => [
+        'anthropic' => AnthropicProvider::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------

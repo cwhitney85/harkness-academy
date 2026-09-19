@@ -12,7 +12,7 @@ use Laravel\Ai\Responses\AgentResponse;
  *
  * Sends two calls that share a long system prefix and reports what Anthropic
  * billed for each. The done-condition is `cache_read_input_tokens > 0` on the
- * second call; anything else means the workaround in App\Ai\PromptCaching has
+ * second call; anything else means the workaround in App\Ai\Providers\AnthropicProvider has
  * stopped reaching the wire and docs/anthropic-specific.md entry #1 is stale.
  *
  * This command makes real, billable calls. It is the only thing in the

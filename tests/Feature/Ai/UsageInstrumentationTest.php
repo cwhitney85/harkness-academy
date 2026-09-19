@@ -5,6 +5,7 @@ namespace Tests\Feature\Ai;
 use App\Ai\Gateway;
 use App\Ai\GatewayAgent;
 use App\Ai\Prompts\PromptRepository;
+use App\Ai\Providers\AnthropicProvider;
 use App\Ai\Tier;
 use App\Ai\UsageRecorder;
 use App\Models\UsageEvent;
@@ -81,18 +82,6 @@ class UsageInstrumentationTest extends TestCase
     }
 
     #[Test]
-    public function cost_prices_each_kind_of_token_at_the_models_own_rate(): void
-    {
-        $recorder = new UsageRecorder;
-        $model = ['id' => 0, 'provider' => 'anthropic', 'model' => 'm', 'input' => 3.0, 'output' => 15.0, 'cache_read' => 0.3, 'cache_write' => 3.75];
-
-        $this->assertSame(3.0, $recorder->cost($model, new Usage(promptTokens: 1_000_000)));
-        $this->assertSame(0.3, $recorder->cost($model, new Usage(cacheReadInputTokens: 1_000_000)));
-        $this->assertSame(3.75, $recorder->cost($model, new Usage(cacheWriteInputTokens: 1_000_000)));
-        $this->assertSame(15.0, $recorder->cost($model, new Usage(completionTokens: 1_000_000)));
-    }
-
-    #[Test]
     public function a_demo_cycle_yields_a_per_feature_cost_report_from_sql_alone(): void
     {
         $user = User::factory()->create();
@@ -131,7 +120,7 @@ class UsageInstrumentationTest extends TestCase
 
         $this->assertEqualsWithDelta(
             array_sum(array_map(
-                fn (array $call): float => $recorder->cost($call[2]->primary(), $call[3]),
+                fn (array $call): float => (new AnthropicProvider)->cost($call[2]->primary(), $call[3]),
                 $cycle,
             )),
             $total,

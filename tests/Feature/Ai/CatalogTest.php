@@ -5,6 +5,7 @@ namespace Tests\Feature\Ai;
 use App\Ai\Gateway;
 use App\Ai\GatewayAgent;
 use App\Ai\PendingCall;
+use App\Ai\Providers\AnthropicProvider;
 use App\Ai\Tier;
 use App\Models\AiModel;
 use App\Models\AiTier;
@@ -32,6 +33,10 @@ class CatalogTest extends TestCase
         config()->set('ai.default', 'anthropic');
         config()->set('ai.providers.anthropic.key', 'test-key');
         config()->set('ai.providers.openai.key', 'test-key');
+
+        // The failover backups below sit on a second provider, which needs a
+        // class before it can be active (14.2.2); Anthropic's stands in.
+        config()->set('ai.provider_classes.openai', AnthropicProvider::class);
     }
 
     #[Test]

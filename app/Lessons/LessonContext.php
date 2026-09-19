@@ -42,7 +42,7 @@ final class LessonContext
      * Pre: the lesson's course has an approved syllabus and both interview
      *      documents are written.
      * Post: the returned text is `[persona | CRITERIA | WK | GUIDANCE]` in
-     *       that order, and is what PromptCaching puts the `system` cache
+     *       that order, and is what AnthropicProvider puts the `system` cache
      *       breakpoint on.
      *
      * @throws MissingCourseDocument
