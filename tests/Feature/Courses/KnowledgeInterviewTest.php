@@ -116,14 +116,18 @@ class KnowledgeInterviewTest extends TestCase
     }
 
     #[Test]
-    public function the_transcript_does_not_outlive_the_document(): void
+    public function the_transcript_outlives_the_document(): void
     {
         $this->scriptTutor();
         $course = $this->course();
 
         $this->interview($course);
 
-        $this->assertSame(0, InterviewMessage::query()->count(), 'Spec 4.3: discarded after summarization.');
+        $this->assertGreaterThan(
+            0,
+            InterviewMessage::query()->count(),
+            'Spec 4.3: the turns are kept once the document is written (ledger D9, amended 2026-09-19).',
+        );
     }
 
     #[Test]
@@ -162,7 +166,7 @@ class KnowledgeInterviewTest extends TestCase
 
         $this->assertSame('student', $signal->source->value);
         $this->assertNotNull((new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'));
-        $this->assertSame(0, InterviewMessage::query()->count());
+        $this->assertGreaterThan(0, InterviewMessage::query()->count(), 'The turns are kept (D9).');
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
     }
 

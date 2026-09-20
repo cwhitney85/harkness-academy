@@ -64,7 +64,11 @@ class GoalsInterviewTest extends TestCase
         }
 
         $this->assertSame(CourseStatus::SyllabusDraft, $course->fresh()?->status);
-        $this->assertSame(0, InterviewMessage::query()->count(), 'Spec 4.3: discarded after summarization.');
+        $this->assertGreaterThan(
+            0,
+            InterviewMessage::query()->count(),
+            'Spec 4.3: the turns are kept once the document is written (ledger D9, amended 2026-09-19).',
+        );
     }
 
     #[Test]
@@ -144,12 +148,12 @@ class GoalsInterviewTest extends TestCase
     }
 
     #[Test]
-    public function it_neither_reads_nor_deletes_the_other_interview_s_turns(): void
+    public function it_does_not_read_the_other_interview_s_turns(): void
     {
         $this->scriptTutor();
         $course = $this->course();
 
-        // What a failed 4.3 summarization would leave behind.
+        // The knowledge interview's own turns, which this one may not read.
         InterviewMessage::query()->create([
             'course_id' => $course->id,
             'kind' => InterviewKind::Knowledge,
@@ -170,7 +174,7 @@ class GoalsInterviewTest extends TestCase
         $this->assertSame(
             1,
             InterviewMessage::query()->where('kind', InterviewKind::Knowledge->value)->count(),
-            'Discarding one interview must not discard the other.',
+            'Summarizing one interview must not touch the other.',
         );
     }
 

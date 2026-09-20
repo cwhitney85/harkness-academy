@@ -125,7 +125,7 @@ class InterviewScreenTest extends TestCase
             'Solid',
             (string) (new MemoryTree)->get($course->student, 'math/algebra/WORKING_KNOWLEDGE.md'),
         );
-        $this->assertSame(0, InterviewMessage::query()->count(), 'The transcript goes when the document lands (4.3).');
+        $this->assertGreaterThan(0, InterviewMessage::query()->count(), 'The transcript stays when the document lands (4.3).');
     }
 
     /**
@@ -184,7 +184,7 @@ class InterviewScreenTest extends TestCase
             ->post(route('courses.knowledge-interview.answers.store', $course), ['text' => 'One more thing.'])
             ->assertRedirect(route('courses.goals-interview.show', $course));
 
-        $this->assertSame(0, InterviewMessage::query()->count());
+        $this->assertSame(0, InterviewMessage::query()->where('content', 'One more thing.')->count());
     }
 
     #[Test]

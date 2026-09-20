@@ -101,7 +101,7 @@ Five route files, each owning one subsystem. Every route below appears as an edg
 | `users` | the account, its plan (`standard`, or `demo` until a demo visitor signs up), its role (`student` or `admin`), and two-factor/passkey credentials |
 | `modules`, `subtopics` | the catalog a course is created against |
 | `courses` | one row per (user, subtopic, level, attempt): position, the two ending dates, the style |
-| `interview_messages` | both interview transcripts |
+| `interview_messages` | both interview transcripts, kept for the life of the course |
 | `course_syllabi` | one row per generation, pinned to the memory versions it was written from; one approved row per course |
 | `lessons` | position, status, the path of the guidance document, and the model its session started on — nothing the syllabus already says |
 | `lesson_messages` | the lesson transcript, including checkpoint turns |

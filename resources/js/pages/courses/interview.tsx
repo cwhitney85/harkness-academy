@@ -115,9 +115,10 @@ function Conversation({
     const [pressed, setPressed] = useState(false);
     const writing = pressed || writing_up;
 
-    // Guards the one request that is destructive if it is made twice. A ref
-    // rather than state because React's StrictMode runs effects twice on
-    // mount, and two concurrent opens would discard the first one's transcript.
+    // Guards the one request that must not be made twice. A ref rather than
+    // state because React's StrictMode runs effects twice on mount, and two
+    // concurrent opens would each stream an opening question into the same
+    // transcript.
     const opened = useRef(false);
     const foot = useRef<HTMLDivElement>(null);
 
