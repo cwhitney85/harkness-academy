@@ -2,12 +2,12 @@
 
 *Required by spec 2.5. Design decision D1 chose Anthropic-direct with a clean provider abstraction, on the condition that every Anthropic-ism is written down here rather than accumulating silently. This file is the record of what a provider migration would cost.*
 
-The rule: **if a change is made because the provider is Anthropic, it gets an entry.** Model IDs are not entries — they live in `config/ai.php` behind the tier indirection (spec 2.1.1) and swap with the rest of the block.
+The rule: **if a change is made because the provider is Anthropic, it gets an entry.** Model IDs are not entries — they are rows in `ai_models`, reached through the tier indirection (spec [2.1.1](specs/02-ai-layer.md), [14.1](specs/14-routing-and-usage.md)), and swap without a code change.
 
 | # | What | Where | Cost to leave |
 |---|---|---|---|
 | 1 | Prompt-caching breakpoints, and the workaround that gets them onto the wire | `app/Ai/Providers/AnthropicProvider.php` | Low — the class goes with the provider (spec 14.2.1) |
-| 2 | Cache-cost multipliers used to price a call | `config/ai.php` → `prompt_caching.read_multiplier` / `write_multiplier` | Low — numbers only |
+| 2 | ~~Cache-cost multipliers used to price a call~~ | — | **Retired 2026-09-20** (spec 14.5.1) — a cache price is now a column on the serving model's row |
 | 3 | Behaviour tuned against Claude: prompt fixes, the interview opener, structured replies, tool calls, cache floors | `prompts/`, the json schemas, `app/Ai/Tools/SignalComplete.php` | Medium — no code, but a trial course per model |
 
 ---
@@ -56,7 +56,7 @@ If real usage shows students doing back-to-back lessons, `ai.prompt_caching.ttl`
 
 **This inverts the intuition, so plan around it.** The `cheap` tier needs an eight-times-longer prefix than `top` before caching engages at all. Its consumers in the 2.3.2 inventory — `checkpoint.generate`, `quiz.refresher`, `explainer.select` — are our *shortest* prompts, so they will very likely never cache no matter what breakpoints we send. That is not a bug to fix; it is a reason not to count on caching when estimating their cost, and a reason not to spend effort optimising prefixes on that tier.
 
-Re-check this table whenever `config/ai.php` changes a tier's model. A model swap can move the floor by 8x in either direction with no other visible change.
+Re-check this table whenever a tier's row points at a different model (Admin → Models, spec 14.4). A model swap can move the floor by 8x in either direction with no other visible change.
 
 ### What Anthropic needs
 
@@ -135,13 +135,13 @@ The markers live in `AnthropicProvider`, which also counts Anthropic's tokens an
 
 ---
 
-## 2. Cache-cost multipliers
+## 2. Cache-cost multipliers — retired
 
-**Status:** live. `config/ai.php` → `prompt_caching.read_multiplier` (0.1) and `write_multiplier` (1.25).
+**Status: retired 2026-09-20** (spec 14.5.1). Nothing to port; the entry stays so the row above has somewhere to point.
 
-Anthropic prices a cache read at 0.1x the input rate and a 5-minute cache write at 1.25x. `App\Ai\UsageRecorder::cost()` uses those two numbers to price the `usage_events` row required by spec 2.2. Another provider with a different cache-pricing shape — or none — changes these two numbers, or drops them to `0.1`/`1.0` where reads are free and writes are not billed separately.
+This entry described two config values, `prompt_caching.read_multiplier` (0.1) and `write_multiplier` (1.25), which `App\Ai\UsageRecorder::cost()` applied to every tier's input price. It was an Anthropic-ism twice over: the multipliers are Anthropic's ratios, and applying them to whatever model served assumed every provider prices cache the same way.
 
-Cost to leave: two config values.
+Spec 14 removed both halves. A cache read and a cache write each have their own per-million-token column on the model's `ai_models` row ([D53](02-design.md)), and `App\Ai\Providers\AnthropicProvider::cost()` reads them — so a provider whose cache pricing has a different shape, or none, gets its own class and its own columns. The one ratio left is Anthropic's alone and lives in entry #1: under `ttl: 1h` the class prices a cache write at 2x input rather than the row's five-minute price.
 
 ---
 

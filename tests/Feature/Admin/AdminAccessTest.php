@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Ai\Tier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
@@ -32,9 +33,17 @@ class AdminAccessTest extends TestCase
     {
         $student = User::factory()->withTwoFactor()->create();
 
+        // A bound parameter must resolve, or the route 404s before the gate
+        // runs; each admin route's parameter names an id that exists here.
+        $ids = ['user' => $student->id, 'model' => Tier::Cheap->primary()['id']];
+
         foreach ($this->adminRoutes() as $route) {
             $method = $route->methods()[0];
-            $uri = '/'.preg_replace('/\{[^}]+\}/', (string) $student->id, $route->uri());
+            $uri = '/'.preg_replace_callback(
+                '/\{([^}?]+)\??\}/',
+                fn (array $m): string => (string) ($ids[$m[1]] ?? throw new \LogicException("No id for [{$m[1]}].")),
+                $route->uri(),
+            );
 
             $this->actingAs($student)->call($method, $uri)
                 ->assertForbidden();

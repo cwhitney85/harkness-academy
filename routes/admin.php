@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActionLogController;
+use App\Http\Controllers\Admin\AiModelController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\ViewAsController;
 use App\Http\Middleware\RequireSecondFactor;
@@ -25,6 +26,10 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('/', [StudentController::class, 'index'])->name('admin.home');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
+
+        // The model catalog, its tiers, and what each model has cost (14.4).
+        Route::get('models', [AiModelController::class, 'index'])->name('admin.models');
+        Route::put('models/{model}', [AiModelController::class, 'update'])->name('admin.models.update');
 
         // Viewing as a student (13.4). Step-up and Exit are the only two
         // `/admin*` routes reachable while viewing (13.4.6); `ViewAsStudent`

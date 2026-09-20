@@ -8,7 +8,7 @@
 
 | # | Subject | Status |
 |---|---|---|
-| D1 | Model sourcing — Anthropic-direct behind a provider abstraction | current |
+| D1 | Model sourcing — Anthropic-direct behind a provider abstraction | **amended 2026-09-20** — its "a config change" claim did not hold for the v1 code; spec 14 makes it hold |
 | D2 | Frontend — Inertia + React | current |
 | D3a | Memory storage — a virtual file tree in Postgres | current |
 | D3b | Memory writes — workflow-initiated only | current |
@@ -97,6 +97,8 @@
 
 Rejected: A (direct, no discipline — lock-in by accretion), B (OpenRouter — +5.5% fee, extra debug hop, beta features unreachable, buys flexibility with no v1 use).
 Rationale: list price, first-party caching, betas reachable; the Laravel AI SDK's provider abstraction makes later multi-provider a config change. Every Anthropic-ism is logged in a portability ledger (spec 2.5). User model selector deferred, not foreclosed.
+
+**Amended 2026-09-20 (spec 14.5.1).** The "config change" claim did not hold for the v1 code, and saying it did let the lock-in D1 rejected accumulate anyway: `PendingCall` never passed a provider, tier and price and timeout all read one config block, and cache markers and cost multipliers sat in the gateway (found by reading the code 2026-09-18, [D52](#d52-tasks-reach-models-through-a-database-catalog-tiers-are-rows-with-backup-models-resolved-2026-09-18-spec-14-items-1411416-colin)). Spec 14 makes it hold: a call reaches its model through `ai_models` and `ai_tiers`, and one class per provider owns that provider's markers, token counting and pricing ([D53](#d53-prices-belong-to-a-model-token-counting-and-cache-markers-belong-to-a-provider-class-resolved-2026-09-18-spec-14-items-1421424)). Adding a provider is now a row and a class, not a config edit — and not a change to any call site.
 
 ## D2. Frontend — **B: Inertia + React**
 

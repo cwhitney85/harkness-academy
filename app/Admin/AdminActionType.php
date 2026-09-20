@@ -11,4 +11,5 @@ enum AdminActionType: string
     case ViewAsStarted = 'view_as.started';
     case ViewAsSteppedUp = 'view_as.stepped_up';
     case ViewAsExited = 'view_as.exited';
+    case AiModelRepriced = 'ai_model.repriced';
 }

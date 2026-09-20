@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Ai\Tier;
 use App\Models\AdminAction;
 use App\Models\User;
 use Closure;
@@ -63,6 +64,10 @@ class AdminWritesTest extends TestCase
         $viewing = fn (self $test, User $student) => $test->post("/admin/users/{$student->id}/view-as");
 
         return [
+            'admin.models.update' => fn (self $test) => fn () => $test->put(
+                '/admin/models/'.Tier::Cheap->primary()['id'],
+                ['input_per_mtok' => 2, 'output_per_mtok' => 10, 'cache_read_per_mtok' => 0.2, 'cache_write_per_mtok' => 2.5],
+            ),
             'admin.users.view-as' => fn (self $test, User $student) => fn () => $viewing($test, $student),
             'admin.view-as.step-up' => function (self $test, User $student) use ($viewing) {
                 $viewing($test, $student);

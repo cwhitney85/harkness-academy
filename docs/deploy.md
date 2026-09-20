@@ -80,11 +80,11 @@ Infrastructure canvas → **Add compute** → **Managed queue**:
 | `--force` | off |
 | Autoscaling | min 0, max 3 workers |
 
-**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call is capped at 300 seconds by `config/ai.php`, so at 60 the worker kills every syllabus and exam generation mid-call — the same failure this queue exists to remove, one layer down and harder to see.
+**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call is capped at 300 seconds by its `ai_tiers` row (spec [14.1.2](specs/14-routing-and-usage.md)), so at 60 the worker kills every syllabus and exam generation mid-call — the same failure this queue exists to remove, one layer down and harder to see.
 
 360 sits just above the app's own ceiling, so our error handling wins over the worker's. It does not cover the theoretical worst case of both attempts running the full 300 seconds, and deliberately: the retry exists for *unusable output*, not slowness, so a second attempt normally begins within seconds of the first and both fit well inside 360. The case it truncates — a first attempt burning the entire 300s — is the one where retrying is least likely to help.
 
-**Both numbers are ceilings, not measurements.** `usage_events.latency_ms` records every call and the Queues dashboard graphs processing duration; after a handful of real generations, tighten `top` in `config/ai.php` and this timeout with it. That also shrinks the Flex exposure below.
+**Both numbers are ceilings, not measurements.** `usage_events.latency_ms` records every call and the Queues dashboard graphs processing duration; after a handful of real generations, tighten `top`'s `timeout` in `ai_tiers` and this timeout with it. That also shrinks the Flex exposure below.
 
 **Cloud will warn that timeouts over 90 seconds want the Pro class, and it is right.** Flex workers run on interruptible capacity with a 90-second shutdown grace, so any job over 90 seconds can be killed mid-run and redelivered — no timeout value changes that. Both generation jobs are idempotent, so a redelivery is safe; it costs one more `top`-tier call. Staying on Flex accepts that trade. Regular interruptions on the Queues dashboard are the signal to move to Pro, not the warning itself.
 
@@ -173,7 +173,7 @@ grep -n fastcgi_read_timeout /etc/nginx/conf.d/default.conf
 
 The second match is the one that governs; the first is a different location block. If it still reads `20s` after a deploy, the setting did not take.
 
-**60 seconds is below what the tiers allow, and that is a standing constraint rather than a solved problem.** `config/ai.php` gives `mid` 120 seconds and `top` 300, so any call the application still believes in past 60 is one the host has already killed — the application's error handling never runs, and the student is told nothing useful by the layer that gave up first. The ordering the queue gets right (`--timeout` 360 above `top`'s 300) cannot be bought here at any price.
+**60 seconds is below what the tiers allow, and that is a standing constraint rather than a solved problem.** `ai_tiers` gives `mid` 120 seconds and `top` 300, so any call the application still believes in past 60 is one the host has already killed — the application's error handling never runs, and the student is told nothing useful by the layer that gave up first. The ordering the queue gets right (`--timeout` 360 above `top`'s 300) cannot be bought here at any price.
 
 **So nothing inside a streamed request may go quiet for 60 seconds.** Run `php artisan usage:latency` (spec 2.2.1) from the Commands tab to see which prompts are near the line; anything that runs to completion without writing bytes — a non-streamed `generate()` after `turn.end`, for instance — belongs on the queue rather than in the request.
 

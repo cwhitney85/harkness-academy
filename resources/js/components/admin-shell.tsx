@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { RailHead } from '@/components/rail';
-import { home, log } from '@/routes/admin';
+import { home, log, models } from '@/routes/admin';
 
 /**
  * The frame every admin screen is set in — the fourth shell (spec 13.3,
@@ -20,7 +20,10 @@ import { home, log } from '@/routes/admin';
  * A page set in this shell returns no layout from the switch in `app.tsx`.
  */
 
-export const NAV = [{ id: 'log', title: 'Log', href: log() }] as const;
+export const NAV = [
+    { id: 'models', title: 'Models', href: models() },
+    { id: 'log', title: 'Log', href: log() },
+] as const;
 
 export type AdminScreen = (typeof NAV)[number]['id'];
 

@@ -33,7 +33,7 @@
 ## 14.2 A class per provider
 
 - **14.2.1 MUST** — One class per provider owns its cache markers, its token counting and its pricing. "Input tokens" means uncached input everywhere. `PromptCaching` moves into the Anthropic class. *Done: the [2.4](02-ai-layer.md) wire test passes unchanged; request bodies are byte-identical before and after.*
-- **14.2.2 MUST** — A model can be marked active only if its provider has a class. *Done: validation refuses activating an `openrouter` model while no OpenRouter class exists.*
+- **14.2.2 MUST** — A model can be marked active only if its provider has a class. *Done: validation refuses activating an `openrouter` model while no OpenRouter class exists.* **It guards activation, not use** (noted 2026-09-20): `Tier::failover()` walks a tier's backups without checking `active`, so a model deactivated after a tier named it as a backup is still offered to the SDK. The next unit owns it.
 - **14.2.3 MUST** — Each class has a token-counting test against a recorded provider response that includes cached tokens. *Done: the Anthropic test passes.*
 - **14.2.4 MUST** — A call is priced from the serving model's prices when its row is written. *Done: equal tokens on two models cost differently; editing a price leaves past rows unchanged.*
 

@@ -204,6 +204,8 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       │         ├─ Step up, with a reason ──► POST /admin/view-as/step-up ──► the same screen, acting as them
       │         └─ Exit, or 60 minutes, or logout ──► DELETE /admin/view-as ──► GET admin
       GET admin/log ──► Admin → Log (13.2.3)
+      GET admin/models ──► Admin → Models (14.4)
+      │   └─ Prices ──► PUT /admin/models/{model} ──► the same screen
       no second factor ──► GET settings/security (13.1.5); a student ──► 403 (13.1.2)
 ```
 
@@ -292,6 +294,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `well-known.passkeys` | machine endpoint; no student edge |
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
+| `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 
 Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
 

@@ -1,6 +1,9 @@
 # Harkness Academy
 
-An LLM personal tutor. Laravel 13 + Inertia/React + Postgres, Anthropic-direct.
+An LLM personal tutor. Laravel 13 + Inertia/React + Postgres. Every AI call reaches its model
+through a database catalog, and one class per provider owns that provider's cache markers, token
+counting and pricing (spec [14](docs/specs/14-routing-and-usage.md)). Anthropic is the only provider
+built; **multiple providers is the plan**, and always was ([D1](docs/02-design.md)).
 
 ## Local setup
 
@@ -48,9 +51,11 @@ usage. It lays the ground for the two units after it.
 **Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
 and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.
 
-**Model switching.** The move to multiple providers that Anthropic-direct was always the first step of
-([D1](docs/02-design.md)): provider classes beyond Anthropic, changing a tier's model from admin, and
-importing prices for a larger catalog.
+**Model switching.** The rest of the move to multiple providers that Anthropic-direct was always the
+first step of ([D1](docs/02-design.md)). Spec 14 landed the catalog, the tiers as rows and the provider
+class; what is left is [14.6](docs/specs/14-routing-and-usage.md)'s three exclusions — provider classes
+beyond Anthropic, changing a tier's model from admin, importing prices for a larger catalog — and
+same-provider fallback within a tier, which the SDK's failover cannot do ([D52](docs/02-design.md)).
 
 **Explicit teaching style, and personas the student picks.** A course already carries a
 style column and the persona is already a prompt file, but exactly one style ships and
