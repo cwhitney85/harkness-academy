@@ -210,3 +210,19 @@ Deleting a user cascades to their courses and lessons, and each of those sets a 
 Package 15 moved prompts into the database, so every test that makes an AI call needs the 18 `prompts` rows before it runs. `RefreshDatabase` looks like it has a hook for exactly this — `afterRefreshingDatabase()` — and it is the wrong one twice over: it runs on **every** test, not once, and it runs **after** `beginDatabaseTransaction()`, so whatever it writes is rolled back with the test that wrote it. `migrateDatabases()` is the right side of the transaction but cannot be overridden from `Tests\TestCase`, because a trait's method in the subclass beats an inherited one from the parent class.
 
 **Name a seeder: `protected $seeder = SomeSeeder::class;` on `Tests\TestCase`.** `migrate:fresh --seeder=` runs it once per process, after the migrations and before the transaction, so the rows are there for the whole run. `Database\Seeders\PromptRegistrySeeder` is the example. It runs that seeder *instead of* `DatabaseSeeder`, which is what is wanted here — nothing else is seeded into every test.
+
+## T19. `wayfinder:generate` by hand drops the form variants the vite plugin asks for
+
+*Found 2026-09-21, building spec 15.2.*
+
+`vite.config.ts` configures `wayfinder({ formVariants: true })`, so every generated route gets a `.form` helper and eighteen files across `resources/js` import one. Running `php artisan wayfinder:generate` by hand regenerates without that option and strips them all, and the failure surfaces as eighteen unrelated TypeScript errors in auth and settings screens — nowhere near the route you were adding.
+
+**Run `php artisan wayfinder:generate --with-form`, or just let vite do it.** The generated tree is gitignored, so a bad run is invisible to `git status` and only `npx tsc --noEmit` catches it.
+
+## T20. A body that drops a declared variable fails silently, and `render()` is not the guard
+
+*Found 2026-09-21, building spec 15.2.*
+
+`PromptDefinition::render()` compares the *supplied* variables to the *declared* ones, and never looks at the body. So two things pass straight through it: a body interpolating `{{ x }}` that `vars` does not declare leaves `{{ x }}` in the prompt text verbatim, and a body that has stopped using a declared `{{ x }}` renders fine while the call site keeps passing the material and the model never sees it. The second is the dangerous one — nothing anywhere errors, and the prompt just quietly gets worse.
+
+**Both directions are checked where a body is written, not where it is rendered**: `prompts:sync` refuses a file that drops a var the active version uses ([15.1.4](specs/15-prompt-registry.md)), and the editor refuses a save whose body and the file's `vars` disagree either way ([15.2.2](specs/15-prompt-registry.md)). The gap that remains: a file that *adds* a var the running body does not use is still silent, because the file's `vars` import and its body does not (ledger [D65](02-design.md)).

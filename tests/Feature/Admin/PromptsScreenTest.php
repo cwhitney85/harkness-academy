@@ -327,6 +327,14 @@ class PromptsScreenTest extends TestCase
 
         $this->assertSame(2, $logged->payload['was']['version']);
         $this->assertSame(1, $logged->payload['now']['version']);
+
+        // The diff still has something to show, although what is running is
+        // now the oldest version there is.
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('diff.from', 1)
+                ->where('diff.to', 2)
+                ->where('versions.1.active', true));
     }
 
     /**

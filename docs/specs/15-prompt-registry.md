@@ -25,9 +25,9 @@
 ## 15.2 Editor
 
 - **15.2.1 MUST** — Admin → Prompts lists key, active version, source, and seven-day calls and cost. *Done: renders all 18 prompts.*
-- **15.2.2 MUST** — Saving a new body or tier creates a version, activates it, and logs it. A missing or undeclared var is refused at save. *Done: feature tests.*
+- **15.2.2 MUST** — Saving a new body or tier creates a version, activates it, and logs it. A missing or undeclared var is refused at save — both directions, because `render()` catches neither ([T20](../lessons.md)). *Done: feature tests.*
 - **15.2.3 MUST** — A prompt that streams inside the request may move only between `cheap` and `mid` until the queued-streaming unit lands ([D63](../02-design.md)). `tier: session` prompts have no editable tier. The in-request list lives in code. *Done: the editor refuses `top` for `interview.knowledge`.*
-- **15.2.4 MUST** — Any two versions can be diffed, and any version re-activated; re-activation is logged. *Done: rolling back to v1 makes the next usage row name v1.*
+- **15.2.4 MUST** — Any two versions can be diffed, and any version re-activated; re-activation is logged, writes no version, and is held to 15.2.3's tier rule so it cannot be a second door to a tier a save refuses. *Done: rolling back to v1 makes the next usage row name v1.*
 - **15.2.5 MUST** — `php artisan prompts:pull` writes active versions back to `prompts/` byte-exact, so the repo, the test seeder and git history hold what is running. *Done: pull leaves a file the loader parses back to the active version's body, tier and contract; a sync after a pull makes no version.*
 
 ## 15.3 Experiments

@@ -209,8 +209,12 @@ class PromptController extends Controller
      * The diff the screen is showing (15.2.4), or null where there is nothing
      * to compare.
      *
-     * `from` and `to` are version numbers, defaulting to the active version
-     * and the one before it, which is the comparison worth seeing by default.
+     * `from` and `to` are version numbers, defaulting to the two newest --
+     * the most recent change, which is the comparison worth seeing without
+     * being asked. Not the active version and its neighbour: a prompt rolled
+     * back to its oldest version would have nothing below it to compare
+     * against, and the history table already marks which one is running.
+     *
      * A number this prompt has no version for is a 404 rather than a silent
      * fallback: the screen's own controls never send one.
      *
@@ -224,21 +228,18 @@ class PromptController extends Controller
             return null;
         }
 
-        $to = (int) $request->integer('to', $prompt->activeVersion->number);
-        $from = (int) $request->integer('from', (int) $numbers->filter(fn (int $n): bool => $n < $to)->last() ?: $numbers->first());
+        $to = $request->integer('to', $numbers->last());
+        $from = $request->integer('from', $numbers[$numbers->count() - 2]);
 
-        $body = function (int $number) use ($prompt): string {
-            $version = $prompt->versions->firstWhere('number', $number);
+        $before = $prompt->versions->firstWhere('number', $from);
+        $after = $prompt->versions->firstWhere('number', $to);
 
-            abort_if($version === null, 404);
-
-            return $version->body;
-        };
+        abort_if($before === null || $after === null, 404);
 
         return [
             'from' => $from,
             'to' => $to,
-            'lines' => PromptDiff::between($body($from), $body($to)),
+            'lines' => PromptDiff::between($before->body, $after->body),
         ];
     }
 
