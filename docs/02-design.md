@@ -93,7 +93,7 @@
 | D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
 | D64 | Any withdrawn attempt may be resumed | current |
 | D65 | The database owns a prompt's body; a file seeds it and archives it | current |
-| D66 | A/B experiments wait for students; what returns is an evaluation package, not this one | current |
+| D66 | A/B experiments wait for students; what returns is an evaluation package, not this one — **carries the quality-signal survey** | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1111,8 +1111,27 @@ Falsified if: a prompt body ever needs to ship with the code that calls it, at w
 
 Rejected: **building it as specced** (correct machinery measuring noise, and the sunk shape would bias what is built later) · **building only the deterministic assignment now** and leaving the screen (a hash with nothing reading it) · **folding it into package 17's admin screens** (a comparison screen with nothing to compare is not an admin screen problem).
 
-**What is settled for whatever comes back.** A variant is authored by a save that does *not* activate, so a candidate never runs at 100% before the split — this amends [15.2.2](specs/15-prompt-registry.md), which activates on every save. The model is the primary axis and the prompt body the secondary one, because that is where the numbers actually move. And any quality signal must attach to the `usage_events` row that produced the output, or it cannot be attributed to a prompt version and no comparison can use it.
+**What is settled for whatever comes back.** A variant is authored by a save that does *not* activate, so a candidate never runs at 100% before the split — this amends [15.2.2](specs/15-prompt-registry.md), which activates on every save. The model is the primary axis and the prompt body the secondary one, because that is where the numbers actually move. And it needs a quality signal, which reopens 15.3.6's WONT; the candidates surveyed when this was deferred are below.
 
-**The golden set is the first piece and the only one that works today.** A fixed set of captured inputs, run through two prompt versions, outputs read side by side. It is not a score — it is a reproducible comparison, which is what turns "I think B is better" into something checkable while Colin is still the only judge. `tests/fixtures/prompts/*.txt` already pins what each prompt renders to; what is missing is captured model replies.
+### Candidates for the quality signal — surveyed 2026-09-21, none weighed
+
+*Recorded so the package that returns does not rederive them. The useful split is not cheap against expensive, it is **works with one student** against **needs volume**.*
+
+**Works at n=1.**
+
+- **Contract compliance.** Eight of the eighteen prompts must return JSON against a schema — `syllabus.generate`, `syllabus.revise`, `exam.final`, `homework.generate`, `quiz.refresher`, `checkpoint.generate`, `lesson.summarize`, `subtopic.check`. For those, part of "quality" is "obeyed its own contract", and that is mechanically checkable with no judge: did it parse, did the quiz have four options with exactly one correct, did the syllabus have the right lesson count, did `explainer.select` stay under the 200 words its body demands. Half-built already — a failed parse lands as `failed` in `usage_events.outcome`. Weakest signal, lowest cost, and the only one that needs no human at all.
+- **The golden set.** A fixed set of captured inputs, run through two prompt versions, outputs read side by side. Not a score — a reproducible comparison, which is what turns "I think B is better" into something checkable while Colin is the only judge. `tests/fixtures/prompts/*.txt` already pins what each prompt *renders to*; the missing half is captured model *replies*. **Recommended first build**, because it is the only candidate that pays off before there are students.
+- **Colin's own rating.** A 1–5 or thumbs on a generated section or syllabus, stored against the call that produced it. Cheap to build, expensive to run, and the only signal that directly encodes taste. It is also the calibration set any LLM judge would need, so it is not skippable by building the judge instead.
+
+**Needs volume.**
+
+- **Student assessment outcomes — the signal this app has and a chatbot does not.** The app grades the student, so it holds ground truth about whether the teaching worked: whether the checkpoint was answered right first try for a section taught by one variant against another, homework and final-exam scores per concept (`final_exam_concepts` already carries the emphasis), and refresher results weeks later, which measure retention rather than comprehension. The data is already accumulating — nine courses hold 45 quizzes and 171 graded attempts as of this entry. Best signal, slowest, and heavily confounded: an exam score reflects a whole course, not one section's wording, so it needs enough courses to average the confounds out.
+- **Confusion proxies, derivable from rows already written.** A Q&A turn immediately after a section, or `explainer.select` called against it, means the prose did not land. Both are already recorded — the turns in `lesson_messages`, the explainer calls as `usage_events` rows naming their lesson — so this costs a query rather than a feature.
+
+**Either, once calibrated.**
+
+- **An LLM judge.** A cheap model scores an output against a rubric. Fast and scalable, with a known bias toward longer and more confident writing, which would quietly select for a wordier tutor. Only trustworthy once calibrated against human ratings — so it is not a shortcut past hand-scoring, it is what is built *after* hand-scoring to stop doing it. It would be a prompt like any other: an inventory row (2.3.2), a usage row, a tier.
+
+**The plumbing that makes any of them usable.** A score must attach to the `usage_events` row that produced the output. That row already knows the prompt version, the model, the course and the lesson, so a score hung there is attributable to a version and a model for free. A score stored anywhere else — on the lesson, on the course, in a file — cannot be attributed to a prompt version, and no comparison screen can ever read it. Likeliest shape is a small table pointing at a usage row, one row per score, so that several kinds of signal can coexist against the same call.
 
 Falsified if: the app reaches enough students that a split is informative before any quality signal exists, at which point cost and latency per variant are worth having on their own.

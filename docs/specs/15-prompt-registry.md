@@ -42,8 +42,8 @@ What was specced: `experiments` (prompt, status, started/stopped) and `experimen
 
 - Variants author as **non-activating saves**, so a candidate never runs at 100% before the split. This amends [15.2.2](#152-editor), which activates on every save.
 - The **model is the primary axis and the body secondary**, inverting how the items above read.
-- It needs **at least one quality signal**, which reopens that exclusion. Any such signal must attach to the `usage_events` row that produced the output, or it cannot be attributed to a prompt version and no comparison screen can show it.
-- The **golden set** — a fixed set of captured inputs, run through two versions, outputs read side by side — is the one piece that works before there are students, and is the first thing to build.
+- It needs **at least one quality signal**, which reopens that exclusion. [D66](../02-design.md) surveys the candidates — contract compliance, a golden set, Colin's own rating, student assessment outcomes, confusion proxies, an LLM judge — and the constraint they share: a score must hang off the `usage_events` row that produced the output, or it cannot be attributed to a prompt version.
+- The **golden set** is the first thing to build, being the only candidate that pays off before there are students.
 
 ## 15.4 Out of scope
 
