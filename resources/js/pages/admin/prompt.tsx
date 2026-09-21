@@ -1,8 +1,8 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 
 import AdminShell from '@/components/admin-shell';
 import { prompts } from '@/routes/admin';
-import { update } from '@/routes/admin/prompts';
+import { activate, show, update } from '@/routes/admin/prompts';
 
 /**
  * One prompt (spec 15.2.2, 15.2.3): its contract, and the body and tier that
@@ -15,6 +15,21 @@ import { update } from '@/routes/admin/prompts';
  * `cheap` and `mid` for one that streams inside a request (15.2.3).
  */
 
+type Version = {
+    number: number;
+    tier: string;
+    source: string;
+    author: string | null;
+    saved_at: string;
+    active: boolean;
+};
+
+type Diff = {
+    from: number;
+    to: number;
+    lines: { marker: 'keep' | 'add' | 'remove'; text: string }[];
+};
+
 type PromptDetail = {
     key: string;
     output: string;
@@ -25,12 +40,21 @@ type PromptDetail = {
     body: string;
 };
 
+const saved = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+});
+
 export default function AdminPrompt({
     prompt,
     tiers,
+    versions,
+    diff,
 }: {
     prompt: PromptDetail;
     tiers: string[];
+    versions: Version[];
+    diff: Diff | null;
 }) {
     const form = useForm({ body: prompt.body, tier: prompt.tier });
 
@@ -133,6 +157,111 @@ export default function AdminPrompt({
                     )}
                 </div>
             </form>
+
+            <h2 className="label mt-11 mb-3">History</h2>
+            <div className="overflow-x-auto">
+                <table className="ledger min-w-max">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Tier</th>
+                            <th>Saved</th>
+                            <th>By</th>
+                            <th />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {versions.map((version) => (
+                            <tr key={version.number}>
+                                <td className="whitespace-nowrap">
+                                    v{version.number}
+                                    {version.active && (
+                                        <span className="label ml-2 text-wine">
+                                            running
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="text-[13px] tracking-[0.08em]">
+                                    {version.tier}
+                                </td>
+                                <td className="whitespace-nowrap text-muted-ink">
+                                    {saved.format(new Date(version.saved_at))}
+                                </td>
+                                <td>
+                                    {version.source === 'file'
+                                        ? 'seeded from file'
+                                        : (version.author ?? '—')}
+                                </td>
+                                <td className="text-right whitespace-nowrap">
+                                    {diff && diff.to !== version.number && (
+                                        <Link
+                                            href={show(prompt.key, {
+                                                query: {
+                                                    from: version.number,
+                                                    to: diff.to,
+                                                },
+                                            })}
+                                            preserveScroll
+                                            className="label mr-3 inline-flex min-h-11 items-center text-muted-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+                                        >
+                                            Compare
+                                        </Link>
+                                    )}
+                                    {!version.active && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(
+                                                    activate([
+                                                        prompt.key,
+                                                        version.number,
+                                                    ]).url,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                            className="label min-h-11 border border-wine px-3 text-wine hover:bg-wine hover:text-ground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+                                        >
+                                            Run this
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {diff && (
+                <>
+                    <h2 className="label mt-11 mb-3">
+                        v{diff.from} → v{diff.to}
+                    </h2>
+                    <pre className="overflow-x-auto border border-hairline bg-surface p-3 font-mono text-[13.5px] leading-[1.6]">
+                        {diff.lines.map((line, index) => (
+                            <div
+                                key={index}
+                                className={
+                                    line.marker === 'add'
+                                        ? 'bg-brass/15'
+                                        : line.marker === 'remove'
+                                          ? 'text-muted-ink line-through decoration-wine/50'
+                                          : undefined
+                                }
+                            >
+                                <span aria-hidden className="text-muted-ink">
+                                    {line.marker === 'add'
+                                        ? '+ '
+                                        : line.marker === 'remove'
+                                          ? '- '
+                                          : '  '}
+                                </span>
+                                {line.text || '\u00a0'}
+                            </div>
+                        ))}
+                    </pre>
+                </>
+            )}
         </AdminShell>
     );
 }

@@ -13,4 +13,5 @@ enum AdminActionType: string
     case ViewAsExited = 'view_as.exited';
     case AiModelRepriced = 'ai_model.repriced';
     case PromptEdited = 'prompt.edited';
+    case PromptRolledBack = 'prompt.rolled_back';
 }

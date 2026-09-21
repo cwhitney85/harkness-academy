@@ -73,6 +73,16 @@ class AdminWritesTest extends TestCase
                 '/admin/prompts/explainer.select',
                 ['body' => Prompt::query()->with('activeVersion')->where('key', 'explainer.select')->sole()->activeVersion->body, 'tier' => 'cheap'],
             ),
+            'admin.prompts.activate' => function (self $test) {
+                $prompt = Prompt::query()->with('activeVersion')->where('key', 'explainer.select')->sole();
+
+                $test->put('/admin/prompts/explainer.select', [
+                    'body' => $prompt->activeVersion->body."\nOne more line.\n",
+                    'tier' => 'cheap',
+                ]);
+
+                return fn () => $test->post('/admin/prompts/explainer.select/versions/1');
+            },
             'admin.users.view-as' => fn (self $test, User $student) => fn () => $viewing($test, $student),
             'admin.view-as.step-up' => function (self $test, User $student) use ($viewing) {
                 $viewing($test, $student);

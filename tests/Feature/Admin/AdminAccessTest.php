@@ -40,6 +40,7 @@ class AdminAccessTest extends TestCase
             'user' => $student->id,
             'model' => Tier::Cheap->primary()['id'],
             'prompt' => 'explainer.select',
+            'number' => 1,
         ];
 
         foreach ($this->adminRoutes() as $route) {

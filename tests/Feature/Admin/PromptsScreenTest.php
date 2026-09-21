@@ -11,6 +11,7 @@ use App\Models\Prompt;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -219,6 +220,139 @@ class PromptsScreenTest extends TestCase
                 'tier' => 'top',
             ])
             ->assertSessionHasErrors('tier');
+    }
+
+    #[Test]
+    public function the_history_lists_every_version_newest_first_with_who_saved_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $prompt = $this->prompt('explainer.select');
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'In one sentence.'),
+            'tier' => 'cheap',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('versions', 2)
+                ->where('versions.0.number', 2)
+                ->where('versions.0.active', true)
+                ->where('versions.0.author', $admin->name)
+                ->where('versions.0.source', 'admin')
+                ->where('versions.1.number', 1)
+                ->where('versions.1.active', false)
+                ->where('versions.1.author', null)
+                ->where('versions.1.source', 'file'));
+    }
+
+    #[Test]
+    public function the_diff_defaults_to_the_active_version_against_the_one_before_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $prompt = $this->prompt('explainer.select');
+
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select')
+            ->assertInertia(fn (Assert $page) => $page->where('diff', null), 'One version is nothing to compare.');
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'In one sentence.'),
+            'tier' => 'cheap',
+        ]);
+
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('diff.from', 1)
+                ->where('diff.to', 2)
+                ->where('diff.lines', fn (Collection $lines): bool => $lines->contains(
+                    fn (array $line): bool => $line === ['marker' => 'add', 'text' => 'In one sentence.'],
+                )));
+    }
+
+    #[Test]
+    public function any_two_versions_can_be_diffed(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        foreach (['Second.', 'Third.'] as $addition) {
+            $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+                'body' => $this->body($this->prompt('explainer.select'), $addition),
+                'tier' => 'cheap',
+            ])->assertSessionHasNoErrors();
+        }
+
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select?from=1&to=3')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('diff.from', 1)
+                ->where('diff.to', 3)
+                // Both edits, although neither is in v1 or in the other's
+                // version: a diff across a gap is not a diff of neighbours.
+                ->where('diff.lines', fn (Collection $lines): bool => $lines
+                    ->where('marker', 'add')
+                    ->pluck('text')
+                    ->intersect(['Second.', 'Third.'])
+                    ->count() === 2));
+
+        $this->actingAs($admin)->get('/admin/prompts/explainer.select?from=1&to=9')->assertNotFound();
+    }
+
+    /**
+     * Spec 15.2.4's done-condition. A call reads its version id from
+     * `PromptRepository`, which the gateway hands to every `PendingCall` and
+     * which is what lands in `usage_events.prompt_version_id` (15.1.6).
+     */
+    #[Test]
+    public function rolling_back_makes_the_next_call_name_the_older_version(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $prompt = $this->prompt('explainer.select');
+        $first = $prompt->activeVersion;
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'In one sentence.'),
+            'tier' => 'cheap',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->post('/admin/prompts/explainer.select/versions/1')
+            ->assertRedirect('/admin/prompts/explainer.select')
+            ->assertSessionHasNoErrors();
+
+        $repository = app(PromptRepository::class);
+
+        $this->assertSame($first->id, $repository->version('explainer.select'));
+        $this->assertSame($first->body, $repository->get('explainer.select')->body);
+        $this->assertSame(2, $this->prompt('explainer.select')->versions()->count(), 'A rollback writes no version.');
+
+        $logged = AdminAction::query()->where('action', AdminActionType::PromptRolledBack)->sole();
+
+        $this->assertSame(2, $logged->payload['was']['version']);
+        $this->assertSame(1, $logged->payload['now']['version']);
+    }
+
+    /**
+     * Spec 15.2.3 must not have a second door: a prompt that has since joined
+     * the in-request list cannot be rolled back onto a tier it may no longer
+     * be saved at.
+     */
+    #[Test]
+    public function a_rollback_is_refused_when_the_versions_tier_is_no_longer_allowed(): void
+    {
+        $prompt = $this->prompt('interview.knowledge');
+
+        // As if this prompt had run at `top` before it began streaming inside
+        // the request; the editor itself would refuse to write this.
+        $prompt->versions()->create([
+            'number' => 2,
+            'body' => $prompt->activeVersion->body,
+            'tier' => Tier::Top,
+            'source' => PromptSource::Admin,
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post('/admin/prompts/interview.knowledge/versions/2')
+            ->assertSessionHasErrors('version');
+
+        $this->assertSame(1, $this->prompt('interview.knowledge')->activeVersion->number);
     }
 
     private function prompt(string $key): Prompt

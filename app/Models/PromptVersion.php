@@ -59,6 +59,16 @@ class PromptVersion extends Model
         return $this->belongsTo(Prompt::class);
     }
 
+    /**
+     * The admin who saved this version, absent on the one seeded from a file.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
     protected function casts(): array
     {
         return [

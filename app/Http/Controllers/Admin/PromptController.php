@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Admin\ActionLog;
 use App\Admin\AdminActionType;
 use App\Ai\Prompts\PromptDefinition;
+use App\Ai\Prompts\PromptDiff;
 use App\Ai\Prompts\PromptSource;
 use App\Ai\Tier;
 use App\Http\Controllers\Controller;
@@ -73,11 +74,22 @@ class PromptController extends Controller
         ]);
     }
 
-    public function show(Prompt $prompt): Response
+    public function show(Request $request, Prompt $prompt): Response
     {
-        $prompt->load('activeVersion');
+        $prompt->load(['activeVersion', 'versions.author']);
+
+        $versions = $prompt->versions->sortByDesc('number')->values();
 
         return Inertia::render('admin/prompt', [
+            'versions' => $versions->map(fn (PromptVersion $version): array => [
+                'number' => $version->number,
+                'tier' => $version->tier->value,
+                'source' => $version->source->value,
+                'author' => $version->author?->name,
+                'saved_at' => $version->created_at->toIso8601String(),
+                'active' => $version->id === $prompt->active_version_id,
+            ])->all(),
+            'diff' => $this->diff($request, $prompt),
             'prompt' => [
                 'key' => $prompt->key,
                 'output' => $prompt->output,
@@ -94,6 +106,45 @@ class PromptController extends Controller
                 $this->editableTiers($prompt),
             ),
         ]);
+    }
+
+    /**
+     * Re-activate an earlier version (15.2.4).
+     *
+     * Pre:  the version belongs to this prompt, and its tier is one this
+     *       prompt may run at -- a rollback must not be a second door to a
+     *       tier 15.2.3 refuses at save.
+     * Post: that version is active, nothing is written to `prompt_versions`,
+     *       and one `admin_actions` row names both numbers.
+     */
+    public function activate(Request $request, Prompt $prompt, int $number, ActionLog $log): RedirectResponse
+    {
+        $prompt->load('activeVersion');
+
+        $was = $prompt->activeVersion;
+        $version = $prompt->versions()->where('number', $number)->firstOrFail();
+        $tiers = $this->editableTiers($prompt);
+
+        if ($tiers !== [] && ! in_array($version->tier, $tiers, true)) {
+            throw ValidationException::withMessages([
+                'version' => "Version {$number} runs at [{$version->tier->value}], which this prompt may no longer be saved at.",
+            ]);
+        }
+
+        $prompt->activate($version);
+
+        $log->record(
+            $request->user(),
+            AdminActionType::PromptRolledBack,
+            $prompt,
+            payload: [
+                'key' => $prompt->key,
+                'was' => ['version' => $was->number, 'tier' => $was->tier->value],
+                'now' => ['version' => $version->number, 'tier' => $version->tier->value],
+            ],
+        );
+
+        return to_route('admin.prompts.show', $prompt);
     }
 
     /**
@@ -152,6 +203,43 @@ class PromptController extends Controller
         );
 
         return to_route('admin.prompts.show', $prompt);
+    }
+
+    /**
+     * The diff the screen is showing (15.2.4), or null where there is nothing
+     * to compare.
+     *
+     * `from` and `to` are version numbers, defaulting to the active version
+     * and the one before it, which is the comparison worth seeing by default.
+     * A number this prompt has no version for is a 404 rather than a silent
+     * fallback: the screen's own controls never send one.
+     *
+     * @return array{from: int, to: int, lines: list<array{marker: string, text: string}>}|null
+     */
+    private function diff(Request $request, Prompt $prompt): ?array
+    {
+        $numbers = $prompt->versions->pluck('number')->sort()->values();
+
+        if ($numbers->count() < 2) {
+            return null;
+        }
+
+        $to = (int) $request->integer('to', $prompt->activeVersion->number);
+        $from = (int) $request->integer('from', (int) $numbers->filter(fn (int $n): bool => $n < $to)->last() ?: $numbers->first());
+
+        $body = function (int $number) use ($prompt): string {
+            $version = $prompt->versions->firstWhere('number', $number);
+
+            abort_if($version === null, 404);
+
+            return $version->body;
+        };
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'lines' => PromptDiff::between($body($from), $body($to)),
+        ];
     }
 
     /**

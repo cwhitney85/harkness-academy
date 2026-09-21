@@ -37,6 +37,9 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('prompts', [PromptController::class, 'index'])->name('admin.prompts');
         Route::get('prompts/{prompt}', [PromptController::class, 'show'])->name('admin.prompts.show');
         Route::put('prompts/{prompt}', [PromptController::class, 'update'])->name('admin.prompts.update');
+        Route::post('prompts/{prompt}/versions/{number}', [PromptController::class, 'activate'])
+            ->whereNumber('number')
+            ->name('admin.prompts.activate');
 
         // Viewing as a student (13.4). Step-up and Exit are the only two
         // `/admin*` routes reachable while viewing (13.4.6); `ViewAsStudent`
