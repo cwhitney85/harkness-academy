@@ -82,7 +82,7 @@
 | D52 | Tasks reach models through a database catalog; tiers are rows with backup models | **amended 2026-09-19** — the SDK's failover cannot reach a backup on the primary's own provider |
 | D53 | Prices belong to a model; token counting and cache markers belong to a provider class | current |
 | D54 | Prompt files are the reviewed baseline; the database is what runs | **superseded by D65** — the reconciliation it implies has no closed form |
-| D55 | An experiment's variant sticks to a course | current |
+| D55 | An experiment's variant sticks to a course | current — binds whatever [D66](#d66) builds |
 | D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
 | D57 | A removal is a record that marks everything it hides | current |
 | D58 | Documents have an owner, and each attempt its own folder | current |
@@ -93,6 +93,7 @@
 | D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
 | D64 | Any withdrawn attempt may be resumed | current |
 | D65 | The database owns a prompt's body; a file seeds it and archives it | current |
+| D66 | A/B experiments wait for students; what returns is an evaluation package, not this one | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1099,3 +1100,19 @@ Rejected, in the order they were put:
 **What it costs, recorded so it is not rediscovered.** Live editing routes around the test suite: `PromptRenderFixturesTest` and `LessonSystemPromptTest` hold the *files* to their contract, and what runs is by definition text they never saw. `prompts:pull` is the mitigation and it is manual. And a code change that adds a variable cannot land its body with it — the file's `vars` imports and its body does not, so the new material silently never reaches the model.
 
 Falsified if: a prompt body ever needs to ship with the code that calls it, at which point the question is whether the editor should exist at all, not how to merge two writers.
+
+## D66. A/B experiments wait for students; what returns is an evaluation package, not this one (resolved 2026-09-21, spec 15 item 15.3, Colin)
+
+15.3 was specced as SHOULD and marked "built in this package's session so they are not lost". Building 15.2 first made the case against building it at all yet.
+
+**Two reasons, and neither is about the machinery being wrong.** With quality scores excluded by 15.3.6, the only numbers a comparison screen can carry are cost, latency and failure rate, and between two wordings of one prompt on one model those differ by a few percent of token count — the screen would answer a question nobody asked. And there is nothing to split: the development database holds nine courses across three users, so a 50/50 assignment yields four courses against five. The assignment would have been correct, the screen would have rendered, and the result would have been noise.
+
+**Chosen: defer the whole of 15.3, and let what returns be its own package.** It is not what 15.3 specced — the axis inverts, the quality exclusion reopens, and a golden set appears that 15.3 never had — so it is a different package that inherits [D55](#d55-an-experiments-variant-sticks-to-a-course-resolved-2026-09-18-spec-15-item-153)'s assignment rule rather than an item of this one. The package is not written yet, deliberately: its done-conditions depend on which quality signal proves usable, which depends on data that does not exist.
+
+Rejected: **building it as specced** (correct machinery measuring noise, and the sunk shape would bias what is built later) · **building only the deterministic assignment now** and leaving the screen (a hash with nothing reading it) · **folding it into package 17's admin screens** (a comparison screen with nothing to compare is not an admin screen problem).
+
+**What is settled for whatever comes back.** A variant is authored by a save that does *not* activate, so a candidate never runs at 100% before the split — this amends [15.2.2](specs/15-prompt-registry.md), which activates on every save. The model is the primary axis and the prompt body the secondary one, because that is where the numbers actually move. And any quality signal must attach to the `usage_events` row that produced the output, or it cannot be attributed to a prompt version and no comparison can use it.
+
+**The golden set is the first piece and the only one that works today.** A fixed set of captured inputs, run through two prompt versions, outputs read side by side. It is not a score — it is a reproducible comparison, which is what turns "I think B is better" into something checkable while Colin is still the only judge. `tests/fixtures/prompts/*.txt` already pins what each prompt renders to; what is missing is captured model replies.
+
+Falsified if: the app reaches enough students that a split is informative before any quality signal exists, at which point cost and latency per variant are worth having on their own.

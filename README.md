@@ -43,10 +43,16 @@ browser and again on a phone, with no developer touching the database
 ([docs/system.md §8](docs/system.md)). What comes next, in the order it is worth doing:
 
 **Admin and performance.** Specced 2026-09-18 as the `admin-and-performance` unit, specs
-[13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md), unbuilt. An admin role and
-shell with view-as, a model catalog and per-model cost behind every AI call, prompts editable live with
-A/B experiments, removal and restore of modules, subtopics and courses, and screens for users, courses and
-usage. It lays the ground for the two units after it.
+[13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md). An admin role and
+shell with view-as, a model catalog and per-model cost behind every AI call, prompts editable live,
+removal and restore of modules, subtopics and courses, and screens for users, courses and
+usage. It lays the ground for the two units after it. 13, 14 and 15 are built; 16 and 17 are not.
+
+**Evaluating a prompt.** Not specced. A/B experiments were specced inside 15 and deferred
+([D66](docs/02-design.md)): with no quality signal the comparison shows only cost and latency, and with
+nine courses there is nothing to split. What returns is its own package — a golden set of captured inputs
+run through two prompt versions and read side by side, then a quality signal attached to the usage row,
+then the split. The model is its primary axis, not the prompt body.
 
 **Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
 and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.

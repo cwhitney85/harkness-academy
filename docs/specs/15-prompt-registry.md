@@ -1,6 +1,6 @@
 # Spec 15 — Prompt Registry and Experiments
 
-*Provides: prompt versions in the database, file sync, the prompt editor, `prompts:pull`, and A/B experiments. Consumes: 14 (the catalog, the fuller usage row), 13 (the gate, the action log), 2.3 (the inventory and its render rules). Specced 2026-09-18.*
+*Provides: prompt versions in the database, file sync, the prompt editor, and `prompts:pull`. A/B experiments were specced here and deferred ([15.3](#153-experiments--deferred-2026-09-21-d66)). Consumes: 14 (the catalog, the fuller usage row), 13 (the gate, the action log), 2.3 (the inventory and its render rules). Specced 2026-09-18.*
 
 **Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D65](../02-design.md) the database owns a prompt's body — **supersedes D54**, whose shape this spec was first written to · [D55](../02-design.md) an experiment sticks to a course · [D52](../02-design.md) the catalog. Amends [2.3.1](02-ai-layer.md): git is where a prompt starts and where it is archived; `prompt_versions` is the history of what ran.
 
@@ -30,16 +30,20 @@
 - **15.2.4 MUST** — Any two versions can be diffed, and any version re-activated; re-activation is logged, writes no version, and is held to 15.2.3's tier rule so it cannot be a second door to a tier a save refuses. *Done: rolling back to v1 makes the next usage row name v1.*
 - **15.2.5 MUST** — `php artisan prompts:pull` writes active versions back to `prompts/` byte-exact, so the repo, the test seeder and git history hold what is running. *Done: pull leaves a file the loader parses back to the active version's body, tier and contract; a sync after a pull makes no version.*
 
-## 15.3 Experiments
+## 15.3 Experiments — **deferred 2026-09-21** ([D66](../02-design.md))
 
-*SHOULD, and built in this package's session so they are not lost.*
+*Specced 2026-09-18 as SHOULD, to be built in this package's session. Nothing was built. The reasoning is [D66](../02-design.md); [D55](../02-design.md) still binds whatever replaces this.*
 
-- **15.3.1 SHOULD** — `experiments` (prompt, status `draft` | `running` | `stopped`, started_at, stopped_at) and `experiment_variants` (prompt version, optional catalog model, weight). At most one running experiment per prompt. *Done: starting a second is refused.*
-- **15.3.2 SHOULD** — The variant is a deterministic hash of experiment and course — or user, when there is no course. *Done: 100 calls from one course share one variant; across 1,000 simulated courses each variant lands within ±3 points of its weight.*
-- **15.3.3 SHOULD** — `lesson.section` and `lesson.qa` follow their `lesson.system`'s variant. *Done: test.*
-- **15.3.4 SHOULD** — A variant's model must be active and have a provider class ([14.2.2](14-routing-and-usage.md)). *Done: validation.*
-- **15.3.5 SHOULD** — A comparison screen shows, per variant: calls, median and p95 latency, cost per call, failure and failover rates. *Done: matches SQL on a fixture.*
-- **15.3.6 WONT** — Quality scores, significance testing, automatic stopping.
+What was specced: `experiments` (prompt, status, started/stopped) and `experiment_variants` (prompt version, optional catalog model, weight), one running experiment per prompt, a variant assigned by a deterministic hash of experiment and course, `lesson.section` and `lesson.qa` following their `lesson.system`'s variant, and a comparison screen showing calls, latency, cost and failure rates per variant.
+
+**Why it was deferred.** With quality scores excluded — 15.3.6's WONT, folded into this block — the only numbers a comparison can show are cost, latency and failure rate — which barely move between two wordings of one prompt on one model. And there is nothing to split: the development database holds nine courses across three users, so a 50/50 assignment gives four against five. The machinery would have been correct and measured nothing.
+
+**What changes when it returns**, as its own package rather than an item here:
+
+- Variants author as **non-activating saves**, so a candidate never runs at 100% before the split. This amends [15.2.2](#152-editor), which activates on every save.
+- The **model is the primary axis and the body secondary**, inverting how the items above read.
+- It needs **at least one quality signal**, which reopens that exclusion. Any such signal must attach to the `usage_events` row that produced the output, or it cannot be attributed to a prompt version and no comparison screen can show it.
+- The **golden set** — a fixed set of captured inputs, run through two versions, outputs read side by side — is the one piece that works before there are students, and is the first thing to build.
 
 ## 15.4 Out of scope
 
@@ -54,4 +58,5 @@
 2. Deploy a change to that prompt's file. The prompt still runs the edit, and no version is added.
 3. `prompts:pull`, commit, redeploy. The file now holds the edit, and still no version is added.
 4. Roll `explainer.select` back to version 1 in admin; use the explainer. The usage row names version 1, and the action log holds the re-activation.
-5. Run a two-variant experiment on `checkpoint.generate` across two courses. Each course sticks to one variant; the comparison screen lists both.
+
+*A fifth step ran a two-variant experiment across two courses. It went with [15.3](#153-experiments--deferred-2026-09-21-d66).*
