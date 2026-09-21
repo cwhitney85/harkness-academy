@@ -7,18 +7,26 @@ use App\Models\Prompt;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reads `prompts/` into the registry (spec 15.1.2, ledger D54).
+ * Reads `prompts/` into the registry (spec 15.1.2, ledger D65).
  *
  * Pre:  every file in `prompts/` parses (the loader says so).
- * Post: each prompt's contract is the file's, and the file's current text is
- *       a version -- a new one only where the file changed since the last
- *       version made from it, so running this twice makes nothing the second
- *       time.
+ * Post: each prompt's contract -- `output` and `vars` -- is the file's, and
+ *       each prompt has at least one version.
  *
- * A file version takes over only where the active version also came from a
- * file (spec 15.1.3): a deploy never overrides a live edit, it queues behind
- * one. The whole run is one transaction, so a refusal (spec 15.1.4) leaves
- * the registry exactly as it was.
+ * **The file owns the contract; the database owns the body.** A prompt's
+ * `output` and `vars` are what the calling code depends on, so they are
+ * rewritten from the file on every run. Its body and tier belong to whichever
+ * version is active, and after the first run that is whatever the editor last
+ * saved -- so the file's body is read once, to seed version 1, and never
+ * again. Nothing here compares a file against a version, because there is
+ * only one writer of a body and it is not this class.
+ *
+ * `prompts:pull` is the other direction, and the only one: it writes active
+ * versions back into the files so the repo, the test seeder and git history
+ * hold what is actually running (spec 15.2.5).
+ *
+ * The whole run is one transaction, so a refusal (spec 15.1.4) leaves the
+ * registry exactly as it was.
  */
 final class PromptSync
 {
@@ -48,37 +56,32 @@ final class PromptSync
 
         $prompt->fill(['output' => $definition->outputContract(), 'vars' => $definition->vars])->save();
 
-        $hash = $this->files->hash($key);
-
-        if ($prompt->latestFileVersion()?->file_hash === $hash) {
-            return PromptSyncOutcome::Unchanged;
+        if ($prompt->activeVersion !== null) {
+            return PromptSyncOutcome::Registered;
         }
 
-        $version = $prompt->versions()->create([
-            'number' => (int) $prompt->versions()->max('number') + 1,
+        $prompt->activate($prompt->versions()->create([
+            'number' => 1,
             'body' => $definition->body,
             'tier' => $definition->tier,
             'source' => PromptSource::File,
-            'file_hash' => $hash,
-        ]);
+            'file_hash' => $this->files->hash($key),
+        ]));
 
-        $active = $prompt->activeVersion;
-
-        if ($active !== null && $active->source !== PromptSource::File) {
-            return PromptSyncOutcome::Waiting;
-        }
-
-        $prompt->activate($version);
-
-        return PromptSyncOutcome::Activated;
+        return PromptSyncOutcome::Seeded;
     }
 
     /**
      * Spec 15.1.4: a file may not drop a variable the running body uses.
      *
-     * Only an admin version can be in that position -- a file version's body
-     * and `vars` arrived together and the loader already held them to each
-     * other.
+     * The running body outlives the file it was seeded from, so this holds for
+     * a file-sourced version as much as an editor's: change a file to drop a
+     * var and sync would write the narrower `vars` while version 1 kept
+     * interpolating the dropped one. `PromptDefinition::render()` does not
+     * catch that -- it holds the caller to the declared vars, and an
+     * undeclared `{{ placeholder }}` is simply left in the prompt text -- so
+     * this refusal is the only thing standing between a file edit and a
+     * silently mangled prompt.
      *
      * @throws PromptSyncFailed
      */
@@ -86,7 +89,7 @@ final class PromptSync
     {
         $active = $prompt->activeVersion;
 
-        if ($active === null || $active->source !== PromptSource::Admin) {
+        if ($active === null) {
             return;
         }
 

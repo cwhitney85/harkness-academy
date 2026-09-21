@@ -3,12 +3,13 @@
 namespace App\Ai\Prompts;
 
 /**
- * Where a prompt version's body came from (spec 15.1.1, ledger D54).
+ * Where a prompt version's body came from (spec 15.1.1, ledger D65).
  *
- * `File` is a version `prompts:sync` read out of `prompts/` -- the reviewed
- * baseline, with a git history behind it. `Admin` is a live edit made in the
- * editor. The distinction is what keeps a deploy from overriding a live edit
- * (spec 15.1.3), so it is a column and not an inference from `author_id`.
+ * `File` is the version `prompts:sync` seeded out of `prompts/`, so there is
+ * at most one per prompt; `Admin` is an editor save. Nothing branches on it --
+ * the editor owns every body after the first, and sync reconciles nothing
+ * (15.1.3) -- but the editor shows it, and a version whose text was never in
+ * git is worth being able to see at a glance.
  */
 enum PromptSource: string
 {

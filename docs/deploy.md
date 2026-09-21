@@ -28,7 +28,7 @@ composer install --no-dev && npm ci --include=dev && npm run build && php artisa
 php artisan migrate --force && php artisan prompts:sync
 ```
 
-`prompts:sync` reads `prompts/` into the registry every release: a file whose text changed becomes a new prompt version, and that version takes over unless a live edit is active, in which case it waits and the editor flags it (spec [15.1.2](specs/15-prompt-registry.md), [15.1.3](specs/15-prompt-registry.md)). Running it twice makes nothing the second time, so a redeploy of the same commit is free. It exits non-zero without writing anything if a prompt file has dropped a variable the running version uses — pull that version back into the file, or activate a file version, and deploy again.
+`prompts:sync` writes each prompt's contract — its declared output and variables — from `prompts/` on every release, and creates a version only for a prompt that has none (spec [15.1.2](specs/15-prompt-registry.md)). It never reads the body of a prompt that already has one, so a release cannot change what any prompt says; prompt text is edited in Admin → Prompts and `php artisan prompts:pull` brings it back into the repo (ledger [D65](02-design.md)). Running it twice does nothing the second time. It exits non-zero without writing anything if a prompt file has dropped a variable the active version still uses — edit that prompt in Admin to stop using it, or put it back in the file, and deploy again.
 
 Nothing else. Cloud restarts queue workers itself, and `optimize:clear` / `storage:link` are actively harmful here.
 

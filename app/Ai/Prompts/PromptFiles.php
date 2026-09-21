@@ -9,16 +9,19 @@ use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
 /**
- * The prompt inventory as `prompts/` holds it (spec 2.3.2) -- the reviewed
- * baseline that `prompts:sync` reads into the registry (ledger D54).
+ * The prompt inventory as `prompts/` holds it (spec 2.3.2) -- where every
+ * prompt's contract comes from, and where its first body comes from
+ * (ledger D65).
  *
  * A file's key is its path: `prompts/interview/knowledge.md` is
  * `interview.knowledge`. The loader rejects any file whose frontmatter key
  * disagrees, so the directory tree and the inventory cannot drift apart, and
  * a key is enough to name its file.
  *
- * What runs is the active version in the database, not these files; read that
- * through `PromptRepository`.
+ * What runs is the active version in the database, not these files: a file's
+ * body seeds version 1 and is never read again, so it goes stale as soon as
+ * the editor is used. Read what runs through `PromptRepository`, and bring
+ * these files back up to date with `prompts:pull`.
  */
 final class PromptFiles
 {

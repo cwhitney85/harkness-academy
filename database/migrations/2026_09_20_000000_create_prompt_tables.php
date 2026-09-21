@@ -5,13 +5,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The prompt registry (spec 15.1.1, ledger D54): files are the reviewed
- * baseline, the database is what runs.
+ * The prompt registry (spec 15.1.1, ledger D65): a file seeds a prompt and
+ * archives it, and the database owns what runs.
  *
  * `prompts` holds the contract the calling code depends on -- `output` and
- * `vars` -- which comes only from the file. `prompt_versions` holds what
- * changes: the body and the tier. A version is never updated, so it has a
- * `created_at` and no `updated_at`.
+ * `vars` -- which comes only from the file. `prompt_versions` holds what the
+ * editor changes: the body and the tier. A version is never updated, so it
+ * has a `created_at` and no `updated_at`.
  *
  * The active version is a pointer on the prompt rather than a flag on the
  * version, so a prompt cannot have two actives. It is null only inside the

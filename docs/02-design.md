@@ -81,7 +81,7 @@
 | D51 | `plan` keys depth, and is not yet a table | current |
 | D52 | Tasks reach models through a database catalog; tiers are rows with backup models | **amended 2026-09-19** — the SDK's failover cannot reach a backup on the primary's own provider |
 | D53 | Prices belong to a model; token counting and cache markers belong to a provider class | current |
-| D54 | Prompt files are the reviewed baseline; the database is what runs | current |
+| D54 | Prompt files are the reviewed baseline; the database is what runs | **superseded by D65** — the reconciliation it implies has no closed form |
 | D55 | An experiment's variant sticks to a course | current |
 | D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
 | D57 | A removal is a record that marks everything it hides | current |
@@ -92,6 +92,7 @@
 | D62 | Admin changes a user's plan; billing waits for a price | current |
 | D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
 | D64 | Any withdrawn attempt may be resumed | current |
+| D65 | The database owns a prompt's body; a file seeds it and archives it | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1081,3 +1082,20 @@ Rejected: queueing only slow models (two delivery paths forever).
 D7b allowed resuming only the highest attempt because attempts shared document paths. D58 gives each attempt its own folder, removing the reason. Colin chose to lift the rule: a withdrawn attempt resumes while no other course on its subtopic is open — the open-course index already enforces that — and the return prompt asks which attempt when there is more than one.
 
 Rejected: keeping the rule (a restored older attempt would be a record, not a course) · lifting it only for restored courses (two rules for one thing).
+
+## D65. The database owns a prompt's body; a file seeds it and archives it (resolved 2026-09-21, spec 15 items 15.1.2–15.2.5, Colin) — **supersedes D54**
+
+D54 made the files the reviewed baseline and the database what runs, with `prompts:sync` reconciling the two and a rule that a deploy never overrides a live edit. Building 15.2 found that reconciliation has no closed form. Sync compares a file against the newest `file` version's hash, so once `prompts:pull` writes a live edit into its file, the next deploy sees a changed file, makes a version whose body duplicates the active one, and flags it — 15.2.5's own done-condition cannot pass. The root cause is that `source` was asked to answer "is a live edit outstanding?", which is a question about whether the file and the running text diverge, not about where a version came from.
+
+**Chosen: one writer per half.** The file owns `output` and `vars`, rewritten on every deploy, because the calling code depends on them. The editor owns the body and the tier. A file's body is read exactly once, to seed version 1 of a prompt that has none, so no deploy can change what a prompt says and there is nothing to reconcile. `prompts:pull` runs the other way, keeping the repo, the test seeder and git history holding what is actually running.
+
+Rejected, in the order they were put:
+
+- **Adopt the pulled text as a new file version** (no schema change, no rule change) — costs a version row whose body duplicates its predecessor, which makes `prompt_versions` hold both "a text this prompt ran" and "this text is now in git".
+- **Compare the file to the active version first, then to the newest file version** — closes 15.2.5 with no migration, but after a pull the active version still records `source: admin`, so the next file edit waits for a manual activation.
+- **Repo-only, with a read-only editor** — deletes the most structure and keeps prompt changes inside the test suite, which matters because eight of the eighteen prompts must produce schema-valid JSON. Rejected because prompt tuning is the product work in this app and Colin wants it immediate; a two-minute deploy in that loop is a tax on the thing the app is for.
+- **A hosted registry** (Langfuse, LangSmith, PromptLayer, Braintrust) — re-examined rather than inherited from D54. Their free tiers would fit, but the half worth paying for is the eval and playground loop, which [15.3.6](specs/15-prompt-registry.md) marks WONT, and their traces would carry student interview transcripts and working-knowledge documents out of the app.
+
+**What it costs, recorded so it is not rediscovered.** Live editing routes around the test suite: `PromptRenderFixturesTest` and `LessonSystemPromptTest` hold the *files* to their contract, and what runs is by definition text they never saw. `prompts:pull` is the mitigation and it is manual. And a code change that adds a variable cannot land its body with it — the file's `vars` imports and its body does not, so the new material silently never reaches the model.
+
+Falsified if: a prompt body ever needs to ship with the code that calls it, at which point the question is whether the editor should exist at all, not how to merge two writers.

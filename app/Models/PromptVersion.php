@@ -10,16 +10,17 @@ use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
- * One immutable version of a prompt's body and tier (spec 15.1.1, ledger D54).
+ * One immutable version of a prompt's body and tier (spec 15.1.1, ledger D65).
  *
  * Invariant: a version is written once and never again. Tuning makes a new
  * version, so every usage row that names a version can be read back against
  * exactly the text that ran. The model enforces it rather than a convention:
  * there is no update path.
  *
- * `file_hash` is the sha256 of the file the version was synced from, and is
+ * `file_hash` is the sha256 of the file version 1 was seeded from, and is
  * null exactly when `source` is `admin` -- `source` names the case, the null
- * does not.
+ * does not. Nothing decides anything from it; it records which file text a
+ * seeded body came from, for a reader comparing the two later.
  *
  * @property int $id
  * @property int $prompt_id

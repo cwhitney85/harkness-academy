@@ -9,7 +9,7 @@ use App\Ai\Tier;
  * A prompt's contract plus the template body that runs (spec 2.3.1).
  *
  * The contract -- `output` and `vars` -- comes from the file; the body and the
- * tier come from whichever version is active (spec 15.1.1, ledger D54). Both
+ * tier come from whichever version is active (spec 15.1.1, ledger D65). Both
  * halves of the registry serve this same shape, so a call site cannot tell
  * whether it is holding a file or a live edit.
  *

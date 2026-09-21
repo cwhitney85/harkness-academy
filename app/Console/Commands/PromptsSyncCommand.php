@@ -8,17 +8,18 @@ use App\Ai\Prompts\PromptSyncOutcome;
 use Illuminate\Console\Command;
 
 /**
- * Reads `prompts/` into the registry (spec 15.1.2, ledger D54).
+ * Reads `prompts/` into the registry (spec 15.1.2, ledger D65).
  *
  * Runs on every deploy, after `migrate` (docs/deploy.md), and at test
- * bootstrap. It is safe to run any number of times: a file that has not
- * changed since the version made from it makes no version.
+ * bootstrap. It writes each prompt's contract and seeds a body only for a
+ * prompt that has none, so running it any number of times -- and running it
+ * against a registry the editor has since tuned -- changes no prompt's text.
  */
 class PromptsSyncCommand extends Command
 {
     protected $signature = 'prompts:sync';
 
-    protected $description = 'Spec 15.1.2: make a prompt version for each file whose content changed';
+    protected $description = "Spec 15.1.2: write each prompt file's contract, and seed version 1 where there is none";
 
     public function handle(PromptSync $sync): int
     {
@@ -30,20 +31,16 @@ class PromptsSyncCommand extends Command
             return self::FAILURE;
         }
 
-        foreach ($outcomes as $key => $outcome) {
-            if ($outcome !== PromptSyncOutcome::Unchanged) {
-                $this->components->twoColumnDetail($key, $outcome->value);
-            }
+        $seeded = array_keys(array_filter($outcomes, fn (PromptSyncOutcome $o): bool => $o === PromptSyncOutcome::Seeded));
+
+        foreach ($seeded as $key) {
+            $this->components->twoColumnDetail($key, PromptSyncOutcome::Seeded->value);
         }
 
-        $counts = array_count_values(array_map(fn (PromptSyncOutcome $o): string => $o->value, $outcomes));
-
         $this->components->info(sprintf(
-            '%d prompts: %d activated, %d waiting behind a live edit, %d unchanged.',
+            '%d prompts registered, %d seeded. Every other body is the editor\'s and was left alone.',
             count($outcomes),
-            $counts[PromptSyncOutcome::Activated->value] ?? 0,
-            $counts[PromptSyncOutcome::Waiting->value] ?? 0,
-            $counts[PromptSyncOutcome::Unchanged->value] ?? 0,
+            count($seeded),
         ));
 
         return self::SUCCESS;

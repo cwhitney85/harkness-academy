@@ -17,8 +17,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 15.1.1-15.1.4 (ledger D54) -- files are the reviewed baseline, the
- * database is what runs, and a deploy never overrides a live edit.
+ * Spec 15.1.1-15.1.4 (ledger D65) -- the file owns the contract, the editor
+ * owns the body, and a deploy reads a file's body exactly once.
  *
  * The prompts here are written into a directory of this test's own, so a file
  * can be changed mid-test. The real `prompts/` tree is synced by
@@ -74,11 +74,11 @@ class PromptSyncTest extends TestCase
     }
 
     #[Test]
-    public function the_first_sync_registers_the_contract_and_activates_version_one(): void
+    public function the_first_sync_registers_the_contract_and_seeds_version_one(): void
     {
         $this->write('Explain {{ topic }}.');
 
-        $this->assertSame(PromptSyncOutcome::Activated, $this->sync());
+        $this->assertSame(PromptSyncOutcome::Seeded, $this->sync());
 
         $prompt = $this->prompt();
 
@@ -97,41 +97,26 @@ class PromptSyncTest extends TestCase
 
         $this->sync();
 
-        $this->assertSame(PromptSyncOutcome::Unchanged, $this->sync());
+        $this->assertSame(PromptSyncOutcome::Registered, $this->sync());
         $this->assertSame(1, $this->versions()->count());
     }
 
     #[Test]
-    public function one_file_change_makes_exactly_one_version(): void
+    public function a_file_body_changed_after_version_one_never_reaches_the_registry(): void
     {
         $this->write('Explain {{ topic }}.');
         $this->sync();
 
         $this->write('Explain {{ topic }} in two sentences.');
 
-        $this->assertSame(PromptSyncOutcome::Activated, $this->sync());
-        $this->assertSame(PromptSyncOutcome::Unchanged, $this->sync());
+        $this->assertSame(PromptSyncOutcome::Registered, $this->sync());
 
-        $this->assertSame(2, $this->versions()->count());
-        $this->assertSame(2, $this->prompt()->activeVersion->number);
-        $this->assertStringContainsString('two sentences', $this->prompt()->activeVersion->body);
+        $this->assertSame(1, $this->versions()->count());
+        $this->assertStringNotContainsString('two sentences', $this->prompt()->activeVersion->body);
     }
 
     #[Test]
-    public function a_file_version_takes_over_from_a_file_version(): void
-    {
-        $this->write('Explain {{ topic }}.');
-        $this->sync();
-
-        $this->write('Explain {{ topic }} slowly.');
-        $this->sync();
-
-        $this->assertFalse($this->prompt()->hasNewerFileVersion());
-        $this->assertStringContainsString('slowly', $this->prompt()->activeVersion->body);
-    }
-
-    #[Test]
-    public function a_file_version_waits_behind_a_live_edit_and_is_flagged(): void
+    public function a_deploy_leaves_an_editor_edit_running(): void
     {
         $this->write('Explain {{ topic }}.');
         $this->sync();
@@ -140,17 +125,28 @@ class PromptSyncTest extends TestCase
 
         $this->write('Explain {{ topic }} slowly.');
 
-        $this->assertSame(PromptSyncOutcome::Waiting, $this->sync());
+        $this->assertSame(PromptSyncOutcome::Registered, $this->sync());
 
-        $prompt = $this->prompt();
-
-        $this->assertSame($edit->id, $prompt->active_version_id, 'A deploy must not override a live edit.');
-        $this->assertSame(3, $this->versions()->count());
-        $this->assertTrue($prompt->hasNewerFileVersion());
+        $this->assertSame($edit->id, $this->prompt()->active_version_id, 'A deploy must not touch the body.');
+        $this->assertSame(2, $this->versions()->count());
     }
 
     #[Test]
-    public function sync_fails_when_the_file_drops_a_var_the_live_edit_uses(): void
+    public function the_contract_keeps_importing_after_version_one(): void
+    {
+        $this->write('Explain {{ topic }}.');
+        $this->sync();
+
+        $this->edit('Explain {{ topic }} for {{ audience }}.');
+        $this->write('Explain {{ topic }} for {{ audience }}.', ['topic', 'audience']);
+
+        $this->sync();
+
+        $this->assertSame(['topic', 'audience'], $this->prompt()->vars);
+    }
+
+    #[Test]
+    public function sync_fails_when_the_file_drops_a_var_the_editors_body_uses(): void
     {
         $this->write('Explain {{ topic }} for {{ audience }}.', ['topic', 'audience']);
         $this->sync();
@@ -170,6 +166,26 @@ class PromptSyncTest extends TestCase
 
         $this->assertSame(['topic', 'audience'], $this->prompt()->vars, 'A refused sync writes nothing.');
         $this->assertSame(2, $this->versions()->count());
+    }
+
+    /**
+     * The same refusal with nothing edited. Version 1 outlives the file it was
+     * seeded from, so a file that drops a variable cleanly -- out of its body
+     * and its `vars` together, which the loader accepts -- still strands the
+     * seeded body that interpolates it.
+     */
+    #[Test]
+    public function sync_fails_when_the_file_drops_a_var_its_own_seeded_body_uses(): void
+    {
+        $this->write('Explain {{ topic }} for {{ audience }}.', ['topic', 'audience']);
+        $this->sync();
+
+        $this->write('Explain {{ topic }}.', ['topic']);
+
+        $this->expectException(PromptSyncFailed::class);
+        $this->expectExceptionMessage('audience');
+
+        $this->sync();
     }
 
     /**

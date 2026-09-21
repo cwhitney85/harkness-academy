@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use LogicException;
 
 /**
- * What runs: the active version of every prompt (spec 15.1.5, ledger D54).
+ * What runs: the active version of every prompt (spec 15.1.5, ledger D65).
  *
  * The interface is the one the gateway has always called -- `get`, `has`,
  * `all`, `keys` -- and the render rules of 2.3.1 are unchanged; only where
