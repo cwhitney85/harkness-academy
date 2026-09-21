@@ -30,6 +30,7 @@ final class UsageRecorder
     public function record(
         string $feature,
         string $promptKey,
+        int $promptVersionId,
         Tier $tier,
         array $model,
         string $outcome,
@@ -49,6 +50,7 @@ final class UsageRecorder
             'acting_user_id' => ViewingAs::actingUserId(),
             'feature' => $feature,
             'prompt_key' => $promptKey,
+            'prompt_version_id' => $promptVersionId,
             'provider' => $model['provider'],
             'tier' => $tier->value,
             'model' => $model['model'],

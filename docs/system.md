@@ -110,8 +110,9 @@ Five route files, each owning one subsystem. Every route below appears as an edg
 | `exam_answer_sheets` | a sitting in progress ([6.3.4](specs/06-assessment.md)) |
 | `generation_requests` | one row per (course, kind) — the wait for a queued generation |
 | `memories`, `memory_versions` | the memory tree and a version on every write, naming the admin if one was acting as the student |
-| `usage_events` | one row per AI call: feature, tier, the catalog model that served it, tokens in/cached/out/reasoning, latency, cost, outcome (`ok`, `failed`, `failed_over`), the course and lesson it served, the student's plan at the time (null on rows written before [14.3.4](specs/14-routing-and-usage.md); no backfill), and the acting admin if there was one |
+| `usage_events` | one row per AI call: feature, tier, the catalog model that served it, the prompt version whose text was sent, tokens in/cached/out/reasoning, latency, cost, outcome (`ok`, `failed`, `failed_over`), the course and lesson it served, the student's plan at the time (null on rows written before [14.3.4](specs/14-routing-and-usage.md); no backfill), and the acting admin if there was one |
 | `ai_models`, `ai_tiers` | the model catalog with each model's prices, and `cheap`/`mid`/`top` as rows: a primary, ordered backups, a timeout |
+| `prompts`, `prompt_versions` | the 18 prompts of the [2.3.2](specs/02-ai-layer.md) inventory, and every version of each that has run. A version is never updated |
 | `admin_actions` | one row per admin write: who, what, about whom, why. Nothing can update or delete a row |
 
 Every question a student meets offers four options, and where the correct one sits is decided as the quiz is written rather than by the model, which keys A or B far more often than chance ([6.6](specs/06-assessment.md)). The order is stored, so a reload does not move an option out from under an answer.
@@ -130,11 +131,15 @@ Five things, and the app is broken without a worker draining them ([T4](lessons.
 
 Every job is idempotent, because a managed queue delivers at least once.
 
-## 7. Cost
+## 7. Prompts
+
+The files in `prompts/` are the reviewed baseline; what actually runs is a row. `php artisan prompts:sync` reads the tree on every deploy and turns each changed file into a new, immutable `prompt_versions` row, and one version of each prompt is active. The contract the calling code depends on — a prompt's declared output and its variables — comes only from the file, so a live edit can change the wording and the tier and nothing else. **A deploy never overrides a live edit**: a new file version activates only where the active one also came from a file, and otherwise waits, flagged, until it is activated or the live version is pulled back into git (ledger [D54](02-design.md)). Every usage row names the version whose text was sent, so what a call cost can be read back against exactly the words that produced it.
+
+## 8. Cost
 
 Every AI call in the system writes a `usage_events` row, priced from the tokens it actually used, cache reads and writes included. There is no call site exempt from this and no model ID in code — call sites name a tier (`cheap`, `mid`, `top`), the tier's row names a model in the catalog, and the call is priced at that model's prices when its row is written. A lesson stays on the model it started on, even if its tier is moved to another one partway through. The total cost of a course is therefore one SQL query. Every call names the course or lesson it serves, except the subtopic check, which runs before a course exists. The row keeps the student's plan, so what demo accounts cost can still be counted after the sweep deletes them.
 
-## 8. The working cycle, and that it has been run
+## 9. The working cycle, and that it has been run
 
 Everything above composes into one cycle, and the cycle is this document's reason to exist. It was v1's definition of done, and it **passed on 2026-09-07** (ledger [D29](02-design.md)):
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Assessment;
 
-use App\Ai\Prompts\PromptRepository;
+use App\Ai\Prompts\PromptFiles;
 use App\Assessment\QuizLength;
 use App\Assessment\QuizSchema;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
@@ -66,7 +66,7 @@ class QuizLengthTest extends AssessmentTestCase
     #[Test]
     public function every_prompt_asks_for_the_length_its_schema_will_accept(): void
     {
-        $prompts = new PromptRepository(base_path('prompts'));
+        $prompts = new PromptFiles(base_path('prompts'));
 
         foreach ([
             'homework.generate' => QuizLength::homework(),
@@ -86,7 +86,7 @@ class QuizLengthTest extends AssessmentTestCase
     #[Test]
     public function the_exam_prompt_states_the_number_its_schema_will_accept(): void
     {
-        $prompt = (new PromptRepository(base_path('prompts')))->get('exam.final');
+        $prompt = (new PromptFiles(base_path('prompts')))->get('exam.final');
 
         foreach (range(5, 10) as $lessons) {
             $length = QuizLength::exam($lessons);

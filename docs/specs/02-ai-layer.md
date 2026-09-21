@@ -13,7 +13,7 @@
 
 ## 2.3 Prompt inventory & contracts
 
-- **2.3.1 Conventions — MUST.** Files in `prompts/`, YAML frontmatter (`key`, `tier`, `output: stream|json/<schema>`, `vars: [...]`) + template body. Render fails on missing/undeclared vars. Git = version history; prompt edits invalidate that prompt's cache prefix on deploy (accepted). *Done: loader test — missing var throws; unknown key throws; tier consumed by gateway.*
+- **2.3.1 Conventions — MUST.** Files in `prompts/`, YAML frontmatter (`key`, `tier`, `output: stream|json/<schema>`, `vars: [...]`) + template body. Render fails on missing/undeclared vars. Prompt edits invalidate that prompt's cache prefix on deploy (accepted). **Amended 2026-09-20 ([D54](../02-design.md), [15.1](15-prompt-registry.md)): a file is the reviewed baseline, not what runs.** `prompts:sync` reads the tree into `prompt_versions` on deploy, and the gateway renders the active version; git is the history of file versions, `prompt_versions` the history of what ran. `output` and `vars` still come only from the file, so this item still owns the frontmatter contract and the render rules. *Done: loader test — missing var throws; unknown key throws; tier consumed by gateway — and [15.1.5](15-prompt-registry.md) proves the same two against the database-backed repository.*
 - **2.3.2 Inventory — MUST.** Any AI call site without a row here is a spec violation.
 
 | Key | Tier | Inputs | Output | Consumer |

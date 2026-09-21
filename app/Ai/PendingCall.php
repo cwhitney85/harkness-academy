@@ -25,7 +25,7 @@ use Throwable;
  * One AI call being assembled (spec 2.1).
  *
  * Preconditions checked before anything reaches a provider:
- *   - the prompt key exists in the inventory (PromptRepository::get)
+ *   - the prompt key exists in the registry (PromptRepository::get)
  *   - the rendered prompt supplies exactly its declared vars (2.3.1)
  *   - `feature` is set, so the usage row can be attributed (2.2)
  *   - the tier resolves to a model in the catalog (14.1.2)
@@ -33,7 +33,8 @@ use Throwable;
  *   - the request is not an admin's preview of a student (spec 13.4.1)
  *
  * Postcondition: exactly one usage_events row per attempt, written even when
- * the provider throws.
+ * the provider throws, naming the prompt version whose body was rendered
+ * (spec 15.1.6).
  *
  * @phpstan-import-type ModelRow from Catalog
  */
@@ -71,6 +72,7 @@ final class PendingCall
      */
     public function __construct(
         private readonly PromptDefinition $prompt,
+        private readonly int $promptVersionId,
         private readonly UsageRecorder $recorder,
         private readonly array $vars,
     ) {}
@@ -326,6 +328,7 @@ final class PendingCall
         return $this->recorder->record(
             feature: $this->feature,
             promptKey: $this->prompt->key,
+            promptVersionId: $this->promptVersionId,
             tier: $tier,
             model: $served,
             outcome: $served['id'] === $first['id'] ? 'ok' : 'failed_over',
@@ -345,6 +348,7 @@ final class PendingCall
         $this->recorder->record(
             feature: $this->feature,
             promptKey: $this->prompt->key,
+            promptVersionId: $this->promptVersionId,
             tier: $tier,
             model: reset($models),
             outcome: 'failed',

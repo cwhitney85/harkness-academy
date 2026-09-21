@@ -96,9 +96,12 @@ class UsageInstrumentationTest extends TestCase
         ];
 
         $recorder = new UsageRecorder;
+        $prompts = app(PromptRepository::class);
 
         foreach ($cycle as [$feature, $promptKey, $tier, $usage]) {
-            $recorder->record($feature, $promptKey, $tier, $tier->primary(), 'ok', $usage, 1_200, $user);
+            $recorder->record(
+                $feature, $promptKey, $prompts->version($promptKey), $tier, $tier->primary(), 'ok', $usage, 1_200, $user,
+            );
         }
 
         $report = DB::table('usage_events')
@@ -130,7 +133,7 @@ class UsageInstrumentationTest extends TestCase
 
     private function explain(): void
     {
-        (new Gateway(new PromptRepository(base_path('prompts')), new UsageRecorder))
+        app(Gateway::class)
             ->prompt('explainer.select', [
                 'selection' => 'a phrase',
                 'surrounding_chunk' => 'a paragraph',

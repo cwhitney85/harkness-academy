@@ -202,3 +202,11 @@ Viewing as a student sets the student as the request's user, leaving the session
 Deleting a user cascades to their courses and lessons, and each of those sets a `usage_events` row's `course_id` or `lesson_id` null. If the usage row was written in the same transaction as the delete, Postgres re-checks every foreign key on it whenever any one of those set-nulls updates it, and it may do so after the course is gone but before the course's own set-null has reached the row. The delete then fails with a foreign-key violation on `usage_events`. A row written in an earlier transaction skips that re-check, so the nightly sweep never trips it. Every `RefreshDatabase` test does, because the whole test is one transaction.
 
 **A nullable foreign key whose parent can be deleted through a cascade that also reaches the same row is `deferrable initially deferred`.** The check then runs at commit, after every set-null. `usage_events.course_id` and `lesson_id` are the examples.
+
+## T18. Data a test suite needs before its transaction has one hook, and it is not the obvious one
+
+*Found 2026-09-20, building spec 15.1.*
+
+Package 15 moved prompts into the database, so every test that makes an AI call needs the 18 `prompts` rows before it runs. `RefreshDatabase` looks like it has a hook for exactly this — `afterRefreshingDatabase()` — and it is the wrong one twice over: it runs on **every** test, not once, and it runs **after** `beginDatabaseTransaction()`, so whatever it writes is rolled back with the test that wrote it. `migrateDatabases()` is the right side of the transaction but cannot be overridden from `Tests\TestCase`, because a trait's method in the subclass beats an inherited one from the parent class.
+
+**Name a seeder: `protected $seeder = SomeSeeder::class;` on `Tests\TestCase`.** `migrate:fresh --seeder=` runs it once per process, after the migrations and before the transaction, so the rows are there for the whole run. `Database\Seeders\PromptRegistrySeeder` is the example. It runs that seeder *instead of* `DatabaseSeeder`, which is what is wanted here — nothing else is seeded into every test.

@@ -3,40 +3,50 @@
 namespace App\Ai\Prompts;
 
 use App\Ai\Prompts\Exceptions\UnknownPromptKey;
-use Illuminate\Support\Str;
-use SplFileInfo;
-use Symfony\Component\Finder\Finder;
+use App\Ai\Tier;
+use App\Models\Prompt;
+use Illuminate\Support\Facades\Cache;
+use LogicException;
 
 /**
- * The prompt inventory (spec 2.3.2), read from `prompts/`.
+ * What runs: the active version of every prompt (spec 15.1.5, ledger D54).
  *
- * A file's key is its path: `prompts/interview/knowledge.md` is
- * `interview.knowledge`. The loader rejects any file whose frontmatter key
- * disagrees, so the directory tree and the inventory cannot drift apart.
+ * The interface is the one the gateway has always called -- `get`, `has`,
+ * `all`, `keys` -- and the render rules of 2.3.1 are unchanged; only where
+ * the body and the tier come from has moved. The contract (`output`, `vars`)
+ * still comes from the file, through the `prompts` row `prompts:sync` writes.
+ *
+ * Every AI call reads this, so the registry is read once and kept: memoised
+ * within a request or job, and in the cache store across them until a
+ * `Prompt` or `PromptVersion` write clears it. Plain arrays, because this
+ * app's cache refuses to unserialize objects (`cache.serializable_classes`).
+ *
+ * @phpstan-type RegistryRow array{version: int, tier: string, output: string, vars: list<string>, body: string}
  */
 final class PromptRepository
 {
-    /** @var array<string, PromptDefinition>|null */
-    private ?array $prompts = null;
-
-    public function __construct(
-        private readonly string $directory,
-        private readonly PromptLoader $loader = new PromptLoader,
-    ) {}
-
     /**
-     * Get the definition registered under the given key.
-     *
      * @throws UnknownPromptKey
      */
     public function get(string $key): PromptDefinition
     {
-        return $this->all()[$key] ?? throw UnknownPromptKey::for($key, $this->keys());
+        return $this->define($key, $this->row($key));
     }
 
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->all());
+        return array_key_exists($key, self::registry());
+    }
+
+    /**
+     * The id of the version a call made now would run -- what its usage row
+     * names (spec 15.1.6).
+     *
+     * @throws UnknownPromptKey
+     */
+    public function version(string $key): int
+    {
+        return $this->row($key)['version'];
     }
 
     /**
@@ -44,21 +54,13 @@ final class PromptRepository
      */
     public function all(): array
     {
-        if ($this->prompts !== null) {
-            return $this->prompts;
+        $definitions = [];
+
+        foreach (self::registry() as $key => $row) {
+            $definitions[$key] = $this->define($key, $row);
         }
 
-        $prompts = [];
-
-        foreach ($this->files() as $file) {
-            $key = $this->keyFor($file);
-
-            $prompts[$key] = $this->loader->load($file->getPathname(), $key);
-        }
-
-        ksort($prompts);
-
-        return $this->prompts = $prompts;
+        return $definitions;
     }
 
     /**
@@ -66,27 +68,55 @@ final class PromptRepository
      */
     public function keys(): array
     {
-        return array_keys($this->all());
+        return array_keys(self::registry());
     }
 
     /**
-     * @return iterable<SplFileInfo>
+     * @param  RegistryRow  $row
      */
-    private function files(): iterable
+    private function define(string $key, array $row): PromptDefinition
     {
-        if (! is_dir($this->directory)) {
-            return [];
-        }
+        [$output, $schema] = PromptOutput::parse($row['output'])
+            ?? throw new LogicException("Prompt [{$key}] is registered with output [{$row['output']}], which is not a contract this app knows.");
 
-        return Finder::create()->files()->in($this->directory)->name('*.md')->sortByName();
+        $tier = Tier::tryFrom($row['tier'])
+            ?? throw new LogicException("Prompt [{$key}] is registered at tier [{$row['tier']}], which is not a tier.");
+
+        return new PromptDefinition($key, $tier, $output, $schema, $row['vars'], $row['body']);
     }
 
-    private function keyFor(SplFileInfo $file): string
+    /**
+     * @return RegistryRow
+     *
+     * @throws UnknownPromptKey
+     */
+    private function row(string $key): array
     {
-        $relative = Str::of($file->getPathname())
-            ->after(rtrim($this->directory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR)
-            ->beforeLast('.md');
+        return self::registry()[$key] ?? throw UnknownPromptKey::for($key, $this->keys());
+    }
 
-        return $relative->explode(DIRECTORY_SEPARATOR)->implode('.');
+    /**
+     * @return array<string, RegistryRow>
+     */
+    private static function registry(): array
+    {
+        return Cache::memo()->rememberForever(Prompt::CACHE_KEY, fn (): array => Prompt::query()
+            ->with('activeVersion')
+            ->orderBy('key')
+            ->get()
+            ->mapWithKeys(function (Prompt $prompt): array {
+                $active = $prompt->activeVersion ?? throw new LogicException(
+                    "Prompt [{$prompt->key}] has no active version; nothing can run it (spec 15.1.1)."
+                );
+
+                return [$prompt->key => [
+                    'version' => $active->id,
+                    'tier' => $active->tier->value,
+                    'output' => $prompt->output,
+                    'vars' => $prompt->vars,
+                    'body' => $active->body,
+                ]];
+            })
+            ->all());
     }
 }

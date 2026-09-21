@@ -7,10 +7,8 @@ use App\Ai\GatewayAgent;
 use App\Ai\PendingCall;
 use App\Ai\Prompts\Exceptions\PromptVariableMismatch;
 use App\Ai\Prompts\Exceptions\UnknownPromptKey;
-use App\Ai\Prompts\PromptRepository;
 use App\Ai\StructuredGatewayAgent;
 use App\Ai\Tier;
-use App\Ai\UsageRecorder;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\UsageEvent;
@@ -388,6 +386,6 @@ class GatewayTest extends TestCase
 
     private function gateway(): Gateway
     {
-        return new Gateway(new PromptRepository(base_path('prompts')), new UsageRecorder);
+        return app(Gateway::class);
     }
 }

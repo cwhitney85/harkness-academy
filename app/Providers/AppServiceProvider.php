@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Ai\Prompts\PromptRepository;
+use App\Ai\Prompts\PromptFiles;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -19,8 +19,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(
-            PromptRepository::class,
-            fn (): PromptRepository => new PromptRepository(base_path('prompts')),
+            PromptFiles::class,
+            fn (): PromptFiles => new PromptFiles(base_path('prompts')),
         );
     }
 

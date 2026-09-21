@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Ai;
 
+use App\Ai\Prompts\PromptFiles;
 use App\Ai\Prompts\PromptOutput;
-use App\Ai\Prompts\PromptRepository;
 use App\Ai\Tier;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -97,9 +97,9 @@ class PromptInventoryTest extends TestCase
         }
     }
 
-    private function repository(): PromptRepository
+    private function repository(): PromptFiles
     {
-        return new PromptRepository(base_path('prompts'));
+        return new PromptFiles(base_path('prompts'));
     }
 
     /**

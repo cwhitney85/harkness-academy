@@ -14,8 +14,8 @@
 
 ## 15.1 Versions
 
-- **15.1.1 MUST** — `prompts`: key, `output`, `vars` (from the file). `prompt_versions`: number, body, tier, source (`file` | `admin`), author, file hash, created_at. Versions are never updated. *Done: the model has no update path.*
-- **15.1.2 MUST** — `php artisan prompts:sync` makes a new version for each file whose content changed. It runs on deploy ([docs/deploy.md](../deploy.md)) and at test bootstrap. *Done: two syncs make no second version; one file change makes exactly one.*
+- **15.1.1 MUST** — `prompts`: key, `output`, `vars` (from the file), and the active version, which is a pointer on the prompt so that two versions of one prompt cannot both be active. `prompt_versions`: number, body, tier, source (`file` | `admin`), author, file hash, created_at. Versions are never updated. *Done: the model has no update path.*
+- **15.1.2 MUST** — `php artisan prompts:sync` makes a new version for each file whose content changed — changed against the newest `file` version of that prompt, which is the file's last known state, never against the active version, or a live edit would make the next deploy re-import an unchanged file. It runs on deploy ([docs/deploy.md](../deploy.md)) and at test bootstrap. *Done: two syncs make no second version; one file change makes exactly one.*
 - **15.1.3 MUST** — A new file version activates only if the active version's source is `file`; otherwise it is stored and flagged "newer file version available". *Done: one test per case.*
 - **15.1.4 MUST** — Sync fails, naming both, when a file drops a var the active admin version uses. *Done: test.*
 - **15.1.5 MUST** — `PromptRepository` keeps its interface and reads active versions, cached. [2.3.1](02-ai-layer.md)'s render rules are unchanged. *Done: the loader tests — missing var throws, unknown key throws — pass against the database-backed repository.*
