@@ -34,6 +34,15 @@ class Prompt extends Model
 
     protected $guarded = [];
 
+    /**
+     * A prompt is named by its key everywhere else -- in the inventory, in
+     * commits, in `usage_events` -- so an admin URL names it that way too.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'key';
+    }
+
     protected static function booted(): void
     {
         static::saved(fn () => self::forgetCache());

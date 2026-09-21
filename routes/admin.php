@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActionLogController;
 use App\Http\Controllers\Admin\AiModelController;
+use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\ViewAsController;
 use App\Http\Middleware\RequireSecondFactor;
@@ -30,6 +31,12 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         // The model catalog, its tiers, and what each model has cost (14.4).
         Route::get('models', [AiModelController::class, 'index'])->name('admin.models');
         Route::put('models/{model}', [AiModelController::class, 'update'])->name('admin.models.update');
+
+        // The 2.3.2 inventory, and the one place a prompt's text is written
+        // (15.2, ledger D65).
+        Route::get('prompts', [PromptController::class, 'index'])->name('admin.prompts');
+        Route::get('prompts/{prompt}', [PromptController::class, 'show'])->name('admin.prompts.show');
+        Route::put('prompts/{prompt}', [PromptController::class, 'update'])->name('admin.prompts.update');
 
         // Viewing as a student (13.4). Step-up and Exit are the only two
         // `/admin*` routes reachable while viewing (13.4.6); `ViewAsStudent`

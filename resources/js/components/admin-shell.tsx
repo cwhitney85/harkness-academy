@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { RailHead } from '@/components/rail';
-import { home, log, models } from '@/routes/admin';
+import { home, log, models, prompts } from '@/routes/admin';
 
 /**
  * The frame every admin screen is set in — the fourth shell (spec 13.3,
@@ -21,6 +21,7 @@ import { home, log, models } from '@/routes/admin';
  */
 
 export const NAV = [
+    { id: 'prompts', title: 'Prompts', href: prompts() },
     { id: 'models', title: 'Models', href: models() },
     { id: 'log', title: 'Log', href: log() },
 ] as const;

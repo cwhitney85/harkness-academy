@@ -34,8 +34,13 @@ class AdminAccessTest extends TestCase
         $student = User::factory()->withTwoFactor()->create();
 
         // A bound parameter must resolve, or the route 404s before the gate
-        // runs; each admin route's parameter names an id that exists here.
-        $ids = ['user' => $student->id, 'model' => Tier::Cheap->primary()['id']];
+        // runs; each admin route's parameter names a key that exists here. A
+        // prompt is bound by its key rather than its id (15.2.1).
+        $ids = [
+            'user' => $student->id,
+            'model' => Tier::Cheap->primary()['id'],
+            'prompt' => 'explainer.select',
+        ];
 
         foreach ($this->adminRoutes() as $route) {
             $method = $route->methods()[0];
