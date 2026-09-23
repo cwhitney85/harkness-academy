@@ -97,6 +97,7 @@
 | D67 | `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student | current |
 | D68 | Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept | current — amends D25 and spec 6.3.4, 12.5.1 |
 | D69 | A document's owner is a type and a pointer; the writing course decides which | current — amends D58 |
+| D70 | A course removed while the model answers saves nothing, and its student is told | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1168,4 +1169,12 @@ D58 gave `memories` a `course_id`, empty for working knowledge. Colin rejected t
 Rejected: **an empty `course_id` for working knowledge** (D58 as written) · **the path alone naming the case**, with a check tying an empty `course_id` to working-knowledge paths (no pointer to the subtopic, and still an empty value to read) · **a pivot table per owner** (one document with two owners, or none, could not be refused).
 
 The migration found two documents in development whose course had been deleted by hand on 2026-09-09, before D68. It refuses to run while any document or version has no course to match, and lists them. Colin chose to delete the two by hand rather than have a migration do it.
+
+## D70. A course removed while the model answers saves nothing, and its student is told (resolved 2026-09-23, spec 16 items 16.2.4, 16.2.8, Colin)
+
+16.2.8 as specced had a queued job check for its course when it starts. A syllabus or exam call runs for minutes, and a removal landing in that window still saved what the model wrote. Colin: *"if a removal occurs during the AI call it should fail to save … show the user a message informing them about the removal and redirecting them."* **Chosen: the gateway checks once more when a non-streamed call answers.** The usage row is written first, because the call happened and was paid for (2.2); then, if the course the call is about has been removed, nothing is returned to save. The one check covers every queued generation, because every course-bound call names its course. Jobs end quietly, and retry loops let it through instead of paying for a second call on a course that is gone. **A student who reaches any screen of their own removed course lands on the dashboard with a message naming it.** That replaces 16.2.4's bare 404, and it is the same answer for the student whose syllabus screen was polling when the course went. To anyone else a removed course is still a 404.
+
+Rejected: **the start check alone** (the spec as written; leaves the window) · **re-checking inside each generator's write** (five places to keep in step, and each still pays for its retry) · **holding a lock on the course row for the length of the call** (minutes of lock, which blocks the removal itself).
+
+A streamed turn is not covered. The student is watching it arrive, and the removal meets them on their next screen.
 

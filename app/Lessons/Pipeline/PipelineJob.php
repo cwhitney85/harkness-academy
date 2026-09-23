@@ -2,6 +2,7 @@
 
 namespace App\Lessons\Pipeline;
 
+use App\Courses\SkipRemovedCourse;
 use App\Models\Lesson;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -55,6 +56,16 @@ abstract class PipelineJob implements ShouldQueue
         $backoff = config('lessons.pipeline.backoff', [10, 60, 300]);
 
         return $backoff;
+    }
+
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
     }
 
     public function handle(CompletionPipeline $pipeline): void

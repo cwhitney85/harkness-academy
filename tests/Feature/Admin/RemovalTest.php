@@ -133,7 +133,7 @@ class RemovalTest extends TestCase
     }
 
     #[Test]
-    public function a_removed_courses_screens_are_a_404_to_its_student(): void
+    public function a_removed_courses_screens_send_its_student_to_the_dashboard_told_why(): void
     {
         $course = $this->courseWithDocuments(status: CourseStatus::Active);
         CourseSyllabus::factory()->for($course)->approved()->create();
@@ -147,10 +147,19 @@ class RemovalTest extends TestCase
 
         $this->removals()->remove($this->admin, $course, 'test data');
 
-        $this->actingAs($course->student)->get(route('lessons.show', $lesson))->assertNotFound();
-        $this->actingAs($course->student)->get(route('courses.syllabus.show', $course))->assertNotFound();
-        $this->actingAs($course->student)->get(route('courses.final-exam.show', $course))->assertNotFound();
-        $this->actingAs($course->student)->get(route('refreshers.show', $refresher))->assertNotFound();
+        foreach ([
+            route('lessons.show', $lesson),
+            route('courses.syllabus.show', $course),
+            route('courses.final-exam.show', $course),
+            route('refreshers.show', $refresher),
+        ] as $url) {
+            $this->actingAs($course->student)->get($url)
+                ->assertRedirect(route('dashboard'))
+                ->assertInertiaFlash('toast.message', 'Algebra (Introductory) has been removed from your courses.');
+
+            // To anyone else it is a 404, saying nothing about what was there.
+            $this->actingAs(User::factory()->create())->get($url)->assertNotFound();
+        }
     }
 
     #[Test]

@@ -1,5 +1,7 @@
 <?php
 
+use App\Courses\Exceptions\CourseRemoved;
+use App\Courses\RemovedCourse;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ViewAsStudent;
@@ -8,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,4 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // A student's own removed course: the dashboard, told why (16.2.4).
+        $exceptions->render(fn (NotFoundHttpException $e, Request $request) => RemovedCourse::response($e, $request));
+        $exceptions->render(fn (CourseRemoved $e, Request $request) => RemovedCourse::response($e, $request));
     })->create();

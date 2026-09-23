@@ -130,7 +130,7 @@ Five things, and the app is broken without a worker draining them ([T4](lessons.
 
 **The lesson completion chain** — summarize, update working knowledge, generate homework, unlock the next lesson — runs as a chain after a lesson is finished. Nothing in it is allowed to undo the completion. An environment with no worker completes lessons and silently never writes their homework.
 
-Every job is idempotent, because a managed queue delivers at least once. And every job looks its course up when it starts: a course an admin has removed is not found, so the job exits having spent nothing, and the removal itself closes whatever the student was waiting on.
+Every job is idempotent, because a managed queue delivers at least once. And every job looks its course up when it starts: a course an admin has removed is not found, so the job exits having spent nothing, and the removal itself closes whatever the student was waiting on. A course removed while the model is answering saves nothing from that answer, though the call is still on the bill. The student meets the removal on their next screen of that course: the dashboard, with a message naming it.
 
 ## 7. Prompts
 

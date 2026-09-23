@@ -3,6 +3,7 @@
 namespace App\Lessons\Checkpoints;
 
 use App\Courses\GenerationKind;
+use App\Courses\SkipRemovedCourse;
 use App\Models\GenerationRequest;
 use App\Models\Lesson;
 use Illuminate\Bus\Queueable;
@@ -41,6 +42,16 @@ class WriteCheckpoint implements ShouldQueue
         public readonly int $lessonId,
         public readonly int $sectionIndex,
     ) {}
+
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
 
     /**
      * Pre:  the section's teaching turn is in the transcript.

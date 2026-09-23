@@ -8,6 +8,7 @@ use App\Assessment\Exceptions\ExamUnusable;
 use App\Assessment\Exceptions\UnansweredQuestion;
 use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Courses\LessonStatus;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Memory\MemoryTree;
@@ -429,6 +430,9 @@ final class FinalExam
                 }
 
                 $reasons = $defects;
+            } catch (CourseRemoved $e) {
+                // Gone mid-call (16.2.8): a retry would pay again for nothing.
+                throw $e;
             } catch (Throwable $e) {
                 $failure = $e;
             }

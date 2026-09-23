@@ -5,6 +5,7 @@ namespace App\Assessment;
 use App\Ai\Gateway;
 use App\Assessment\Exceptions\RefresherNotAvailable;
 use App\Assessment\Exceptions\RefresherUnusable;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Courses\ModuleRollup;
 use App\Courses\SubtopicPointer;
 use App\Courses\Syllabus\SyllabusConcepts;
@@ -258,6 +259,9 @@ final class Refreshers
                 }
 
                 $reasons = $defects;
+            } catch (CourseRemoved $e) {
+                // Gone mid-call (16.2.8): a retry would pay again for nothing.
+                throw $e;
             } catch (Throwable $e) {
                 $failure = $e;
             }

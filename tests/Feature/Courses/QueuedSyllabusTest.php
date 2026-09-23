@@ -3,16 +3,19 @@
 namespace Tests\Feature\Courses;
 
 use App\Admin\Removals;
+use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
 use App\Courses\GenerationKind;
 use App\Courses\GenerationState;
 use App\Courses\Syllabus\DrawUpSyllabus;
 use App\Courses\Syllabus\SyllabusGenerator;
+use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\GenerationRequest;
 use App\Models\UsageEvent;
 use App\Models\User;
+use Database\Factories\CourseSyllabusFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
@@ -245,6 +248,33 @@ class QueuedSyllabusTest extends TestCase
 
         $this->assertSame(0, CourseSyllabus::query()->count());
         $this->assertSame(0, UsageEvent::query()->count());
+        $this->assertSame(GenerationState::Cancelled, GenerationRequest::query()->sole()->state);
+    }
+
+    /**
+     * 16.2.8, D70 -- removed while the model was answering: the call is on the
+     * bill, nothing it wrote is saved, and the job ends quietly.
+     */
+    #[Test]
+    public function a_course_removed_while_the_model_answers_saves_no_syllabus(): void
+    {
+        $course = $this->course();
+        $tree = app(MemoryTree::class);
+        $tree->put($course, $course->workingKnowledgePath(), '# Solid: fractions');
+        $tree->put($course, CourseCriteria::pathFor($course), '## Goals');
+        GenerationRequest::open($course, GenerationKind::Syllabus);
+
+        $admin = User::factory()->admin()->create();
+        $this->fakeModel(function () use ($course, $admin): array {
+            app(Removals::class)->remove($admin, $course, 'test data');
+
+            return CourseSyllabusFactory::exampleSyllabus();
+        });
+
+        DrawUpSyllabus::dispatchSync($course->id);
+
+        $this->assertSame(0, CourseSyllabus::query()->count());
+        $this->assertSame(1, UsageEvent::query()->where('course_id', $course->id)->count());
         $this->assertSame(GenerationState::Cancelled, GenerationRequest::query()->sole()->state);
     }
 

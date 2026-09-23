@@ -5,6 +5,7 @@ namespace App\Ai;
 use App\Admin\ViewingAs;
 use App\Ai\Prompts\PromptDefinition;
 use App\Ai\Prompts\PromptOutput;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\UsageEvent;
@@ -219,6 +220,9 @@ final class PendingCall
 
     /**
      * Send the call and wait for the whole reply.
+     *
+     * @throws CourseRemoved when the course it is about was removed while the
+     *                       model was answering (16.2.8)
      */
     public function generate(): GatewayResponse
     {
@@ -242,11 +246,19 @@ final class PendingCall
             throw $e;
         }
 
+        $usage = $this->record($tier, $models, $response, $startedAt);
+
+        // Removed while the model was answering (16.2.8, D70): the call is on
+        // the bill, and nothing it says is saved.
+        if ($this->courseId !== null && Course::onlyTrashed()->whereKey($this->courseId)->exists()) {
+            throw CourseRemoved::during($this->courseId);
+        }
+
         return new GatewayResponse(
             text: $response->text,
             structured: $response instanceof StructuredAgentResponse ? $response->structured : null,
             toolCalls: $response->toolCalls,
-            usage: $this->record($tier, $models, $response, $startedAt),
+            usage: $usage,
         );
     }
 

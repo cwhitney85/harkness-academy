@@ -5,6 +5,7 @@ namespace App\Assessment;
 use App\Assessment\Exceptions\ExamNotAvailable;
 use App\Assessment\Exceptions\ExamUnusable;
 use App\Courses\GenerationKind;
+use App\Courses\SkipRemovedCourse;
 use App\Models\Course;
 use App\Models\GenerationRequest;
 use Illuminate\Bus\Queueable;
@@ -36,6 +37,16 @@ class WriteFinalExam implements ShouldQueue
     public int $tries = 1;
 
     public function __construct(public readonly int $courseId) {}
+
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
 
     /**
      * Pre:  a `GenerationRequest` for this course's exam is open.
