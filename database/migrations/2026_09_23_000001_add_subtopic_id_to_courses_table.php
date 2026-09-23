@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Schema;
  * memory path, and retitling or promoting a subtopic must move nothing.
  *
  * A slug the catalog does not have was typed by a student before student rows
- * existed. It gets one now, credited to the first student who typed it and
- * titled as they wrote it, and is printed so it can be read over: whether any
+ * existed. It gets one now, titled as the first student to type it wrote it,
+ * and is printed so it can be read over: whether any
  * of them is a catalog subtopic under an old name is a question only a person
  * can answer.
  *
@@ -28,19 +28,19 @@ return new class extends Migration
         });
 
         $created = DB::select(<<<'SQL'
-            INSERT INTO subtopics (module_id, slug, title, position, origin, listed, created_by, created_at, updated_at)
+            INSERT INTO subtopics (module_id, slug, title, position, origin, listed, created_at, updated_at)
             SELECT DISTINCT ON (m.id, c.subtopic_slug)
                 m.id, c.subtopic_slug, c.subtopic_title,
                 (SELECT coalesce(max(position), 0) FROM subtopics WHERE module_id = m.id)
                     + dense_rank() OVER (PARTITION BY m.id ORDER BY c.subtopic_slug),
-                'student', false, c.user_id, now(), now()
+                'student', false, now(), now()
             FROM courses c
             JOIN modules m ON m.slug = c.module_slug
             WHERE NOT EXISTS (
                 SELECT 1 FROM subtopics s WHERE s.module_id = m.id AND s.slug = c.subtopic_slug
             )
             ORDER BY m.id, c.subtopic_slug, c.created_at, c.id
-            RETURNING module_id, slug, title, created_by
+            RETURNING module_id, slug, title
         SQL);
 
         DB::statement(<<<'SQL'
@@ -56,7 +56,7 @@ return new class extends Migration
         });
 
         foreach ($created as $row) {
-            echo "  student subtopic created: module #{$row->module_id} / {$row->slug} «{$row->title}», first typed by user #{$row->created_by}\n";
+            echo "  student subtopic created: module #{$row->module_id} / {$row->slug} «{$row->title}»\n";
         }
     }
 

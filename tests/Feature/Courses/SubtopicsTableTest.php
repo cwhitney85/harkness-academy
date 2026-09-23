@@ -94,11 +94,7 @@ class SubtopicsTableTest extends TestCase
     #[Test]
     public function the_backfill_points_every_course_at_a_row_and_prints_the_rows_it_made(): void
     {
-        // Replayed in order: the backfill ran while `created_by` existed,
-        // and the drop after it (D68).
         $backfill = require database_path('migrations/2026_09_23_000001_add_subtopic_id_to_courses_table.php');
-        $drop = require database_path('migrations/2026_09_23_000002_drop_created_by_from_subtopics_table.php');
-        $drop->down();
         $backfill->down();
 
         [$first, $second] = User::factory()->count(2)->create();
@@ -114,7 +110,6 @@ class SubtopicsTableTest extends TestCase
         ob_start();
         $backfill->up();
         $printed = (string) ob_get_clean();
-        $drop->up();
 
         $civilWar = Subtopic::query()->where('slug', 'civil-war')->sole();
         $this->assertSame(SubtopicOrigin::Student, $civilWar->origin);
@@ -126,7 +121,7 @@ class SubtopicsTableTest extends TestCase
         $this->assertSame($civilWar->id, Course::query()->find($later)->subtopic_id);
 
         $this->assertSame(1, substr_count($printed, 'student subtopic created'));
-        $this->assertStringContainsString('civil-war «civil war», first typed by user #'.$first->id, $printed);
+        $this->assertStringContainsString('civil-war «civil war»', $printed);
     }
 
     #[Test]
