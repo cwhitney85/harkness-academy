@@ -169,7 +169,8 @@ final class MemoryTree
     /**
      * Every document a student has, removed ones included and marked, each
      * with its whole history in version order -- the admin's read of the tree
-     * (spec 16.3.4).
+     * (spec 16.3.4). Only an admin controller may call it, because it shows
+     * what a removal hid from the student (16.2.4).
      *
      * Plain arrays, not models: the caller holds nothing it could save.
      *

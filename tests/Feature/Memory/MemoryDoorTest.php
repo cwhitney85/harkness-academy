@@ -49,16 +49,17 @@ class MemoryDoorTest extends TestCase
     }
 
     /**
-     * Spec 16.3.4 -- an admin reads memory, and nothing else: whatever holds a
-     * `MemoryTree` in an admin controller calls `history` on it and no other
-     * method.
+     * Spec 16.3.4 -- `history` is the admin's read, and the admin's only one.
+     * It shows what a removal hid, so nothing but an admin controller may call
+     * it; and an admin controller calls nothing else on a `MemoryTree`.
      */
     #[Test]
-    public function an_admin_controller_only_reads_memory(): void
+    public function only_an_admin_controller_reads_history_and_it_reads_nothing_else(): void
     {
         $offenders = [];
 
-        foreach (Finder::create()->files()->in(app_path('Http/Controllers/Admin'))->name('*.php') as $file) {
+        foreach (Finder::create()->files()->in(app_path())->name('*.php') as $file) {
+            $relative = $this->relativePath($file);
             $source = (string) file_get_contents($file->getPathname());
 
             // A tree resolved inline, or a variable or property typed as one.
@@ -67,12 +68,18 @@ class MemoryDoorTest extends TestCase
 
             preg_match_all('/(?:'.implode('|', $receivers).')->(\w+)\(/', $source, $calls);
 
-            foreach (array_diff($calls[1], ['history']) as $method) {
-                $offenders[] = $this->relativePath($file)." calls {$method}";
+            foreach ($calls[1] as $method) {
+                $allowed = str_starts_with($relative, 'Http/Controllers/Admin/')
+                    ? $method === 'history'
+                    : $method !== 'history';
+
+                if (! $allowed) {
+                    $offenders[] = "{$relative} calls {$method}";
+                }
             }
         }
 
-        $this->assertSame([], $offenders, 'Admin reads memory through MemoryTree::history only (spec 16.3.4): '.implode(', ', $offenders));
+        $this->assertSame([], $offenders, 'Only an admin controller reads MemoryTree::history, and it reads nothing else (spec 16.3.4): '.implode(', ', $offenders));
     }
 
     private function relativePath(SplFileInfo $file): string
