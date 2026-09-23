@@ -19,6 +19,7 @@ use App\Models\Module;
 use App\Models\Subtopic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -89,7 +90,9 @@ class CourseController extends Controller
         // is empty and empty is what `required` means.
         $validated = $request->validate([
             'source' => ['required', 'in:catalog,free_text'],
-            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', 'exists:subtopics,id'],
+            // Only what the picker offers: an unlisted student row reached
+            // through this door would skip the scope check (16.1.4).
+            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', Rule::exists('subtopics', 'id')->where('listed', true)],
             'module_slug' => ['nullable', 'required_if:source,free_text', 'string', 'exists:modules,slug'],
             'name' => ['nullable', 'required_if:source,free_text', 'string', 'max:120'],
             'level' => ['required', 'integer', 'in:101,201,301'],
@@ -236,7 +239,9 @@ class CourseController extends Controller
     }
 
     /**
-     * The preset catalog (spec 4.1) -- starting points, never a limit.
+     * The preset catalog (spec 4.1) -- starting points, never a limit. Listed
+     * rows only: a student's typed subtopic joins it when it is promoted
+     * (16.1.4).
      *
      * @return list<array<string, mixed>>
      */
@@ -244,7 +249,11 @@ class CourseController extends Controller
     {
         $modules = [];
 
-        foreach (Module::query()->with('subtopics')->orderBy('position')->cursor() as $module) {
+        // `get`, not `cursor`: a cursor drops eager loads, constraint and all,
+        // and the lazy load it falls back to would offer unlisted rows.
+        $listed = Module::query()->with(['subtopics' => fn ($subtopics) => $subtopics->listed()]);
+
+        foreach ($listed->orderBy('position')->get() as $module) {
             $subtopics = [];
 
             foreach ($module->subtopics as $subtopic) {

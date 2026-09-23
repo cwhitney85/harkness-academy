@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $user_id
+ * @property int $subtopic_id
  * @property string $module_slug
  * @property string $subtopic_slug
  * @property string $subtopic_title
@@ -60,6 +61,19 @@ class Course extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The subtopic row this course was started under (spec 16.1.3).
+     *
+     * Beside the frozen slugs, not instead of them: the slugs are the memory
+     * path, and this row can be retitled or promoted without moving it.
+     *
+     * @return BelongsTo<Subtopic, $this>
+     */
+    public function subtopic(): BelongsTo
+    {
+        return $this->belongsTo(Subtopic::class);
     }
 
     /**

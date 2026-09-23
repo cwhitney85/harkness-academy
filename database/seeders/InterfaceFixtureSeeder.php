@@ -21,7 +21,9 @@ use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Quiz;
+use App\Models\Subtopic;
 use App\Models\User;
 use Database\Seeders\Fixtures\ConversationalSpanish;
 use Database\Seeders\Fixtures\CourseFixture;
@@ -141,6 +143,12 @@ class InterfaceFixtureSeeder extends Seeder
     {
         $course = Course::query()->create([
             'user_id' => $student->id,
+            'subtopic_id' => Subtopic::findOrCreateFor(
+                Module::query()->where('slug', $fixture->moduleSlug)->sole(),
+                $fixture->slug,
+                $fixture->title,
+                $student,
+            )->id,
             'module_slug' => $fixture->moduleSlug,
             'subtopic_slug' => $fixture->slug,
             'subtopic_title' => $fixture->title,

@@ -2,22 +2,30 @@
 
 namespace App\Models;
 
+use App\Courses\SubtopicOrigin;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * A preset subtopic offered under a module (spec 4.1).
+ * A subtopic under a module: a catalog entry, or a name a student typed
+ * (spec 16.1, ledger D59).
  *
- * A suggestion the picker shows, not the identity of anything a student owns.
- * Picking one and typing its name freehand produce the same course, because
- * both resolve to the same slug (ledger D7b).
+ * `listed` is what the picker offers and what the scope check calls the
+ * catalog. A student row is unlisted until an admin promotes it. A course
+ * points here and still keeps its own frozen slugs, which are its memory
+ * path; retitling this row moves nothing.
  *
  * @property int $id
  * @property int $module_id
  * @property string $slug
  * @property string $title
  * @property int $position
+ * @property SubtopicOrigin $origin
+ * @property bool $listed
+ * @property int|null $created_by
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -26,10 +34,57 @@ class Subtopic extends Model
     protected $guarded = [];
 
     /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'origin' => SubtopicOrigin::class,
+            'listed' => 'boolean',
+        ];
+    }
+
+    /**
+     * The row a course at this slug belongs to, created as a student row if
+     * no row has the slug yet (16.1.2). Two students typing the same name
+     * share one row through the (module, slug) key; `firstOrCreate` falls
+     * back to reading it when a concurrent insert wins.
+     */
+    public static function findOrCreateFor(Module $module, string $slug, string $title, User $student): self
+    {
+        return self::query()->firstOrCreate(
+            ['module_id' => $module->id, 'slug' => $slug],
+            fn (): array => [
+                'title' => $title,
+                'origin' => SubtopicOrigin::Student,
+                'listed' => false,
+                'created_by' => $student->id,
+                'position' => 1 + (int) self::query()->where('module_id', $module->id)->max('position'),
+            ],
+        );
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    public function scopeListed(Builder $query): void
+    {
+        $query->where('listed', true);
+    }
+
+    /**
      * @return BelongsTo<Module, $this>
      */
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    /**
+     * @return HasMany<Course, $this>
+     */
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Course::class);
     }
 }

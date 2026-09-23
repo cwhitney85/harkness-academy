@@ -98,18 +98,4 @@ class NextActionTest extends TestCase
 
         $this->assertSame(route('modules.show', $module), NextAction::url($course));
     }
-
-    /**
-     * The catalog row is a copy, not a foreign key (4.1), so a course can
-     * outlive its module. Nothing deletes one today; the fallback is here so
-     * that if anything ever does, the card lands somewhere rather than 500ing
-     * the dashboard it sits on.
-     */
-    #[Test]
-    public function a_completed_course_whose_module_is_gone_lands_on_the_dashboard(): void
-    {
-        $course = Course::factory()->completed()->create(['module_slug' => 'no-such-module']);
-
-        $this->assertSame(route('dashboard'), NextAction::url($course));
-    }
 }
