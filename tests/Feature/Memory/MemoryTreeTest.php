@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Memory;
 
+use App\Courses\CourseCriteria;
 use App\Memory\Exceptions\InvalidMemoryPath;
 use App\Memory\MemoryTree;
 use App\Models\Course;
@@ -183,6 +184,21 @@ class MemoryTreeTest extends TestCase
         $this->assertSame($course->id, MemoryVersion::sole()->course_id);
     }
 
+    #[Test]
+    public function a_later_attempt_writes_beside_an_earlier_one_not_over_it(): void
+    {
+        $first = $this->course();
+        $first->forceFill(['withdrawn_at' => now()])->save();
+        $second = Course::factory()->for($first->student, 'student')->create(['attempt' => 2]);
+
+        $this->tree()->put($first, CourseCriteria::pathFor($first), 'first attempt');
+        $this->tree()->put($second, CourseCriteria::pathFor($second), 'second attempt');
+
+        $this->assertSame('math/algebra/101/a1/COURSE_CRITERIA.md', CourseCriteria::pathFor($first));
+        $this->assertSame('first attempt', $this->tree()->get($first->student, CourseCriteria::pathFor($first)));
+        $this->assertSame('second attempt', $this->tree()->get($first->student, CourseCriteria::pathFor($second)));
+    }
+
     /**
      * @return array<string, array{string}>
      */
@@ -190,7 +206,8 @@ class MemoryTreeTest extends TestCase
     {
         return [
             'another subtopic\'s knowledge' => ['math/geometry/WORKING_KNOWLEDGE.md'],
-            'another level\'s folder' => ['math/algebra/201/COURSE_CRITERIA.md'],
+            'another level\'s folder' => ['math/algebra/201/a1/COURSE_CRITERIA.md'],
+            'another attempt\'s folder' => ['math/algebra/101/a2/COURSE_CRITERIA.md'],
             'the subtopic folder itself' => ['math/algebra/notes.md'],
             'the module rollup' => ['math/WORKING_KNOWLEDGE.md'],
         ];

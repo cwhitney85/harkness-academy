@@ -152,7 +152,7 @@ class InterviewScreenTest extends TestCase
 
         $this->assertStringContainsString(
             'Solid',
-            (string) (new MemoryTree)->get($course->student, 'math/algebra/101/COURSE_CRITERIA.md'),
+            (string) (new MemoryTree)->get($course->student, 'math/algebra/101/a1/COURSE_CRITERIA.md'),
         );
     }
 

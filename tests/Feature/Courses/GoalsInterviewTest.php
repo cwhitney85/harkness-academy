@@ -32,7 +32,7 @@ class GoalsInterviewTest extends TestCase
 
     private const CLOSING_ANSWER = 'I want to order dinner in Madrid in October without switching to English.';
 
-    private const CRITERIA_PATH = 'math/algebra/101/COURSE_CRITERIA.md';
+    private const CRITERIA_PATH = 'math/algebra/101/a1/COURSE_CRITERIA.md';
 
     private const WK_DOC = "## Solid\n\n- Reads an equation aloud correctly.\n\n## Shaky\n\n- Signs.\n\n## Gaps\n\n- Quadratics.";
 

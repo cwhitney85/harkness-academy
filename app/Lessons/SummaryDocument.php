@@ -28,8 +28,7 @@ final class SummaryDocument
      * Where this lesson's summary lives in the memory tree.
      *
      * The same `{lesson-slug}` segment GUIDANCE.md uses, so the two are
-     * siblings. Like GUIDANCE it carries no attempt number, which is the
-     * reason only the highest attempt at a level is resumable (ledger D7b).
+     * siblings.
      */
     public static function pathFor(Lesson $lesson): string
     {

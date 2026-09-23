@@ -306,7 +306,7 @@ class DesignFixtureTest extends TestCase
         $paths = app(MemoryTree::class)->list($this->student());
 
         $this->assertContains('language/conversational-spanish/WORKING_KNOWLEDGE.md', $paths);
-        $this->assertContains('language/conversational-spanish/101/COURSE_CRITERIA.md', $paths);
+        $this->assertContains('language/conversational-spanish/101/a1/COURSE_CRITERIA.md', $paths);
     }
 
     private function student(): User

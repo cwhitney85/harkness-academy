@@ -23,7 +23,7 @@ class MemoryShowCommandTest extends TestCase
         $user = $algebra->student;
         $geometry = Course::factory()->for($user, 'student')->create(['subtopic_slug' => 'geometry', 'subtopic_title' => 'Geometry']);
 
-        $this->tree()->put($algebra, 'math/algebra/101/COURSE_CRITERIA.md', 'x');
+        $this->tree()->put($algebra, 'math/algebra/101/a1/COURSE_CRITERIA.md', 'x');
         $this->tree()->put($algebra, 'math/algebra/WORKING_KNOWLEDGE.md', 'x');
         $this->tree()->put($geometry, 'math/geometry/WORKING_KNOWLEDGE.md', 'x');
 
@@ -31,7 +31,8 @@ class MemoryShowCommandTest extends TestCase
             ->expectsOutput('math')
             ->expectsOutput('  algebra')
             ->expectsOutput('    101')
-            ->expectsOutput('      COURSE_CRITERIA.md')
+            ->expectsOutput('      a1')
+            ->expectsOutput('        COURSE_CRITERIA.md')
             ->expectsOutput('    WORKING_KNOWLEDGE.md')
             ->expectsOutput('  geometry')
             ->expectsOutput('    WORKING_KNOWLEDGE.md')

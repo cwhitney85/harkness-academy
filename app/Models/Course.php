@@ -189,15 +189,14 @@ class Course extends Model
     }
 
     /**
-     * Where this course's own materials hang (spec 4.5.3).
+     * Where this course's own materials hang (spec 4.5.3, 16.3.2).
      *
-     * Carries no attempt number, so a later attempt at the same level
-     * overwrites an earlier one's lesson guidance -- which is why only the
-     * highest attempt may be resumed (ledger D7b).
+     * One folder per attempt, so a later attempt at the same level never
+     * overwrites an earlier one's criteria, guidance or summaries (ledger D58).
      */
     public function materialsPrefix(): string
     {
-        return "{$this->module_slug}/{$this->subtopic_slug}/".$this->skill_level->pathSegment();
+        return "{$this->module_slug}/{$this->subtopic_slug}/".$this->skill_level->pathSegment()."/a{$this->attempt}";
     }
 
     /**

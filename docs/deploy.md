@@ -32,6 +32,8 @@ php artisan migrate --force && php artisan prompts:sync
 
 Nothing else. Cloud restarts queue workers itself, and `optimize:clear` / `storage:link` are actively harmful here.
 
+**Before a release whose migrations rewrite rows**, take a restore point by hand: run `php artisan db:backup` from your machine with the target database's credentials in the environment, then deploy. It cannot go in the deploy command, because files written there are discarded. Moving course documents into attempt folders ([16.3.2](specs/16-catalog-removal-ownership.md)) is the first such release. The same goes for migrating the development database.
+
 **5. Attach Postgres.** Infrastructure canvas → **Add database** → **Laravel Serverless Postgres**. Region must match the compute cluster. Smallest instance and 5GB storage are ample for dogfooding; enable **scale to zero** so an idle app costs nothing.
 
 Cloud injects `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` automatically. **Do not set those by hand** — a custom variable overrides the injected one and will silently point production at the wrong database.
