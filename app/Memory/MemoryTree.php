@@ -11,6 +11,7 @@ use App\Models\Removal;
 use App\Models\Subtopic;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -163,6 +164,32 @@ final class MemoryTree
         }
 
         return $paths;
+    }
+
+    /**
+     * Every document a student has, removed ones included and marked, each
+     * with its whole history in version order -- the admin's read of the tree
+     * (spec 16.3.4).
+     *
+     * Plain arrays, not models: the caller holds nothing it could save.
+     *
+     * @return list<array{path: string, removed: bool, versions: list<array{version: int, course_id: int, acting_user_id: int|null, content: string, created_at: Carbon}>}>
+     */
+    public function history(User $user): array
+    {
+        return array_values(Memory::withTrashed()
+            ->where('user_id', $user->id)
+            ->with(['versions' => fn ($versions) => $versions->orderBy('version')])
+            ->orderByRaw('path collate "C"')
+            ->get()
+            ->map(fn (Memory $memory): array => [
+                'path' => $memory->path,
+                'removed' => $memory->trashed(),
+                'versions' => array_values($memory->versions
+                    ->map(fn (MemoryVersion $version): array => $version->only('version', 'course_id', 'acting_user_id', 'content', 'created_at'))
+                    ->all()),
+            ])
+            ->all());
     }
 
     /**

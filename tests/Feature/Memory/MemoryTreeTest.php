@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Memory;
 
+use App\Admin\Removals;
 use App\Courses\CourseCriteria;
 use App\Memory\Exceptions\InvalidMemoryPath;
 use App\Memory\MemoryTree;
@@ -10,6 +11,8 @@ use App\Models\Memory;
 use App\Models\MemoryVersion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -311,6 +314,35 @@ class MemoryTreeTest extends TestCase
         $this->tree()->put($this->course(), self::WK, 'theirs');
 
         $this->assertNull($this->tree()->document($mine, self::WK));
+    }
+
+    #[Test]
+    public function the_admins_history_includes_removed_documents_and_names_who_wrote_each_version(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $first = $this->course();
+        $this->tree()->put($first, CourseCriteria::pathFor($first), 'criteria');
+        $this->tree()->put($first, self::WK, 'after attempt 1');
+
+        $first->forceFill(['withdrawn_at' => now()])->save();
+        $second = Course::factory()->for($first->student, 'student')->create(['attempt' => 2]);
+        Context::add('acting_user_id', $admin->id);
+        $this->tree()->put($second, self::WK, 'after attempt 2');
+        Context::forget('acting_user_id');
+
+        app(Removals::class)->remove($admin, $first, 'test data');
+        $this->tree()->put($this->course(), self::WK, 'someone else');
+
+        $history = collect($this->tree()->history($first->student));
+
+        $this->assertSame([CourseCriteria::pathFor($first) => true, self::WK => false], $history->pluck('removed', 'path')->all());
+        $this->assertSame(
+            [
+                ['version' => 1, 'course_id' => $first->id, 'acting_user_id' => null, 'content' => 'after attempt 1'],
+                ['version' => 2, 'course_id' => $second->id, 'acting_user_id' => $admin->id, 'content' => 'after attempt 2'],
+            ],
+            collect($history->firstWhere('path', self::WK)['versions'])->map(fn (array $version): array => Arr::except($version, 'created_at'))->all(),
+        );
     }
 
     private function tree(): MemoryTree
