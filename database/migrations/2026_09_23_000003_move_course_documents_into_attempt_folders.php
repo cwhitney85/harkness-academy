@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * Checked before anything moves: a path the new folder would push past the
  * 255-character column refuses the migration and is listed.
  *
- * Take `php artisan db:backup` first (docs/deploy.md).
+ * Take a restore point first (docs/deploy.md).
  */
 return new class extends Migration
 {

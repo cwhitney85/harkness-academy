@@ -32,9 +32,9 @@ php artisan migrate --force && php artisan prompts:sync
 
 Nothing else. Cloud restarts queue workers itself, and `optimize:clear` / `storage:link` are actively harmful here.
 
-**Before a release whose migrations rewrite rows**, take a restore point by hand: run `php artisan db:backup` from your machine with the target database's credentials in the environment, then deploy. It cannot go in the deploy command, because files written there are discarded. Moving course documents into attempt folders ([16.3.2](specs/16-catalog-removal-ownership.md)) is the first such release. The same goes for migrating the development database.
+**Before a release whose migrations rewrite rows**, note the time, then deploy. Production is covered by the cluster's point-in-time recovery (step 5): if the release goes wrong, Organization → Resources → Databases → the cluster → **Restore from point-in-time**, to a minute before. A restore creates a new cluster from that moment and leaves the current one alone; point the environment at the new one, redeploy, and delete whichever cluster is not wanted. Moving course documents into attempt folders ([16.3.2](specs/16-catalog-removal-ownership.md)) is the first such release. The development database has no such history, so take `php artisan db:backup` before migrating it.
 
-**5. Attach Postgres.** Infrastructure canvas → **Add database** → **Laravel Serverless Postgres**. Region must match the compute cluster. Smallest instance and 5GB storage are ample for dogfooding; enable **scale to zero** so an idle app costs nothing.
+**5. Attach Postgres.** Infrastructure canvas → **Add database** → **Laravel Serverless Postgres**. Region must match the compute cluster. Smallest instance and 5GB storage are ample for dogfooding; enable **scale to zero** so an idle app costs nothing. Set **backups retention** to 5 days (the cluster's settings → Backups retention → Edit; set 2026-09-23). At 0 there is no point-in-time recovery at all, and the dialog's button says "Save and disable backups". Retention is billed per GB-month of backup, which at a database of about 10 MB is pennies.
 
 Cloud injects `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` automatically. **Do not set those by hand** — a custom variable overrides the injected one and will silently point production at the wrong database.
 
