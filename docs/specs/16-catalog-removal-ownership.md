@@ -44,6 +44,7 @@
 - **16.2.11 MUST** — A generation request is kept when its work lands and when it fails; its state is a column, not its existence, and the one-row key becomes one open request per (course, kind) ([D68](../02-design.md), amending D25 and [11.5](11-generation-off-the-request.md)). *Done: a landed syllabus and a failed-then-retried exam each leave every request row they made, and no screen reads a settled row as a wait.*
 - **16.2.12 MUST** — An exam's answer sheet is kept at hand-in; a re-sit opens a new, empty sheet ([D68](../02-design.md), amending [6.3.4](06-assessment.md)). *Done: fail and re-sit — the first sitting's sheet is still there, and the re-sit opens with nothing ticked.*
 - **16.2.13 WONT** — Erasing an account's personal data on request. Its own question when a request makes it one.
+- **16.2.14 MUST** — `NextAction` finds a completed course's module through the course's own link (course → subtopic → module), not by matching `module_slug`, and its dashboard fallback for a missing module is removed. The database refuses to delete a module with courses under it (16.1.3), and removing one hides its courses with it, so the fallback has nothing left to catch (Colin, 2026-09-23). *Done: grep finds no dashboard fallback in `NextAction`; a completed course lands on its module rollup.*
 
 ## 16.3 Memory ownership
 
