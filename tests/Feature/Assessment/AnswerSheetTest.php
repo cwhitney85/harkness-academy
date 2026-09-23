@@ -66,7 +66,7 @@ class AnswerSheetTest extends AssessmentTestCase
     }
 
     #[Test]
-    public function handing_in_clears_the_sheet_and_a_re_sit_opens_an_empty_book(): void
+    public function handing_in_keeps_the_sheet_and_a_re_sit_opens_a_new_empty_one(): void
     {
         $course = $this->seatedCourse();
 
@@ -79,7 +79,8 @@ class AnswerSheetTest extends AssessmentTestCase
             ->postJson("/courses/{$course->id}/final-exam/sittings", ['answers' => ['e1' => 'a', 'e2' => 'a']])
             ->assertOk();
 
-        $this->assertSame(0, ExamAnswerSheet::query()->count());
+        // Kept at hand-in (16.2.12): the first sitting's draft is still there.
+        $this->assertSame(['e1' => 'a', 'e2' => 'b'], ExamAnswerSheet::query()->sole()->selections);
         $this->assertSame(CourseStatus::Active, $course->refresh()->status);
 
         // The result renders on a plain reload, with no draft left behind.
@@ -100,7 +101,10 @@ class AnswerSheetTest extends AssessmentTestCase
             ->postJson($this->url($course), ['answers' => ['e4' => 'a']])
             ->assertOk();
 
-        $this->assertSame(2, ExamAnswerSheet::query()->firstOrFail()->attempt);
+        $this->assertSame(
+            [1 => ['e1' => 'a', 'e2' => 'b'], 2 => ['e4' => 'a']],
+            ExamAnswerSheet::query()->orderBy('attempt')->pluck('selections', 'attempt')->all(),
+        );
     }
 
     #[Test]
