@@ -44,7 +44,8 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's profile.
+     * Delete the user's profile: a soft delete, so nothing under it goes and
+     * an admin can bring it back (spec 16.2.10, ledger D68).
      */
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {

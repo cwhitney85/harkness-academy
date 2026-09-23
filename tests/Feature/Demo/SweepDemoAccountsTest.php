@@ -47,10 +47,19 @@ class SweepDemoAccountsTest extends AssessmentTestCase
     {
         $young = User::factory()->create(['plan' => 'demo', 'created_at' => now()->subDays(6)]);
         $standard = User::factory()->create(['created_at' => now()->subYear()]);
+        $deleted = User::factory()->create(['created_at' => now()->subYear()]);
+        $deleted->delete();
+        $deletedDemo = User::factory()->create(['plan' => 'demo', 'created_at' => now()->subDays(8)]);
+        $deletedDemo->delete();
 
         $this->artisan('demo:sweep')->assertSuccessful();
 
         $this->assertNotNull($young->fresh());
         $this->assertNotNull($standard->fresh());
+
+        // 16.2.10: a soft-deleted account is kept -- unless it is an unclaimed
+        // demo, which the sweep removes whether or not its visitor deleted it.
+        $this->assertTrue($deleted->fresh()?->trashed());
+        $this->assertNull($deletedDemo->fresh());
     }
 }
