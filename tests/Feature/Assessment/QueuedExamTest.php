@@ -4,6 +4,7 @@ namespace Tests\Feature\Assessment;
 
 use App\Assessment\WriteFinalExam;
 use App\Courses\GenerationKind;
+use App\Courses\GenerationState;
 use App\Models\GenerationRequest;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
@@ -62,7 +63,7 @@ class QueuedExamTest extends AssessmentTestCase
         }
 
         Queue::assertPushed(WriteFinalExam::class, 1);
-        $this->assertSame(1, GenerationRequest::query()->count());
+        $this->assertSame(1, GenerationRequest::query()->where('kind', GenerationKind::FinalExam)->count());
     }
 
     #[Test]
@@ -95,6 +96,34 @@ class QueuedExamTest extends AssessmentTestCase
         // A failed request is over, so the book is shut and askable again.
         $this->assertSame('closed', $props['state']);
         $this->assertStringContainsString('could not be written', (string) $props['failure']);
+    }
+
+    /**
+     * 16.2.11 -- a request is kept once it is over, so a failure and the
+     * retry that landed are both still there, and neither reads as a wait.
+     */
+    #[Test]
+    public function a_failed_then_retried_exam_keeps_every_request_it_made(): void
+    {
+        $course = $this->taughtCourse();
+
+        Queue::fake();
+
+        $this->actingAs($course->student)->postJson(route('courses.final-exam.store', $course))->assertStatus(202);
+        (new WriteFinalExam($course->id))->failed(new \RuntimeException('killed'));
+
+        $this->actingAs($course->student)->postJson(route('courses.final-exam.store', $course))->assertStatus(202);
+        $this->scriptModel([$this->examResponse()]);
+        app()->call([new WriteFinalExam($course->id), 'handle']);
+
+        $this->assertSame(
+            [GenerationState::Failed, GenerationState::Landed],
+            GenerationRequest::query()->where('kind', GenerationKind::FinalExam)->orderBy('id')->pluck('state')->all(),
+        );
+
+        $props = $this->inertiaProps($this->actingAs($course->student)->get(route('courses.final-exam.show', $course)));
+
+        $this->assertSame('open', $props['state']);
     }
 
     /** `QueuedSyllabusTest`'s twin: a killed job still ends the wait. */

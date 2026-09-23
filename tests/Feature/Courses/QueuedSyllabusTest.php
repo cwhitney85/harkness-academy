@@ -4,6 +4,7 @@ namespace Tests\Feature\Courses;
 
 use App\Courses\CourseStatus;
 use App\Courses\GenerationKind;
+use App\Courses\GenerationState;
 use App\Courses\Syllabus\DrawUpSyllabus;
 use App\Courses\Syllabus\SyllabusGenerator;
 use App\Models\Course;
@@ -188,7 +189,11 @@ class QueuedSyllabusTest extends TestCase
         // loudly rather than quietly costing money.
         (new DrawUpSyllabus($course->id))->handle(app(SyllabusGenerator::class));
 
-        $this->assertNull(GenerationRequest::for($course, GenerationKind::Syllabus));
+        // Kept once landed (16.2.11), and not read as a wait.
+        $this->assertSame(GenerationState::Landed, GenerationRequest::for($course, GenerationKind::Syllabus)?->state);
+        $this->assertFalse($this->inertiaProps(
+            $this->actingAs($course->student)->get(route('courses.syllabus.show', $course)),
+        )['generating']);
     }
 
     /**

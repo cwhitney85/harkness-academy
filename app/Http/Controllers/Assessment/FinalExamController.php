@@ -66,7 +66,7 @@ class FinalExamController extends Controller
 
         $seated = $course->isOpen() && $course->status === CourseStatus::FinalExam;
         $pending = GenerationRequest::for($course, GenerationKind::FinalExam);
-        $writing = $pending instanceof GenerationRequest && ! $pending->hasFailed();
+        $writing = $pending?->isPending() ?? false;
 
         return Inertia::render('courses/final-exam', [
             // `closed` is the book as it is handed over, `opening` is it being

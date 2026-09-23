@@ -4,6 +4,7 @@ namespace Tests\Feature\Courses;
 
 use App\Ai\GatewayAgent;
 use App\Courses\CourseStatus;
+use App\Courses\GenerationState;
 use App\Courses\Interviews\InterviewKind;
 use App\Courses\Interviews\Speaker;
 use App\Courses\Interviews\Transcript;
@@ -72,7 +73,7 @@ class QueuedInterviewWriteUpTest extends TestCase
         app()->call([new WriteUpInterview($course->id, InterviewKind::Knowledge), 'handle']);
 
         $this->assertSame(CourseStatus::GoalsInterview, $course->fresh()?->status);
-        $this->assertSame(0, GenerationRequest::query()->count());
+        $this->assertSame(GenerationState::Landed, GenerationRequest::query()->sole()->state);
     }
 
     /**
