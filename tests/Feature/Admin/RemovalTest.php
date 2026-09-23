@@ -3,9 +3,11 @@
 namespace Tests\Feature\Admin;
 
 use App\Admin\AdminActionType;
+use App\Admin\Exceptions\RestoreRefused;
 use App\Admin\Removals;
 use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
+use App\Courses\CourseTransitions;
 use App\Courses\CreateCourse;
 use App\Courses\SkillLevel;
 use App\Memory\MemoryTree;
@@ -184,6 +186,51 @@ class RemovalTest extends TestCase
         $this->assertSame(2, $fresh->attempt);
         $this->assertTrue($fresh->isOpen());
         $this->assertSame('# Solid: something', $this->tree()->get($fresh->student, $fresh->workingKnowledgePath()));
+    }
+
+    #[Test]
+    public function a_course_cannot_be_restored_while_another_holds_its_subtopic_and_both_outcomes_are_logged(): void
+    {
+        $first = $this->courseWithDocuments();
+        $removal = $this->removals()->remove($this->admin, $first, 'test data');
+        $second = app(CreateCourse::class)->fromCatalog($first->student, $first->subtopic, SkillLevel::Introductory);
+
+        try {
+            $this->removals()->restore($this->admin, $removal, 'wanted back');
+            $this->fail('The restore should have been refused.');
+        } catch (RestoreRefused $e) {
+            $this->assertStringContainsString("Course #{$second->id}", $e->getMessage());
+            $this->assertStringContainsString('attempt 2', $e->getMessage());
+        }
+
+        $this->assertNull(Course::query()->find($first->id));
+
+        app(CourseTransitions::class)->withdraw($second);
+        $this->removals()->restore($this->admin, $removal, 'wanted back');
+
+        $this->assertTrue(Course::query()->findOrFail($first->id)->isOpen());
+        $this->assertSame(
+            [AdminActionType::Removed, AdminActionType::RestoreRefused, AdminActionType::Restored],
+            AdminAction::query()->orderBy('id')->pluck('action')->all(),
+        );
+        $this->assertSame($removal->id, AdminAction::query()->where('action', AdminActionType::RestoreRefused)->sole()->payload['removal_id']);
+    }
+
+    #[Test]
+    public function nothing_is_restored_under_a_parent_that_is_still_removed(): void
+    {
+        $course = $this->courseWithDocuments();
+        $alone = $this->removals()->remove($this->admin, $course, 'on its own');
+        $this->removals()->remove($this->admin, $course->subtopic, 'the subtopic');
+
+        $this->expectException(RestoreRefused::class);
+        $this->expectExceptionMessage('Its subtopic, Algebra, is removed.');
+
+        try {
+            $this->removals()->restore($this->admin, $alone, 'wanted back');
+        } finally {
+            $this->assertNull(Course::query()->find($course->id));
+        }
     }
 
     private function courseWithDocuments(string $module = 'math', string $subtopic = 'algebra', CourseStatus $status = CourseStatus::GoalsInterview): Course
