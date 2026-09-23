@@ -15,7 +15,7 @@
 ## 13.1 Role
 
 - **13.1.1 MUST** — `users.role`: string, default `student`, values `student` | `admin`, added by a migration that only adds. *Done: after migrating the dev database, every existing row reads `student`.*
-- **13.1.2 MUST** — One `admin` gate guards every `/admin*` route. *Done: a route-list test finds the gate on every `/admin*` route; a student gets 403 on each.*
+- **13.1.2 MUST** — One `admin` gate guards every `/admin*` route, and every route an admin controller answers wherever it is mounted — admin controllers alone read removed memory ([16.3.4](16-catalog-removal-ownership.md)). *Done: a route-list test finds the gate on every such route; a student gets 403 on each.*
 - **13.1.3 MUST** — A role is granted or revoked only by `php artisan user:role {email} {role}`. *Done: command test; no web route writes `role`.*
 - **13.1.4 MUST** — Role is independent of plan and skill level ([4.5.6](04-course-pipeline.md)). *Done: an admin on the `demo` plan gets demo depth.*
 - **13.1.5 MUST** — `/admin` requires a confirmed second factor — passkey or two-factor code. An admin without one is sent to set one up. *Done: feature test — an admin with no second factor is redirected to setup; with one, `/admin` renders.*

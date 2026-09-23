@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route as Router;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-/** Spec 13.1.2, 13.1.5 -- one gate on every `/admin*` route, and a second factor. */
+/** Spec 13.1.2, 13.1.5 -- one gate on every `/admin*` route and every admin controller, and a second factor. */
 class AdminAccessTest extends TestCase
 {
     use RefreshDatabase;
@@ -103,13 +103,19 @@ class AdminAccessTest extends TestCase
     }
 
     /**
+     * Every `/admin*` route, and every route an admin controller answers
+     * wherever it is mounted -- the door test lets only admin controllers read
+     * removed memory (16.3.4), which holds only while each is gated.
+     *
      * @return list<Route>
      */
     private function adminRoutes(): array
     {
         return array_values(array_filter(
             Router::getRoutes()->getRoutes(),
-            fn (Route $route): bool => $route->uri() === 'admin' || str_starts_with($route->uri(), 'admin/'),
+            fn (Route $route): bool => $route->uri() === 'admin'
+                || str_starts_with($route->uri(), 'admin/')
+                || str_starts_with(ltrim($route->getControllerClass() ?? '', '\\'), 'App\\Http\\Controllers\\Admin\\'),
         ));
     }
 }

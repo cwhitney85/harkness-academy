@@ -250,3 +250,11 @@ Package 15 moved prompts into the database, so every test that makes an AI call 
 Adding `SoftDeletes` to a model has two effects that reach code nobody is editing. **Anything that reads the table without Eloquent still sees removed rows.** Three places did: Catalog → Demand's `DB::table` query counted removed courses, and course creation's `Rule::exists('subtopics', …)` and `exists:modules,slug` accepted a removed subtopic's id from a hand-built POST. `whereHas` and route binding do respect the scope. **And every existing `delete()` on that model silently becomes a soft delete.** The demo sweep, which is meant to be the one hard delete, would have started keeping rows. The fixture seeder's reset would have broken outright, because a soft delete sets `deleted_at` without a `removal_id` and trips the check that ties the two together.
 
 **When a model gains `SoftDeletes`, grep for its table in `DB::table`, raw joins and `exists:`/`Rule::exists` rules, and add `whereNull('deleted_at')`. Then grep for `->delete()` on it and decide each one: soft, or `forceDelete()`.**
+
+## T24. A route's controller class may start with a backslash, depending on how the route was declared
+
+*Found 2026-09-23, widening 13.1.2's gate test for spec 16.3.4.*
+
+`Route::getControllerClass()` returns `App\Http\Controllers\…` for a route declared with a plain `Route::get` inside a group, and `\App\Http\Controllers\…` for one declared through a chain such as `Route::middleware('auth')->get(…)`: `RouteRegistrar::compileAction` prepends the backslash, the router does not. A test matching the class with `str_starts_with($class, 'App\\…')` therefore passed while a chained route mounted an admin controller outside the gate — it could only ever match the routes already declared the ordinary way.
+
+**Compare a route's controller class after `ltrim($class, '\\')`. And a guard test is not proven by passing: plant the violation it exists to catch, see it fail, then remove it.**
