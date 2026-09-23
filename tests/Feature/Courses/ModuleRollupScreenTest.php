@@ -129,7 +129,7 @@ class ModuleRollupScreenTest extends TestCase
 
         $course = app(CreateCourse::class)->fromCatalog($student, $preset, SkillLevel::Introductory);
 
-        app(MemoryTree::class)->put($student, $course->workingKnowledgePath(), "# Solid: something about {$subtopic}");
+        app(MemoryTree::class)->put($course, $course->workingKnowledgePath(), "# Solid: something about {$subtopic}");
 
         return $course;
     }

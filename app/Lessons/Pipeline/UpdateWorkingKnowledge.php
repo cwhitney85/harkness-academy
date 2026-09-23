@@ -82,6 +82,6 @@ final class UpdateWorkingKnowledge extends PipelineJob
             ]);
         }
 
-        $memory->put($lesson->course->student, $path, $updated);
+        $memory->put($lesson->course, $path, $updated);
     }
 }

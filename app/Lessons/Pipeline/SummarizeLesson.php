@@ -72,7 +72,7 @@ final class SummarizeLesson extends PipelineJob
             $lesson->forceFill(['summary_json' => $summary->document()])->save();
 
             $memory->put(
-                $lesson->course->student,
+                $lesson->course,
                 SummaryDocument::pathFor($lesson),
                 SummaryDocument::render($lesson, $summary),
             );

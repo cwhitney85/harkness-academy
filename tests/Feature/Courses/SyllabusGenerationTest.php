@@ -339,10 +339,10 @@ class SyllabusGenerationTest extends TestCase
         $course = Course::factory()->status(CourseStatus::SyllabusDraft)->create();
 
         $tree = app(MemoryTree::class);
-        $tree->put($course->student, $course->workingKnowledgePath(), self::WK);
+        $tree->put($course, $course->workingKnowledgePath(), self::WK);
 
         if ($withCriteria) {
-            $tree->put($course->student, CourseCriteria::pathFor($course), self::CRITERIA);
+            $tree->put($course, CourseCriteria::pathFor($course), self::CRITERIA);
         }
 
         return $course;

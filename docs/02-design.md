@@ -85,7 +85,7 @@
 | D55 | An experiment's variant sticks to a course | current — binds whatever [D66](#d66) builds |
 | D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
 | D57 | A removal is a record that marks everything it hides | current |
-| D58 | Documents have an owner, and each attempt its own folder | current |
+| D58 | Documents have an owner, and each attempt its own folder | **amended by D69** — the owner is a type and a pointer, never an empty `course_id` |
 | D59 | One subtopics table holds catalog and student subtopics | **amended by D67** — no `created_by` |
 | D60 | Viewing as a student is read-only until you step up with a reason | **amended 2026-09-18** — preview also refuses a stream that would teach something new |
 | D61 | Role is a column, apart from plan and skill level; admin is a fourth shell | current |
@@ -96,6 +96,7 @@
 | D66 | A/B experiments wait for students; what returns is an evaluation package, not this one — **carries the quality-signal survey** | current |
 | D67 | `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student | current |
 | D68 | Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept | current — amends D25 and spec 6.3.4, 12.5.1 |
+| D69 | A document's owner is a type and a pointer; the writing course decides which | current — amends D58 |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1044,7 +1045,7 @@ Rejected: marking only the removed row and hiding descendants by joining up the 
 
 A removed subtopic's name cannot be typed back in as a student subtopic (16.2.7), which is what keeps a subtopic restore from ever colliding with a course started meanwhile.
 
-## D58. Documents have an owner, and each attempt its own folder (resolved 2026-09-18, spec 16 item 16.3, Colin)
+## D58. Documents have an owner, and each attempt its own folder (resolved 2026-09-18, spec 16 item 16.3, Colin; **owner shape amended by [D69](#d69-a-documents-owner-is-a-type-and-a-pointer-the-writing-course-decides-which-resolved-2026-09-23-spec-16-items-1631-1633-colin)**)
 
 v1 memories are keyed by user and path; nothing records which course wrote what, and a later attempt overwrites an earlier one's guidance and criteria at the same paths (D7b's rider). **Chosen: course documents carry `course_id` and live under `{module}/{subtopic}/{level}/a{attempt}/`; working knowledge stays subtopic-owned (D8), and every version records the course that wrote it.** Removing a course hides its documents and keeps working knowledge, because what the student knows is still true.
 
@@ -1157,3 +1158,14 @@ Colin: *"we never want to actually delete anything. We should always be using so
 - **An exam's answer sheet is kept at hand-in.** Amends [6.3.4](specs/06-assessment.md): a re-sit still opens an empty book, and it opens a new sheet instead of emptying the old one.
 
 Rejected: **hard delete on self-deletion** (irreversible, and the account cannot be restored) · **soft-deleting unclaimed demos too** (a visitor who never signed up has no one to restore them for, and the cost record survives without the row) · **erasing personal data now** (deferred as 16.2.13, its own question when a privacy request makes it one).
+
+## D69. A document's owner is a type and a pointer; the writing course decides which (resolved 2026-09-23, spec 16 items 16.3.1, 16.3.3, Colin)
+
+D58 gave `memories` a `course_id`, empty for working knowledge. Colin rejected the empty value when 16.3.1 came to be built: *"not a fan of using null to confer meaning … The memory belongs to something. Making it null implies otherwise and can't be relied upon."* **Chosen: `memories.owner_type` and `owner_id`, neither ever empty, the type held by a database check to a course or a subtopic.** Working knowledge points at its subtopic row (D8); criteria, guidance and summaries at their course. Those are the only two: the module rollup is rendered on read and never stored (3.3). A new owner is one more value in the check when something else is first stored. Every version names the course that wrote it, in `memory_versions.course_id`, also never empty: every write the app makes is some course's workflow.
+
+**`put` takes the writing course, not an owner.** A document can belong only to the course writing it or to that course's subtopic, so the owner follows from the path. The course's working-knowledge path is the subtopic's; anything under its own folder is the course's; any other path is refused. Passing an owner in would let a caller name a wrong one, and the refusal would have nothing to check against.
+
+Rejected: **an empty `course_id` for working knowledge** (D58 as written) · **the path alone naming the case**, with a check tying an empty `course_id` to working-knowledge paths (no pointer to the subtopic, and still an empty value to read) · **a pivot table per owner** (one document with two owners, or none, could not be refused).
+
+The migration found two documents in development whose course had been deleted by hand on 2026-09-09, before D68. It refuses to run while any document or version has no course to match, and lists them. Colin chose to delete the two by hand rather than have a migration do it.
+

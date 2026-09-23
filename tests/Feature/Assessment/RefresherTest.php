@@ -139,7 +139,7 @@ class RefresherTest extends AssessmentTestCase
     {
         $course = $this->activeCourse();
 
-        app(MemoryTree::class)->put($course->student, $course->workingKnowledgePath(), '   ');
+        app(MemoryTree::class)->put($course, $course->workingKnowledgePath(), '   ');
 
         $this->expectException(RefresherNotAvailable::class);
 

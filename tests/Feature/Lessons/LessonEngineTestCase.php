@@ -57,8 +57,8 @@ abstract class LessonEngineTestCase extends TestCase
         // these rather than writing placeholders of its own -- which keeps the
         // version count honest for the erosion tests.
         $tree = app(MemoryTree::class);
-        $tree->put($course->student, $course->workingKnowledgePath(), self::WK);
-        $tree->put($course->student, CourseCriteria::pathFor($course), self::CRITERIA);
+        $tree->put($course, $course->workingKnowledgePath(), self::WK);
+        $tree->put($course, CourseCriteria::pathFor($course), self::CRITERIA);
 
         app(ApproveSyllabus::class)($course, CourseSyllabus::factory()->for($course)->create());
 

@@ -113,7 +113,7 @@ class WithdrawAndResumeTest extends TestCase
         );
 
         $tree = app(MemoryTree::class);
-        $tree->put($student, $course->workingKnowledgePath(), '# Solid: fractions');
+        $tree->put($course, $course->workingKnowledgePath(), '# Solid: fractions');
 
         $this->transitions()->withdraw($course);
 

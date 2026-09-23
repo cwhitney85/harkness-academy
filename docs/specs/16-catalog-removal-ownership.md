@@ -2,7 +2,7 @@
 
 *Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4.5.3](04-course-pipeline.md), [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md), [6.3.4](06-assessment.md), [11.5](11-generation-off-the-request.md) and [12.5.1](12-demo.md). Specced 2026-09-18.*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D67](../02-design.md) `subtopics` has no `created_by` · [D68](../02-design.md) nothing is hard-deleted but an unclaimed demo.
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D67](../02-design.md) `subtopics` has no `created_by` · [D68](../02-design.md) nothing is hard-deleted but an unclaimed demo · [D69](../02-design.md) a document's owner is a type and a pointer.
 
 ## The shape
 
@@ -48,9 +48,9 @@
 
 ## 16.3 Memory ownership
 
-- **16.3.1 MUST** — `memories.course_id` (null for working knowledge and the module rollup); `memory_versions.course_id` and `acting_user_id` (the latter already added by [13.4.3](13-admin-foundation.md)). *Done: migrations.*
+- **16.3.1 MUST** — `memories.owner_type` and `owner_id`: the course a document belongs to, or the subtopic whose working knowledge it is, never empty ([D69](../02-design.md)); `memory_versions.course_id`, never empty, and `acting_user_id` (the latter already added by [13.4.3](13-admin-foundation.md)). A document or version with no course to match refuses the migration and is listed. *Done: migrations.*
 - **16.3.2 MUST** — Course documents move to `{module}/{subtopic}/{level}/a{attempt}/…`. A data migration rewrites existing paths, every path stays within 255 characters, and [docs/deploy.md](../deploy.md) gains a `db:backup` step before it. *Done: every course's documents resolve under its attempt folder; `course_syllabi`'s pinned versions still resolve.*
-- **16.3.3 MUST** — `MemoryTree::put` takes an owner — a course, or none — and every version records the course that wrote it. Sixteen call sites (confirmed) pass it. *Done: every working-knowledge version names its writing course.*
+- **16.3.3 MUST** — `MemoryTree::put` takes the course that writes, and the owner follows from the path: the course's working knowledge is its subtopic's, its own folder is its own, and any other path is refused ([D69](../02-design.md)). Every version records the course that wrote it. *Done: every working-knowledge version names its writing course.*
 - **16.3.4 MUST** — Admin reads memory read-only, through a path-API method that can include removed documents. [3.2](03-memory.md)'s "no other door" test extends to admin controllers. *Done: the architecture test passes.*
 
 ## 16.4 Resuming any withdrawn attempt

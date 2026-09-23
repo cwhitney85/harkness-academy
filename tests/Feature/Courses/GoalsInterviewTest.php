@@ -313,7 +313,7 @@ class GoalsInterviewTest extends TestCase
             ->status(CourseStatus::KnowledgeInterview)
             ->create();
 
-        (new MemoryTree)->put($course->student, $course->workingKnowledgePath(), self::WK_DOC);
+        (new MemoryTree)->put($course, $course->workingKnowledgePath(), self::WK_DOC);
 
         return $course;
     }

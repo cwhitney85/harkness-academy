@@ -184,8 +184,8 @@ class InterfaceFixtureSeeder extends Seeder
      */
     private function writeDocuments(Course $course, CourseFixture $fixture): void
     {
-        $this->memory->put($course->student, $course->workingKnowledgePath(), $fixture->workingKnowledge);
-        $this->memory->put($course->student, CourseCriteria::pathFor($course), $fixture->criteria);
+        $this->memory->put($course, $course->workingKnowledgePath(), $fixture->workingKnowledge);
+        $this->memory->put($course, CourseCriteria::pathFor($course), $fixture->criteria);
     }
 
     /**
@@ -287,7 +287,7 @@ class InterfaceFixtureSeeder extends Seeder
             $lesson->forceFill(['summary_json' => $fixture->summary])->save();
 
             $this->memory->put(
-                $lesson->course->student,
+                $lesson->course,
                 SummaryDocument::pathFor($lesson),
                 SummaryDocument::render($lesson, LessonSummary::of($fixture->summary)),
             );

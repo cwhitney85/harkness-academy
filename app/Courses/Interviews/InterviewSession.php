@@ -316,7 +316,7 @@ final class InterviewSession implements CompletionListener
         }
 
         DB::transaction(function () use ($document): void {
-            $this->memory->put($this->course->student, $this->interview->documentPath($this->course), $document);
+            $this->memory->put($this->course, $this->interview->documentPath($this->course), $document);
 
             $this->transitions->to($this->course, $this->interview->next());
         });

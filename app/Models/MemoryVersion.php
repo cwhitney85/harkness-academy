@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $memory_id
+ * @property int $course_id the course whose workflow wrote it (spec 16.3.3)
  * @property int $version
  * @property string $content
  * @property int|null $acting_user_id the admin acting as the student (spec 13.4.3)
@@ -31,6 +32,14 @@ class MemoryVersion extends Model
     public function memory(): BelongsTo
     {
         return $this->belongsTo(Memory::class);
+    }
+
+    /**
+     * @return BelongsTo<Course, $this>
+     */
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class);
     }
 
     protected function casts(): array

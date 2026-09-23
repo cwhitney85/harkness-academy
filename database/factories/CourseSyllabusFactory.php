@@ -111,7 +111,7 @@ class CourseSyllabusFactory extends Factory
             : CourseCriteria::pathFor($course);
 
         if ($tree->get($course->student, $path) === null) {
-            $tree->put($course->student, $path, "# {$which} fixture");
+            $tree->put($course, $path, "# {$which} fixture");
         }
 
         return $tree->document($course->student, $path)->versionId;

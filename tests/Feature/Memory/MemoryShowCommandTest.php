@@ -3,6 +3,7 @@
 namespace Tests\Feature\Memory;
 
 use App\Memory\MemoryTree;
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,15 +19,13 @@ class MemoryShowCommandTest extends TestCase
     #[Test]
     public function it_prints_the_tree_when_no_path_is_given(): void
     {
-        $user = User::factory()->create();
+        $algebra = Course::factory()->create();
+        $user = $algebra->student;
+        $geometry = Course::factory()->for($user, 'student')->create(['subtopic_slug' => 'geometry', 'subtopic_title' => 'Geometry']);
 
-        foreach ([
-            'math/algebra/101/COURSE_CRITERIA.md',
-            'math/algebra/WORKING_KNOWLEDGE.md',
-            'math/geometry/WORKING_KNOWLEDGE.md',
-        ] as $path) {
-            $this->tree()->put($user, $path, 'x');
-        }
+        $this->tree()->put($algebra, 'math/algebra/101/COURSE_CRITERIA.md', 'x');
+        $this->tree()->put($algebra, 'math/algebra/WORKING_KNOWLEDGE.md', 'x');
+        $this->tree()->put($geometry, 'math/geometry/WORKING_KNOWLEDGE.md', 'x');
 
         $this->artisan('memory:show', ['user' => $user->email])
             ->expectsOutput('math')
@@ -42,9 +41,10 @@ class MemoryShowCommandTest extends TestCase
     #[Test]
     public function it_prints_one_document_when_a_path_is_given(): void
     {
-        $user = User::factory()->create();
+        $course = Course::factory()->create();
+        $user = $course->student;
 
-        $this->tree()->put($user, 'math/algebra/WORKING_KNOWLEDGE.md', "## Solid\n- fractions");
+        $this->tree()->put($course, 'math/algebra/WORKING_KNOWLEDGE.md', "## Solid\n- fractions");
 
         $this->artisan('memory:show', [
             'user' => (string) $user->id,
