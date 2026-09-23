@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActionLogController;
 use App\Http\Controllers\Admin\AiModelController;
+use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\ViewAsController;
@@ -27,6 +28,12 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('/', [StudentController::class, 'index'])->name('admin.home');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
+
+        // What students type that the catalog does not offer, and what the
+        // scope check turned away (16.1.5, 16.1.6).
+        Route::get('catalog/demand', [CatalogController::class, 'demand'])->name('admin.catalog.demand');
+        Route::post('catalog/subtopics/{subtopic}/promote', [CatalogController::class, 'promote'])->name('admin.catalog.promote');
+        Route::get('catalog/refusals', [CatalogController::class, 'refusals'])->name('admin.catalog.refusals');
 
         // The model catalog, its tiers, and what each model has cost (14.4).
         Route::get('models', [AiModelController::class, 'index'])->name('admin.models');

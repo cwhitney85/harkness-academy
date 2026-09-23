@@ -41,9 +41,11 @@ class ActionLogController extends Controller
                 'subject' => $row->subject_type === null ? null : [
                     'type' => $row->subject_type,
                     // The subject may be gone; the row still says what it was.
-                    // A catalog model names itself `display_name` (14.4.2).
+                    // A catalog model names itself `display_name` (14.4.2), a
+                    // subtopic `title` (16.1.5).
                     'name' => $row->subject?->getAttribute('name')
                         ?? $row->subject?->getAttribute('display_name')
+                        ?? $row->subject?->getAttribute('title')
                         ?? "#{$row->subject_id}",
                 ],
                 'reason' => $row->reason,

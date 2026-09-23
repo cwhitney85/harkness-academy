@@ -9,8 +9,8 @@ use Illuminate\Support\Carbon;
 /**
  * One free-text subtopic the scope check turned away (spec 4.9.7).
  *
- * Write-only in v1. Nothing reads it and nothing is allowed to render
- * `reason` -- see the migration.
+ * Read back only by Admin → Catalog → Refusals (16.1.6), the one place
+ * `reason` is rendered: a student never reads the model's words (4.9.6).
  *
  * @property int $id
  * @property int $user_id

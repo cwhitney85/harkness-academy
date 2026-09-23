@@ -14,4 +14,5 @@ enum AdminActionType: string
     case AiModelRepriced = 'ai_model.repriced';
     case PromptEdited = 'prompt.edited';
     case PromptRolledBack = 'prompt.rolled_back';
+    case SubtopicPromoted = 'subtopic.promoted';
 }

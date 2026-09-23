@@ -301,6 +301,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
 | `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 | `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |
+| `admin.catalog.demand` · `admin.catalog.promote` · `admin.catalog.refusals` | admin, outside the thirteen (spec 16.1) |
 
 Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
 

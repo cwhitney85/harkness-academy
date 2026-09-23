@@ -3,6 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Ai\Tier;
+use App\Models\Module;
+use App\Models\Subtopic;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
@@ -41,6 +43,12 @@ class AdminAccessTest extends TestCase
             'model' => Tier::Cheap->primary()['id'],
             'prompt' => 'explainer.select',
             'number' => 1,
+            'subtopic' => Subtopic::findOrCreateFor(
+                Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]),
+                'knot-theory',
+                'Knot Theory',
+                $student,
+            )->id,
         ];
 
         foreach ($this->adminRoutes() as $route) {

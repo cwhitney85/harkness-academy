@@ -6,7 +6,6 @@ use App\Courses\SubtopicOrigin;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -78,13 +77,5 @@ class Subtopic extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
-    }
-
-    /**
-     * @return HasMany<Course, $this>
-     */
-    public function courses(): HasMany
-    {
-        return $this->hasMany(Course::class);
     }
 }
