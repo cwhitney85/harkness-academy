@@ -30,7 +30,9 @@ class CatalogController extends Controller
     {
         $subtopics = DB::table('subtopics')
             ->join('modules', 'modules.id', '=', 'subtopics.module_id')
-            ->leftJoin('courses', 'courses.subtopic_id', '=', 'subtopics.id')
+            ->leftJoin('courses', fn ($join) => $join->on('courses.subtopic_id', '=', 'subtopics.id')->whereNull('courses.deleted_at'))
+            ->whereNull('subtopics.deleted_at')
+            ->whereNull('modules.deleted_at')
             ->where('subtopics.origin', SubtopicOrigin::Student->value)
             ->where('subtopics.listed', false)
             ->groupBy('subtopics.id', 'modules.id')

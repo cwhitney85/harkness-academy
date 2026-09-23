@@ -101,7 +101,10 @@ class InterfaceFixtureSeeder extends Seeder
         // Memory documents are deliberately *not* cleared: the path API has no
         // delete, and re-putting the same content simply adds a version. The
         // tree ends up saying exactly what it said before.
-        Course::query()->where('user_id', $student->id)->delete();
+        //
+        // A hard delete: this resets fixtures, it does not remove a student's
+        // course, so it is not a removal (16.2) and leaves no mark.
+        Course::query()->where('user_id', $student->id)->forceDelete();
 
         foreach ($this->fixtures() as $fixture) {
             $this->build($student, $fixture);

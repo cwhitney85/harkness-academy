@@ -7,6 +7,8 @@ use App\Memory\Exceptions\InvalidMemoryPath;
 use App\Models\Course;
 use App\Models\Memory;
 use App\Models\MemoryVersion;
+use App\Models\Removal;
+use App\Models\Subtopic;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +64,7 @@ final class MemoryTree
             ->join('memories', 'memories.id', '=', 'memory_versions.memory_id')
             ->where('memories.user_id', $user->id)
             ->where('memories.path', $path->value)
+            ->whereNull('memories.deleted_at')
             ->orderByDesc('memory_versions.version')
             ->select('memory_versions.id', 'memory_versions.content')
             ->first();
@@ -160,6 +163,35 @@ final class MemoryTree
         }
 
         return $paths;
+    }
+
+    /**
+     * Hide the documents whose owners a removal has just hidden (spec
+     * 16.2.2): its courses' own documents, and the working knowledge of its
+     * subtopics. A document already removed keeps its own removal (16.2.3).
+     *
+     * Crosses students, because a subtopic's removal does. Only `Removals`
+     * calls it, after stamping the owners.
+     */
+    public function remove(Removal $removal): void
+    {
+        $owners = fn (string $model) => $model::onlyTrashed()->where('removal_id', $removal->id)->select('id');
+
+        Memory::query()
+            ->where(fn (Builder $query) => $query
+                ->where(fn (Builder $query) => $query->where('owner_type', Course::class)->whereIn('owner_id', $owners(Course::class)))
+                ->orWhere(fn (Builder $query) => $query->where('owner_type', Subtopic::class)->whereIn('owner_id', $owners(Subtopic::class))))
+            ->update(['deleted_at' => now(), 'removal_id' => $removal->id]);
+    }
+
+    /**
+     * Bring back exactly the documents one removal hid (spec 16.2.3).
+     */
+    public function restore(Removal $removal): void
+    {
+        Memory::onlyTrashed()
+            ->where('removal_id', $removal->id)
+            ->update(['deleted_at' => null, 'removal_id' => null]);
     }
 
     /**

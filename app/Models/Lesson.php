@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Courses\LessonStatus;
 use App\Lessons\LessonSummary;
 use Database\Factories\LessonFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,6 +59,18 @@ class Lesson extends Model
             'summary_json' => 'array',
             'pipeline_parked_at' => 'datetime',
         ];
+    }
+
+    /**
+     * A lesson's URL answers only while its course is not removed, as the
+     * course's own does (spec 16.2.4).
+     *
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null): Builder
+    {
+        return parent::resolveRouteBindingQuery($query, $value, $field)->whereHas('course');
     }
 
     /**

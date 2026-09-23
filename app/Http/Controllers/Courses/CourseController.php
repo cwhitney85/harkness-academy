@@ -92,8 +92,8 @@ class CourseController extends Controller
             'source' => ['required', 'in:catalog,free_text'],
             // Only what the picker offers: an unlisted student row reached
             // through this door would skip the scope check (16.1.4).
-            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', Rule::exists('subtopics', 'id')->where('listed', true)],
-            'module_slug' => ['nullable', 'required_if:source,free_text', 'string', 'exists:modules,slug'],
+            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', Rule::exists('subtopics', 'id')->where('listed', true)->whereNull('deleted_at')],
+            'module_slug' => ['nullable', 'required_if:source,free_text', 'string', Rule::exists('modules', 'slug')->whereNull('deleted_at')],
             'name' => ['nullable', 'required_if:source,free_text', 'string', 'max:120'],
             'level' => ['required', 'integer', 'in:101,201,301'],
             // The student has answered D7b's question with "start from
