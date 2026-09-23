@@ -24,7 +24,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('courses', function (Blueprint $table): void {
-            $table->foreignId('subtopic_id')->nullable()->after('user_id')->constrained()->restrictOnDelete();
+            $table->foreignId('subtopic_id')->nullable()->constrained()->restrictOnDelete();
         });
 
         $created = DB::select(<<<'SQL'

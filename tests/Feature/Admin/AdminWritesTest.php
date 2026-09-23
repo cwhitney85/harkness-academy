@@ -67,8 +67,8 @@ class AdminWritesTest extends TestCase
         $viewing = fn (self $test, User $student) => $test->post("/admin/users/{$student->id}/view-as");
 
         return [
-            'admin.catalog.promote' => function (self $test, User $student) {
-                $knots = Subtopic::findOrCreateFor(Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]), 'knot-theory', 'Knot Theory', $student);
+            'admin.catalog.promote' => function (self $test) {
+                $knots = Subtopic::findOrCreateFor(Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]), 'knot-theory', 'Knot Theory');
 
                 return fn () => $test->post("/admin/catalog/subtopics/{$knots->id}/promote");
             },

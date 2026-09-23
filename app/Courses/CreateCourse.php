@@ -64,7 +64,7 @@ final class CreateCourse
             // (16.1.2). A catalog pick always finds its own row.
             return DB::transaction(fn (): Course => Course::query()->create([
                 'user_id' => $student->id,
-                'subtopic_id' => Subtopic::findOrCreateFor($module, $name->slug, $name->title, $student)->id,
+                'subtopic_id' => Subtopic::findOrCreateFor($module, $name->slug, $name->title)->id,
                 'module_slug' => $module->slug,
                 'subtopic_slug' => $name->slug,
                 'subtopic_title' => $name->title,

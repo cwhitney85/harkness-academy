@@ -47,7 +47,7 @@ Three properties of the running system make this small, each confirmed by readin
 
 ## 12.5 The sweep
 
-- **12.5.1 SHOULD** — A command deletes unclaimed `demo`-plan accounts older than a configured age. *Done: deleting one removes its courses, memory tree, quizzes, attempts, answer sheets and refusals, and leaves its `usage_events` rows with a null `user_id` — the FK rules are CASCADE throughout and SET NULL on `usage_events`, so the command is a delete and nothing else.*
+- **12.5.1 SHOULD** — A command deletes unclaimed `demo`-plan accounts older than a configured age. This is the one hard delete in the app ([D69](../02-design.md)); once other accounts soft-delete ([16.2.10](16-catalog-removal-ownership.md)) it force-deletes, and touches no other plan. *Done: deleting one removes its courses, memory tree, quizzes, attempts, answer sheets and refusals, and leaves its `usage_events` rows with a null `user_id` — the FK rules are CASCADE throughout and SET NULL on `usage_events`, so the command is a delete and nothing else.*
 
 ## 12.6 Out of scope
 

@@ -24,7 +24,6 @@ use Illuminate\Support\Carbon;
  * @property int $position
  * @property SubtopicOrigin $origin
  * @property bool $listed
- * @property int|null $created_by
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -49,7 +48,7 @@ class Subtopic extends Model
      * share one row through the (module, slug) key; `firstOrCreate` falls
      * back to reading it when a concurrent insert wins.
      */
-    public static function findOrCreateFor(Module $module, string $slug, string $title, User $student): self
+    public static function findOrCreateFor(Module $module, string $slug, string $title): self
     {
         return self::query()->firstOrCreate(
             ['module_id' => $module->id, 'slug' => $slug],
@@ -57,7 +56,6 @@ class Subtopic extends Model
                 'title' => $title,
                 'origin' => SubtopicOrigin::Student,
                 'listed' => false,
-                'created_by' => $student->id,
                 'position' => 1 + (int) self::query()->where('module_id', $module->id)->max('position'),
             ],
         );

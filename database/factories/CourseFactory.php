@@ -37,7 +37,6 @@ class CourseFactory extends Factory
                 ),
                 $course['subtopic_slug'],
                 $course['subtopic_title'],
-                User::query()->whereKey($course['user_id'])->sole(),
             )->id,
             'skill_level' => SkillLevel::Introductory,
             'attempt' => 1,

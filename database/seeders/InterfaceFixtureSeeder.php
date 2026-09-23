@@ -147,7 +147,6 @@ class InterfaceFixtureSeeder extends Seeder
                 Module::query()->where('slug', $fixture->moduleSlug)->sole(),
                 $fixture->slug,
                 $fixture->title,
-                $student,
             )->id,
             'module_slug' => $fixture->moduleSlug,
             'subtopic_slug' => $fixture->slug,

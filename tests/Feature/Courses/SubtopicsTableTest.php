@@ -30,36 +30,24 @@ class SubtopicsTableTest extends TestCase
     }
 
     #[Test]
-    public function catalog_rows_read_catalog_and_listed_with_no_creator(): void
+    public function catalog_rows_read_catalog_and_listed(): void
     {
         $this->assertSame(0, Subtopic::query()
             ->where(fn ($rows) => $rows
                 ->where('origin', '!=', SubtopicOrigin::Catalog)
-                ->orWhere('listed', false)
-                ->orWhereNotNull('created_by'))
+                ->orWhere('listed', false))
             ->count());
     }
 
     #[Test]
-    public function a_student_row_must_name_its_creator_and_a_catalog_row_must_not(): void
+    public function an_origin_outside_catalog_and_student_is_refused(): void
     {
-        $math = Module::query()->where('slug', 'math')->sole();
-        $student = User::factory()->create();
+        $this->expectException(QueryException::class);
 
-        foreach ([
-            ['origin' => 'student', 'created_by' => null],
-            ['origin' => 'catalog', 'created_by' => $student->id],
-            ['origin' => 'imported', 'created_by' => null],
-        ] as $i => $row) {
-            try {
-                DB::transaction(fn () => DB::table('subtopics')->insert($row + [
-                    'module_id' => $math->id, 'slug' => "row-{$i}", 'title' => 'Row', 'position' => 99, 'listed' => false,
-                ]));
-                $this->fail("Accepted {$row['origin']} with created_by ".var_export($row['created_by'], true));
-            } catch (QueryException) {
-                $this->addToAssertionCount(1);
-            }
-        }
+        DB::table('subtopics')->insert([
+            'module_id' => Module::query()->where('slug', 'math')->sole()->id,
+            'slug' => 'imported', 'title' => 'Imported', 'position' => 99, 'origin' => 'imported', 'listed' => false,
+        ]);
     }
 
     #[Test]
@@ -85,8 +73,7 @@ class SubtopicsTableTest extends TestCase
         $row = Subtopic::query()->where('slug', 'knot-theory')->sole();
         $this->assertSame(SubtopicOrigin::Student, $row->origin);
         $this->assertFalse($row->listed);
-        $this->assertSame($first->id, $row->created_by);
-        $this->assertSame('Knot Theory', $row->title);
+        $this->assertSame('Knot Theory', $row->title, 'Titled as the first student typed it.');
         $this->assertSame([$row->id, $row->id], Course::query()->orderBy('id')->pluck('subtopic_id')->all());
     }
 
@@ -107,8 +94,12 @@ class SubtopicsTableTest extends TestCase
     #[Test]
     public function the_backfill_points_every_course_at_a_row_and_prints_the_rows_it_made(): void
     {
-        $migration = require database_path('migrations/2026_09_23_000001_add_subtopic_id_to_courses_table.php');
-        $migration->down();
+        // Replayed in order: the backfill ran while `created_by` existed,
+        // and the drop after it (D68).
+        $backfill = require database_path('migrations/2026_09_23_000001_add_subtopic_id_to_courses_table.php');
+        $drop = require database_path('migrations/2026_09_23_000002_drop_created_by_from_subtopics_table.php');
+        $drop->down();
+        $backfill->down();
 
         [$first, $second] = User::factory()->count(2)->create();
         $course = fn (User $student, string $module, string $slug, string $title, string $at): int => DB::table('courses')->insertGetId([
@@ -121,14 +112,14 @@ class SubtopicsTableTest extends TestCase
         $earlier = $course($first, 'history', 'civil-war', 'civil war', '2026-09-02');
 
         ob_start();
-        $migration->up();
+        $backfill->up();
         $printed = (string) ob_get_clean();
+        $drop->up();
 
         $civilWar = Subtopic::query()->where('slug', 'civil-war')->sole();
         $this->assertSame(SubtopicOrigin::Student, $civilWar->origin);
         $this->assertFalse($civilWar->listed);
-        $this->assertSame($first->id, $civilWar->created_by, 'Credited to whoever typed it first.');
-        $this->assertSame('civil war', $civilWar->title);
+        $this->assertSame('civil war', $civilWar->title, 'Titled as the first student typed it.');
 
         $this->assertSame(Subtopic::query()->where('slug', 'algebra')->sole()->id, Course::query()->find($catalog)->subtopic_id);
         $this->assertSame($civilWar->id, Course::query()->find($earlier)->subtopic_id);
@@ -153,7 +144,7 @@ class SubtopicsTableTest extends TestCase
     {
         $student = User::factory()->create();
         $math = Module::query()->where('slug', 'math')->sole();
-        $unlisted = Subtopic::findOrCreateFor($math, 'knot-theory', 'Knot Theory', $student);
+        $unlisted = Subtopic::findOrCreateFor($math, 'knot-theory', 'Knot Theory');
 
         $this->actingAs($student)
             ->get(route('courses.create'))
@@ -177,7 +168,7 @@ class SubtopicsTableTest extends TestCase
     public function an_unlisted_subtopic_cannot_be_started_through_the_picker(): void
     {
         $student = User::factory()->create();
-        $unlisted = Subtopic::findOrCreateFor(Module::query()->where('slug', 'math')->sole(), 'knot-theory', 'Knot Theory', $student);
+        $unlisted = Subtopic::findOrCreateFor(Module::query()->where('slug', 'math')->sole(), 'knot-theory', 'Knot Theory');
 
         $this->actingAs($student)
             ->post(route('courses.store'), [

@@ -47,7 +47,6 @@ class AdminAccessTest extends TestCase
                 Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]),
                 'knot-theory',
                 'Knot Theory',
-                $student,
             )->id,
         ];
 

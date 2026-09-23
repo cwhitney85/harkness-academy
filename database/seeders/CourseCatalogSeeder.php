@@ -91,7 +91,6 @@ class CourseCatalogSeeder extends Seeder
                         'position' => $position++,
                         'origin' => SubtopicOrigin::Catalog,
                         'listed' => true,
-                        'created_by' => null,
                     ],
                 );
             }

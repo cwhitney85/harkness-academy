@@ -52,7 +52,7 @@
 | D22 | Material carries meaning; assessment is not more lesson | current |
 | D23 | The in-lesson checkpoint is a margin question | current |
 | D24 | Radix and the copied shadcn primitives stay | current |
-| D25 | A `top`-tier generation is queued work, not request work | current |
+| D25 | A `top`-tier generation is queued work, not request work | **amended by D69** — a request row is kept once its work lands |
 | D26 | A half-finished exam is a saved answer sheet | current |
 | D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
 | D28 | The mounted-component defect is a class, and is fixed at the boundary | **amended 2026-09-08** — the class is narrower than stated, and its fourth instance is not one |
@@ -86,7 +86,7 @@
 | D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
 | D57 | A removal is a record that marks everything it hides | current |
 | D58 | Documents have an owner, and each attempt its own folder | current |
-| D59 | One subtopics table holds catalog and student subtopics | current |
+| D59 | One subtopics table holds catalog and student subtopics | **amended by D68** — no `created_by` |
 | D60 | Viewing as a student is read-only until you step up with a reason | **amended 2026-09-18** — preview also refuses a stream that would teach something new |
 | D61 | Role is a column, apart from plan and skill level; admin is a fourth shell | current |
 | D62 | Admin changes a user's plan; billing waits for a price | current |
@@ -94,7 +94,9 @@
 | D64 | Any withdrawn attempt may be resumed | current |
 | D65 | The database owns a prompt's body; a file seeds it and archives it | current |
 | D66 | A/B experiments wait for students; what returns is an evaluation package, not this one — **carries the quality-signal survey** | current |
-| D67 | A student subtopic names its creator with no foreign key; NULL means catalog | current |
+| D67 | A student subtopic names its creator with no foreign key; NULL means catalog | **superseded by D68** — the column is dropped |
+| D68 | `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student | current |
+| D69 | Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept | current — amends D25 and spec 6.3.4, 12.5.1 |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -602,6 +604,8 @@ Raising the timeout was rejected even where it was possible. A phone holding a t
 
 Rider: this is also the first thing in production that *needs* a queue worker at all. `CompletionPipeline` has dispatched `ShouldQueue` jobs since package 5 and nothing has ever drained them, so homework and the working-knowledge summaries were queued and silently unprocessed — a landmine that would have gone off at the first completed lesson. `docs/deploy.md` deferred Cloud-side queue enablement to "when package 4 does queue work"; that day had already passed unnoticed.
 
+
+**Amended 2026-09-23 by [D69](#d69-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin).** A request row is no longer deleted when its work lands or on the retry after a failure: it is kept with its state, and the key becomes one open request per (course, kind) ([16.2.11](specs/16-catalog-removal-ownership.md)).
 ## D26. A half-finished exam is a saved answer sheet (resolved 2026-09-04, dogfood session, Colin)
 
 Every other quiz in the system saves itself as you go. Choosing an option on a homework, a checkpoint or a refresher POSTs immediately, is graded, and hands back the key and the explanation — the row is in `quiz_attempts` the instant it is clicked. The final exam does none of that, and [D20](#d20-an-exam-measures-it-does-not-teach-resolved-2026-08-28-package-6-session-colin) is why: grading a final one question at a time would disclose the key mid-exam and a re-sit would be passable from memory. `QuizGrader::grade()` throws rather than allow it.
@@ -1047,7 +1051,7 @@ v1 memories are keyed by user and path; nothing records which course wrote what,
 
 Rejected: rolling working knowledge back when a course is removed (can discard real learning, and is an admin-triggered memory write) · per-course working knowledge (breaks D8: 201 builds on 101).
 
-## D59. One subtopics table holds catalog and student subtopics (resolved 2026-09-18, spec 16 item 16.1, Colin)
+## D59. One subtopics table holds catalog and student subtopics (resolved 2026-09-18, spec 16 item 16.1, Colin; **`created_by` dropped by [D68](#d68-subtopics-has-no-created_by-who-typed-a-subtopic-first-is-its-oldest-courses-student-resolved-2026-09-23-spec-16-item-1611-colin--supersedes-d67)**)
 
 Colin wants to see which free-text subtopics students start and promote the popular ones. **Chosen: `subtopics` gains `origin` (`catalog` | `student`), `listed` and `created_by`; promotion lists a row.** Two students typing the same name share one row through the existing (module, slug) key. Courses gain `subtopic_id` beside their frozen slugs. Refusals keep their own table — they never became a subtopic.
 
@@ -1137,8 +1141,26 @@ Rejected: **building it as specced** (correct machinery measuring noise, and the
 
 Falsified if: the app reaches enough students that a split is informative before any quality signal exists, at which point cost and latency per variant are worth having on their own.
 
-## D67. A student subtopic names its creator with no foreign key; NULL means catalog and nothing else (resolved 2026-09-23, spec 16 item 16.1.1)
+## D67. A student subtopic names its creator with no foreign key; NULL means catalog and nothing else (resolved 2026-09-23, spec 16 item 16.1.1; **superseded by [D68](#d68-subtopics-has-no-created_by-who-typed-a-subtopic-first-is-its-oldest-courses-student-resolved-2026-09-23-spec-16-item-1611-colin--supersedes-d67)** — read D68 for the current rule)
 
 D59 gave `subtopics` a `created_by` and did not say what happens when that student goes. Account deletion is a hard delete, and a student subtopic is shared by everyone who types its name. **Chosen: `created_by` carries no foreign key, as `admin_actions.subject_id` does not, and a check holds `created_by IS NULL` exactly when `origin = 'catalog'`.** A row keeps saying who first typed it after that account is gone.
 
 Rejected: **cascade** (one student deleting their account deletes a row other students' courses point at) · **restrict** (a student who once typed a new name cannot delete their account) · **set null** (NULL would mean both "catalog" and "creator gone", and nothing could tell them apart).
+
+## D68. `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student (resolved 2026-09-23, spec 16 item 16.1.1, Colin) — **supersedes D67**
+
+D67 kept `created_by` with no foreign key and NULL on catalog rows. Colin rejected the NULL — *"I really, really don't like null to confer any meaning"* — and asked what the column was for. The answer was nothing new: a student subtopic is created in the same transaction as its first course, so who typed it first is the student on its oldest course, and with nothing hard-deleted ([D69](#d69-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin)) that course always exists. Demand never read the column, and who *promoted* a subtopic is the `subtopic.promoted` row in `admin_actions`. **Chosen: drop it.** A migration after D67's removes it, and its `down()` rebuilds it from the oldest course.
+
+Rejected: **an admin id on catalog rows and a student id on student rows** (no admin created the seeded catalog; one would have to be invented) · **D67's no-FK column** (a second copy of a fact the courses table owns, and a NULL that meant "catalog").
+
+## D69. Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept (resolved 2026-09-23, spec 16 items 16.2.10–16.2.13, Colin)
+
+Colin: *"we never want to actually delete anything. We should always be using soft deletes in case we need to restore an account or a course or subtopic."* D57 already made removal soft for modules, subtopics, courses and memory documents. Four hard deletes remained, found by reading the code 2026-09-23: a student deleting their own account, the demo sweep, a generation request once its work lands (or on the retry after a failure), and an exam's draft answer sheet at hand-in. The two user deletes cascade through twenty-one foreign keys: courses, memory, quizzes, attempts, refusals.
+
+**Chosen:**
+- **A student who deletes their account is soft-deleted.** Nothing under the row is touched, and the account cannot sign in. It comes back by an admin restoring it. Its email stays taken, so signing up again with it is refused rather than making a second account.
+- **An unclaimed demo is the one hard delete.** The sweep ([12.5.1](specs/12-demo.md)) keeps deleting `demo`-plan rows that never converted after `demo_account_days`, which is the timer Colin proposed. A demo that converts is the same row moved to `standard` ([12.4.2](specs/12-demo.md)), so it is never swept. Its `usage_events` survive as before, so what demos cost stays countable.
+- **A generation request is kept when its work lands, and when it fails.** Amends [D25](#d25-a-top-tier-generation-is-queued-work-not-request-work-resolved-2026-09-02-dogfood-session-colin): the row's existence stops meaning "pending", so the row carries its state, and the one-row-per-(course, kind) key becomes one *open* request per (course, kind).
+- **An exam's answer sheet is kept at hand-in.** Amends [6.3.4](specs/06-assessment.md): a re-sit still opens an empty book, and it opens a new sheet instead of emptying the old one.
+
+Rejected: **hard delete on self-deletion** (irreversible, and the account cannot be restored) · **soft-deleting unclaimed demos too** (a visitor who never signed up has no one to restore them for, and the cost record survives without the row) · **erasing personal data now** (deferred as 16.2.13, its own question when a privacy request makes it one).

@@ -1,8 +1,8 @@
 # Spec 16 — Catalog, Removal and Ownership
 
-*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4.5.3](04-course-pipeline.md), and [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md). Specced 2026-09-18.*
+*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4.5.3](04-course-pipeline.md), [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md), [6.3.4](06-assessment.md), [11.5](11-generation-off-the-request.md) and [12.5.1](12-demo.md). Specced 2026-09-18.*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D67](../02-design.md) a student subtopic's creator has no foreign key.
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D68](../02-design.md) `subtopics` has no `created_by` · [D69](../02-design.md) nothing is hard-deleted but an unclaimed demo.
 
 ## The shape
 
@@ -22,7 +22,7 @@
 
 ## 16.1 One subtopics table
 
-- **16.1.1 MUST** — `subtopics` gains `origin` (`catalog` | `student`), `listed`, and `created_by`. Existing rows become `catalog`, listed. *Done: after migrating, every existing row reads so.*
+- **16.1.1 MUST** — `subtopics` gains `origin` (`catalog` | `student`) and `listed`. Existing rows become `catalog`, listed. Who first typed a student subtopic is the student on its oldest course; there is no `created_by` ([D68](../02-design.md)). *Done: after migrating, every existing row reads so.*
 - **16.1.2 MUST** — A free-text subtopic that passes [4.9](04-course-pipeline.md) finds or creates a `student` row. *Done: two students typing the same name share one row.*
 - **16.1.3 MUST** — `courses.subtopic_id` is added and backfilled from the frozen slugs; slugs absent from the catalog create `student` rows, and the migration prints what it created for review. Three are expected in dev (confirmed); whether any is a renamed catalog subtopic is unknown. *Done: every course has a `subtopic_id`; the printout matches.*
 - **16.1.4 MUST** — The student's picker shows only listed, unremoved subtopics. *Done: feature test.*
@@ -40,6 +40,10 @@
 - **16.2.7 MUST** — Typing a name that matches a removed subtopic is refused before the scope check. *Done: the test finds no `subtopic.check` usage row.*
 - **16.2.8 MUST** — A queued job for a removed course checks at start and exits quietly; the course's open generation requests close. *Done: remove a course during its syllabus job — no syllabus is written.*
 - **16.2.9 WONT** — Hard deletion from admin.
+- **16.2.10 MUST** — A student deleting their own account soft-deletes it ([D69](../02-design.md)). Nothing under it is deleted, it cannot sign in, and its email stays taken. The demo sweep ([12.5.1](12-demo.md)) remains a hard delete of unclaimed demo rows only. *Done: after a self-deletion the account's courses, memory tree and usage rows are all present and sign-in is refused; `demo:sweep` still removes an unclaimed demo row with its courses, and a soft-deleted `standard` account survives it.*
+- **16.2.11 MUST** — A generation request is kept when its work lands and when it fails; its state is a column, not its existence, and the one-row key becomes one open request per (course, kind) ([D69](../02-design.md), amending D25 and [11.5](11-generation-off-the-request.md)). *Done: a landed syllabus and a failed-then-retried exam each leave every request row they made, and no screen reads a settled row as a wait.*
+- **16.2.12 MUST** — An exam's answer sheet is kept at hand-in; a re-sit opens a new, empty sheet ([D69](../02-design.md), amending [6.3.4](06-assessment.md)). *Done: fail and re-sit — the first sitting's sheet is still there, and the re-sit opens with nothing ticked.*
+- **16.2.13 WONT** — Erasing an account's personal data on request. Its own question when a request makes it one.
 
 ## 16.3 Memory ownership
 
