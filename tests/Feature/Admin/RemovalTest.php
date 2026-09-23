@@ -6,6 +6,8 @@ use App\Admin\AdminActionType;
 use App\Admin\Removals;
 use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
+use App\Courses\CreateCourse;
+use App\Courses\SkillLevel;
 use App\Memory\MemoryTree;
 use App\Models\AdminAction;
 use App\Models\Course;
@@ -168,6 +170,20 @@ class RemovalTest extends TestCase
         $this->actingAs($student)
             ->post(route('courses.store'), ['source' => 'catalog', 'subtopic_id' => $subtopic->id, 'level' => 101])
             ->assertSessionHasErrors('subtopic_id');
+    }
+
+    #[Test]
+    public function a_student_whose_open_course_was_removed_starts_afresh_as_the_next_attempt(): void
+    {
+        $removed = $this->courseWithDocuments();
+
+        $this->removals()->remove($this->admin, $removed, 'test data');
+
+        $fresh = app(CreateCourse::class)->fromCatalog($removed->student, $removed->subtopic, SkillLevel::Introductory);
+
+        $this->assertSame(2, $fresh->attempt);
+        $this->assertTrue($fresh->isOpen());
+        $this->assertSame('# Solid: something', $this->tree()->get($fresh->student, $fresh->workingKnowledgePath()));
     }
 
     private function courseWithDocuments(string $module = 'math', string $subtopic = 'algebra', CourseStatus $status = CourseStatus::GoalsInterview): Course

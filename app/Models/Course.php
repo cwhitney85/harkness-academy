@@ -165,7 +165,9 @@ class Course extends Model
     /**
      * Whether this course currently holds its subtopic's single open slot.
      *
-     * Mirrors the `courses_one_open_per_subtopic` index predicate exactly.
+     * Mirrors the `courses_one_open_per_subtopic` index predicate, less its
+     * `deleted_at IS NULL`: a removed course is hidden rather than closed, and
+     * this is what it would be if restored (16.2.6).
      */
     public function isOpen(): bool
     {

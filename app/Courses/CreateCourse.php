@@ -95,7 +95,8 @@ final class CreateCourse
     }
 
     /**
-     * One past the highest run at this subtopic and level (ledger D7b).
+     * One past the highest run at this subtopic and level (ledger D7b),
+     * removed runs included: the attempt key still counts them (16.2.5).
      *
      * Deliberately unlocked: Postgres refuses `FOR UPDATE` alongside an
      * aggregate, and the attempt unique key already rejects a number two
@@ -103,7 +104,7 @@ final class CreateCourse
      */
     private function nextAttempt(User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): int
     {
-        return 1 + (int) Course::query()
+        return 1 + (int) Course::withTrashed()
             ->forLevel($student, $moduleSlug, $subtopicSlug, $level)
             ->max('attempt');
     }
