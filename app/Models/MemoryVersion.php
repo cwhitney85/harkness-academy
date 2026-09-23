@@ -34,14 +34,6 @@ class MemoryVersion extends Model
         return $this->belongsTo(Memory::class);
     }
 
-    /**
-     * @return BelongsTo<Course, $this>
-     */
-    public function course(): BelongsTo
-    {
-        return $this->belongsTo(Course::class);
-    }
-
     protected function casts(): array
     {
         return [

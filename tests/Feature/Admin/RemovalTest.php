@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Admin\AdminActionType;
 use App\Admin\Exceptions\RestoreRefused;
 use App\Admin\Removals;
+use App\Assessment\QuizKind;
 use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
@@ -20,6 +21,7 @@ use App\Models\CourseSyllabus;
 use App\Models\Lesson;
 use App\Models\LessonPipelineStep;
 use App\Models\Module;
+use App\Models\Quiz;
 use App\Models\Subtopic;
 use App\Models\UsageEvent;
 use App\Models\User;
@@ -136,6 +138,10 @@ class RemovalTest extends TestCase
         $course = $this->courseWithDocuments(status: CourseStatus::Active);
         CourseSyllabus::factory()->for($course)->approved()->create();
         $lesson = Lesson::factory()->for($course)->create();
+        $refresher = Quiz::query()->create([
+            'user_id' => $course->user_id, 'course_id' => $course->id, 'kind' => QuizKind::Refresher,
+            'quizzable_type' => $course->getMorphClass(), 'quizzable_id' => $course->id, 'payload' => [],
+        ]);
 
         $this->actingAs($course->student)->get(route('lessons.show', $lesson))->assertOk();
 
@@ -144,6 +150,7 @@ class RemovalTest extends TestCase
         $this->actingAs($course->student)->get(route('lessons.show', $lesson))->assertNotFound();
         $this->actingAs($course->student)->get(route('courses.syllabus.show', $course))->assertNotFound();
         $this->actingAs($course->student)->get(route('courses.final-exam.show', $course))->assertNotFound();
+        $this->actingAs($course->student)->get(route('refreshers.show', $refresher))->assertNotFound();
     }
 
     #[Test]
