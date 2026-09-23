@@ -10,13 +10,18 @@ use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
 use App\Courses\CreateCourse;
 use App\Courses\SkillLevel;
+use App\Lessons\Checkpoints\CheckpointGenerator;
+use App\Lessons\Checkpoints\WriteCheckpoint;
+use App\Lessons\Pipeline\SummarizeLesson;
 use App\Memory\MemoryTree;
 use App\Models\AdminAction;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\Lesson;
+use App\Models\LessonPipelineStep;
 use App\Models\Module;
 use App\Models\Subtopic;
+use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -231,6 +236,23 @@ class RemovalTest extends TestCase
         } finally {
             $this->assertNull(Course::query()->find($course->id));
         }
+    }
+
+    #[Test]
+    public function a_lessons_queued_work_for_a_removed_course_exits_quietly(): void
+    {
+        $course = $this->courseWithDocuments(status: CourseStatus::Active);
+        CourseSyllabus::factory()->for($course)->approved()->create();
+        $lesson = Lesson::factory()->for($course)->create();
+
+        $this->removals()->remove($this->admin, $course, 'test data');
+
+        (new WriteCheckpoint($lesson->id, 1))->handle(app(CheckpointGenerator::class));
+        (new WriteCheckpoint($lesson->id, 1))->failed(null);
+        app()->call([new SummarizeLesson($lesson->id), 'handle']);
+
+        $this->assertSame(0, UsageEvent::query()->count());
+        $this->assertSame(0, LessonPipelineStep::query()->count());
     }
 
     private function courseWithDocuments(string $module = 'math', string $subtopic = 'algebra', CourseStatus $status = CourseStatus::GoalsInterview): Course

@@ -50,7 +50,7 @@ class WriteCheckpoint implements ShouldQueue
      */
     public function handle(CheckpointGenerator $checkpoints): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
         if (! $lesson instanceof Lesson) {
             return;
@@ -68,7 +68,7 @@ class WriteCheckpoint implements ShouldQueue
      */
     public function failed(?Throwable $e): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
         if (! $lesson instanceof Lesson) {
             return;

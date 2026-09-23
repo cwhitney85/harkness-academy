@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Courses;
 
+use App\Admin\Removals;
 use App\Courses\CourseStatus;
 use App\Courses\GenerationKind;
 use App\Courses\GenerationState;
@@ -10,6 +11,7 @@ use App\Courses\Syllabus\SyllabusGenerator;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\GenerationRequest;
+use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -222,6 +224,28 @@ class QueuedSyllabusTest extends TestCase
 
         $this->assertFalse($props['generating']);
         $this->assertStringContainsString('ask again', (string) $props['failure']);
+    }
+
+    /**
+     * 16.2.8 -- a course removed while its syllabus job waits: the job finds
+     * nothing when it starts, spends nothing, and the wait was closed by the
+     * removal rather than failed by the job.
+     */
+    #[Test]
+    public function a_course_removed_while_its_syllabus_job_waits_gets_no_syllabus(): void
+    {
+        Queue::fake();
+
+        $course = $this->course();
+
+        $this->actingAs($course->student)->post(route('courses.syllabus.store', $course));
+        app(Removals::class)->remove(User::factory()->admin()->create(), $course, 'test data');
+
+        (new DrawUpSyllabus($course->id))->handle(app(SyllabusGenerator::class));
+
+        $this->assertSame(0, CourseSyllabus::query()->count());
+        $this->assertSame(0, UsageEvent::query()->count());
+        $this->assertSame(GenerationState::Cancelled, GenerationRequest::query()->sole()->state);
     }
 
     private function course(): Course

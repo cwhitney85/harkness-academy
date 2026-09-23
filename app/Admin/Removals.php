@@ -3,8 +3,10 @@
 namespace App\Admin;
 
 use App\Admin\Exceptions\RestoreRefused;
+use App\Courses\GenerationState;
 use App\Memory\MemoryTree;
 use App\Models\Course;
+use App\Models\GenerationRequest;
 use App\Models\Module;
 use App\Models\Removal;
 use App\Models\Subtopic;
@@ -53,6 +55,14 @@ final class Removals
             }
 
             $this->memory->remove($removal);
+
+            // A job already queued for one of these courses finds nothing when
+            // it starts and exits; what the student was waiting on closes
+            // here (16.2.8).
+            GenerationRequest::query()
+                ->whereIn('course_id', Course::onlyTrashed()->where('removal_id', $removal->id)->select('id'))
+                ->where('state', GenerationState::Open)
+                ->update(['state' => GenerationState::Cancelled]);
 
             return $removal;
         });

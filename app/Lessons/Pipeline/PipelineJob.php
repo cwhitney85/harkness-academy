@@ -59,10 +59,11 @@ abstract class PipelineJob implements ShouldQueue
 
     public function handle(CompletionPipeline $pipeline): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
-        // The course was deleted under us. There is nothing left to summarize
-        // and nothing to park -- the chain is done because its subject is gone.
+        // The course was deleted or removed under us (16.2.8). There is nothing
+        // left to summarize and nothing to park -- the chain is done because
+        // its subject is gone.
         if ($lesson === null) {
             return;
         }
