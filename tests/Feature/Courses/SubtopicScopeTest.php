@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Courses;
 
+use App\Admin\Removals;
 use App\Courses\SkillLevel;
 use App\Models\Course;
+use App\Models\Module;
+use App\Models\Subtopic;
 use App\Models\SubtopicRefusal;
 use App\Models\UsageEvent;
 use App\Models\User;
@@ -287,6 +290,30 @@ class SubtopicScopeTest extends TestCase
             ->assertSessionMissing('resumable');
 
         $this->assertSame(1, Course::query()->count(), 'The withdrawn attempt is all there is.');
+    }
+
+    /**
+     * 16.2.7 -- a removed subtopic's name is refused before the model is
+     * asked anything, in the words any untaught topic gets.
+     */
+    #[Test]
+    public function a_removed_subtopics_name_is_refused_without_asking_the_model(): void
+    {
+        $math = Module::query()->where('slug', 'math')->sole();
+        $removed = Subtopic::findOrCreateFor($math, 'quantum-computing', 'Quantum computing');
+        app(Removals::class)->remove(User::factory()->admin()->create(), $removed, 'not something we teach');
+
+        $this->scriptModel([['verdict' => 'in_scope', 'module' => null, 'reason' => 'It is maths.']]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('courses.store'), $this->submission('math', 'Quantum computing'))
+            ->assertRedirect()
+            ->assertSessionHas('refused', fn (array $refused): bool => $refused['message']
+                === "We can't build a course around «Quantum computing.»");
+
+        $this->assertSame([], $this->sent);
+        $this->assertFalse(UsageEvent::query()->where('feature', 'subtopic.check')->exists());
+        $this->assertSame(0, Course::query()->count());
     }
 
     /**

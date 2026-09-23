@@ -66,6 +66,14 @@ final class SubtopicScopeCheck
      */
     public function check(User $student, Module $module, SubtopicName $name): void
     {
+        // 16.2.7 -- a removed subtopic's name is refused before anything is
+        // asked. Under this module that name *is* the removed row, and a
+        // course started on it would collide with the row, or with its
+        // restore (D57). The student is told only that it is not taught.
+        if (Subtopic::onlyTrashed()->where('module_id', $module->id)->where('slug', $name->slug)->exists()) {
+            throw new SubtopicOutOfScope($name, $module);
+        }
+
         // 4.9.1 -- the gate spends nothing it need not. A slug that matches a
         // starting point under this very module is the catalog's own entry
         // arrived at by typing (`SubtopicName` makes them the same course), so
