@@ -242,3 +242,11 @@ Package 15 moved prompts into the database, so every test that makes an AI call 
 `withCount(['courses as students_count' => fn ($q) => $q->selectRaw('count(distinct user_id)')])` still emits `count(*)`. The closure's `where`s apply and its select does not, so three courses by two students read as three students, with no error.
 
 **Pass the expression as the column: `withAggregate('courses as students_count', DB::raw('distinct courses.user_id'), 'count')`.** An expression is used verbatim, giving `count(distinct courses.user_id)`. Larastan cannot type an aggregate alias on the model, though. When several aggregates are wanted for one screen, a grouped `DB::table` query, as `CatalogController::demand` has it, is simpler than annotating the model.
+
+## T23. Soft deletes hide a row only from Eloquent, and change `delete()` everywhere at once
+
+*Found 2026-09-23, building spec 16.2.*
+
+Adding `SoftDeletes` to a model has two effects that reach code nobody is editing. **Anything that reads the table without Eloquent still sees removed rows.** Three places did: Catalog → Demand's `DB::table` query counted removed courses, and course creation's `Rule::exists('subtopics', …)` and `exists:modules,slug` accepted a removed subtopic's id from a hand-built POST. `whereHas` and route binding do respect the scope. **And every existing `delete()` on that model silently becomes a soft delete.** The demo sweep, which is meant to be the one hard delete, would have started keeping rows. The fixture seeder's reset would have broken outright, because a soft delete sets `deleted_at` without a `removal_id` and trips the check that ties the two together.
+
+**When a model gains `SoftDeletes`, grep for its table in `DB::table`, raw joins and `exists:`/`Rule::exists` rules, and add `whereNull('deleted_at')`. Then grep for `->delete()` on it and decide each one: soft, or `forceDelete()`.**

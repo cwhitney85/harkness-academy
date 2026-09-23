@@ -53,7 +53,7 @@
 | D23 | The in-lesson checkpoint is a margin question | current |
 | D24 | Radix and the copied shadcn primitives stay | current |
 | D25 | A `top`-tier generation is queued work, not request work | **amended by D68** — a request row is kept once its work lands |
-| D26 | A half-finished exam is a saved answer sheet | current |
+| D26 | A half-finished exam is a saved answer sheet | **amended by D68** — the sheet is kept at hand-in; a re-sit opens a new one |
 | D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
 | D28 | The mounted-component defect is a class, and is fixed at the boundary | **amended 2026-09-08** — the class is narrower than stated, and its fourth instance is not one |
 | D29 | An acceptance test lives in a spec, one per package | current |
@@ -606,7 +606,7 @@ Rider: this is also the first thing in production that *needs* a queue worker at
 
 
 **Amended 2026-09-23 by [D68](#d68-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin).** A request row is no longer deleted when its work lands or on the retry after a failure: it is kept with its state, and the key becomes one open request per (course, kind) ([16.2.11](specs/16-catalog-removal-ownership.md)).
-## D26. A half-finished exam is a saved answer sheet (resolved 2026-09-04, dogfood session, Colin)
+## D26. A half-finished exam is a saved answer sheet (resolved 2026-09-04, dogfood session, Colin; **amended by [D68](#d68-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin)** — the sheet is kept at hand-in)
 
 Every other quiz in the system saves itself as you go. Choosing an option on a homework, a checkpoint or a refresher POSTs immediately, is graded, and hands back the key and the explanation — the row is in `quiz_attempts` the instant it is clicked. The final exam does none of that, and [D20](#d20-an-exam-measures-it-does-not-teach-resolved-2026-08-28-package-6-session-colin) is why: grading a final one question at a time would disclose the key mid-exam and a re-sit would be passable from memory. `QuizGrader::grade()` throws rather than allow it.
 

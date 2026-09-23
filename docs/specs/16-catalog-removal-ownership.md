@@ -36,7 +36,7 @@
 - **16.2.3 MUST** — An already-removed row keeps its own removal; restoring a parent restores only its removal's rows. *Done: remove course A, remove its subtopic, restore the subtopic — A stays removed.*
 - **16.2.4 MUST** — Removed rows are hidden by default: queries exclude them, `MemoryTree` excludes removed documents, and a removed course's URL is a 404 to the student. *Done: feature tests.*
 - **16.2.5 MUST** — The open-course index gains `deleted_at IS NULL`. After a course is removed the student can start fresh; the attempt number continues. *Done: test.*
-- **16.2.6 MUST** — Restoring a course is refused while another open course exists on its subtopic; the refusal names that course. Both outcomes are logged. *Done: test.*
+- **16.2.6 MUST** — Restoring a course is refused while another open course exists on its subtopic; the refusal names that course. A course or subtopic whose parent is still removed is refused too, naming the parent, so nothing comes back under something hidden. Both outcomes are logged. *Done: test.*
 - **16.2.7 MUST** — Typing a name that matches a removed subtopic is refused before the scope check. *Done: the test finds no `subtopic.check` usage row.*
 - **16.2.8 MUST** — A queued job for a removed course checks at start and exits quietly; the course's open generation requests close. *Done: remove a course during its syllabus job — no syllabus is written.*
 - **16.2.9 WONT** — Hard deletion from admin.
