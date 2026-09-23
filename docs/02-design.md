@@ -94,6 +94,7 @@
 | D64 | Any withdrawn attempt may be resumed | current |
 | D65 | The database owns a prompt's body; a file seeds it and archives it | current |
 | D66 | A/B experiments wait for students; what returns is an evaluation package, not this one — **carries the quality-signal survey** | current |
+| D67 | A student subtopic names its creator with no foreign key; NULL means catalog | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1135,3 +1136,9 @@ Rejected: **building it as specced** (correct machinery measuring noise, and the
 **The plumbing that makes any of them usable.** A score must attach to the `usage_events` row that produced the output. That row already knows the prompt version, the model, the course and the lesson, so a score hung there is attributable to a version and a model for free. A score stored anywhere else — on the lesson, on the course, in a file — cannot be attributed to a prompt version, and no comparison screen can ever read it. Likeliest shape is a small table pointing at a usage row, one row per score, so that several kinds of signal can coexist against the same call.
 
 Falsified if: the app reaches enough students that a split is informative before any quality signal exists, at which point cost and latency per variant are worth having on their own.
+
+## D67. A student subtopic names its creator with no foreign key; NULL means catalog and nothing else (resolved 2026-09-23, spec 16 item 16.1.1)
+
+D59 gave `subtopics` a `created_by` and did not say what happens when that student goes. Account deletion is a hard delete, and a student subtopic is shared by everyone who types its name. **Chosen: `created_by` carries no foreign key, as `admin_actions.subject_id` does not, and a check holds `created_by IS NULL` exactly when `origin = 'catalog'`.** A row keeps saying who first typed it after that account is gone.
+
+Rejected: **cascade** (one student deleting their account deletes a row other students' courses point at) · **restrict** (a student who once typed a new name cannot delete their account) · **set null** (NULL would mean both "catalog" and "creator gone", and nothing could tell them apart).

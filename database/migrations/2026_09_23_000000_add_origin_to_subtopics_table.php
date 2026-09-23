@@ -14,12 +14,8 @@ use Illuminate\Support\Facades\Schema;
  * origin and whether it is listed, so a student subtopic cannot reach the
  * picker by leaving a column out.
  *
- * `created_by` is the student who first typed the name. It carries no foreign
- * key, as `admin_actions.subject_id` does not: a student subtopic is shared by
- * everyone who types that name, so it can neither cascade with its creator's
- * account nor block that account's deletion, and nulling it would make NULL
- * mean "catalog" and "creator gone" at once. NULL means catalog and nothing
- * else, and the check below holds it to that.
+ * `created_by` is the student who first typed the name, with no foreign key,
+ * and NULL exactly on catalog rows (ledger D67).
  */
 return new class extends Migration
 {

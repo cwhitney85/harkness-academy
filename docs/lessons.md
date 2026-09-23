@@ -226,3 +226,19 @@ Package 15 moved prompts into the database, so every test that makes an AI call 
 `PromptDefinition::render()` compares the *supplied* variables to the *declared* ones, and never looks at the body. So two things pass straight through it: a body interpolating `{{ x }}` that `vars` does not declare leaves `{{ x }}` in the prompt text verbatim, and a body that has stopped using a declared `{{ x }}` renders fine while the call site keeps passing the material and the model never sees it. The second is the dangerous one — nothing anywhere errors, and the prompt just quietly gets worse.
 
 **Both directions are checked where a body is written, not where it is rendered**: `prompts:sync` refuses a file that drops a var the active version uses ([15.1.4](specs/15-prompt-registry.md)), and the editor refuses a save whose body and the file's `vars` disagree either way ([15.2.2](specs/15-prompt-registry.md)). The gap that remains: a file that *adds* a var the running body does not use is still silent, because the file's `vars` import and its body does not (ledger [D65](02-design.md)).
+
+## T21. `cursor()` drops eager loads, and the constraint on them with it
+
+*Found 2026-09-23, building spec 16.1.*
+
+`Module::query()->with(['subtopics' => fn ($q) => $q->listed()])->cursor()` never runs the `with`. A cursor holds one model at a time, so it cannot eager load, and it does not say so. Each module then lazy-loads `subtopics` on first access, **without the closure**. While the eager load was only an optimisation the cost was an N+1 nobody noticed. Once it carried a rule, the picker offered every row the rule was there to hide.
+
+**If a `with` carries a constraint, iterate with `get()` or `lazy()`, never `cursor()`.** `lazy()` chunks and does eager load.
+
+## T22. `withCount` ignores a custom select, so it cannot count distinct
+
+*Found 2026-09-23, building spec 16.1.*
+
+`withCount(['courses as students_count' => fn ($q) => $q->selectRaw('count(distinct user_id)')])` still emits `count(*)`. The closure's `where`s apply and its select does not, so three courses by two students read as three students, with no error.
+
+**Pass the expression as the column: `withAggregate('courses as students_count', DB::raw('distinct courses.user_id'), 'count')`.** An expression is used verbatim, giving `count(distinct courses.user_id)`. Larastan cannot type an aggregate alias on the model, though. When several aggregates are wanted for one screen, a grouped `DB::table` query, as `CatalogController::demand` has it, is simpler than annotating the model.

@@ -1,8 +1,8 @@
 # Spec 16 — Catalog, Removal and Ownership
 
-*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md) and [4.5.3](04-course-pipeline.md). Specced 2026-09-18.*
+*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4.5.3](04-course-pipeline.md), and [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md). Specced 2026-09-18.*
 
-**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed.
+**Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D67](../02-design.md) a student subtopic's creator has no foreign key.
 
 ## The shape
 
