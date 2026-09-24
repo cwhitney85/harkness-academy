@@ -11,6 +11,7 @@ use App\Courses\Exceptions\CourseNotResumable;
 use App\Courses\Exceptions\IllegalTransition;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -120,8 +121,9 @@ final class CourseTransitions
     /**
      * Pick a withdrawn course back up where it was left.
      *
-     * Pre: the course is withdrawn, is the highest attempt at its level, and
-     *      nothing else is open in its subtopic.
+     * Pre: the course is withdrawn and nothing else is open in its subtopic.
+     *      Any attempt qualifies, not only the newest: each keeps its own
+     *      documents in its own folder (ledger D64).
      * Post: `withdrawn_at` is cleared, `status` unchanged.
      *
      * @throws CourseNotResumable
@@ -142,31 +144,29 @@ final class CourseTransitions
     }
 
     /**
-     * The course a student would be offered to pick back up, if any.
+     * The attempts at this level a student could pick back up, newest first.
      *
-     * What the "carry on, or start over?" prompt asks before creating a new
-     * course (ledger D7b). Null means free to start fresh.
+     * What the "carry on, or start over?" prompt offers before creating a new
+     * course (spec 16.4.2). Empty means free to start fresh.
+     *
+     * @return Collection<int, Course>
      */
-    public function resumable(User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): ?Course
+    public function resumable(User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): Collection
     {
-        $latest = Course::query()
+        return Course::query()
             ->forLevel($student, $moduleSlug, $subtopicSlug, $level)
             ->orderByDesc('attempt')
-            ->first();
-
-        if ($latest === null) {
-            return null;
-        }
-
-        return $this->refusal($latest) === null ? $latest : null;
+            ->get()
+            ->filter(fn (Course $course): bool => $this->refusal($course) === null)
+            ->values();
     }
 
     /**
      * Why this course cannot be picked back up, or null if it can.
      *
-     * The same three checks `resume` makes, asked without making the move --
-     * what the set-aside list needs to say "a later attempt replaced it"
-     * instead of offering a button that 422s (8.10.3). Public so that the one
+     * The same checks `resume` makes, asked without making the move -- what
+     * the set-aside list needs to say "your other course is open" instead of
+     * offering a button that 422s (8.10.3). Public so that the one
      * statement of the rule serves both the question and the act.
      *
      * Post: null iff `resume` would commit.
@@ -189,19 +189,6 @@ final class CourseTransitions
     {
         if (! $course->isWithdrawn()) {
             throw CourseNotResumable::because($course, ResumeRefusal::NotWithdrawn);
-        }
-
-        // Lesson guidance paths carry no attempt number (spec 4.5.3), so a
-        // later attempt has already overwritten this one's teaching notes.
-        // Resuming would show the student the newer course's material under
-        // this course's lesson rows (ledger D7b).
-        $superseded = Course::query()
-            ->forLevel($course->student, $course->module_slug, $course->subtopic_slug, $course->skill_level)
-            ->where('attempt', '>', $course->attempt)
-            ->exists();
-
-        if ($superseded) {
-            throw CourseNotResumable::because($course, ResumeRefusal::Superseded);
         }
 
         // Backstopped by courses_one_open_per_subtopic -- checked here only to

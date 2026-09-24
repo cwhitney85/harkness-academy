@@ -155,7 +155,7 @@ class DashboardScreenTest extends TestCase
      * offering a button that 422s (8.10.3).
      */
     #[Test]
-    public function a_course_a_later_attempt_replaced_says_so_rather_than_offering_a_button(): void
+    public function a_course_whose_subtopic_is_taken_says_so_rather_than_offering_a_button(): void
     {
         $student = User::factory()->create();
 
@@ -168,7 +168,7 @@ class DashboardScreenTest extends TestCase
                 ->has('set_aside', 1)
                 ->where('set_aside.0.id', $first->id)
                 ->where('set_aside.0.resume_url', null)
-                ->where('set_aside.0.refusal', ResumeRefusal::Superseded->explanation()),
+                ->where('set_aside.0.refusal', ResumeRefusal::SubtopicOccupied->explanation()),
             );
 
         // And the engine agrees, which is why the card must not offer it.

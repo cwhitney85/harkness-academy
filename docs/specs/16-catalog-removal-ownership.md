@@ -1,6 +1,6 @@
 # Spec 16 — Catalog, Removal and Ownership
 
-*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4.5.3](04-course-pipeline.md), [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md), [6.3.4](06-assessment.md), [11.5](11-generation-off-the-request.md) and [12.5.1](12-demo.md). Specced 2026-09-18.*
+*Provides: one subtopics table for catalog and student subtopics, removal and restore, memory ownership, resuming any withdrawn attempt, and the refusals list. Consumes: 13 (the gate, the action log), 3 (the memory tree), 4 (course creation, the scope check). Amends [3.1](03-memory.md), [3.2](03-memory.md), [4's resume rule and 4.5.3](04-course-pipeline.md), [4.9.1, 4.9.2 and 4.9.7](04-course-pipeline.md), [6.3.4](06-assessment.md), [8.6 and 8.10.3](08-interface.md), [11.5](11-generation-off-the-request.md) and [12.5.1](12-demo.md). Specced 2026-09-18.*
 
 **Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D8](../02-design.md) working knowledge is per subtopic · [D42](../02-design.md) a free-text subtopic is checked before a course exists · [D57](../02-design.md) a removal is a record that marks what it hides · [D58](../02-design.md) documents have an owner, and each attempt its own folder · [D59](../02-design.md) one subtopics table · [D64](../02-design.md) any withdrawn attempt may be resumed · [D67](../02-design.md) `subtopics` has no `created_by` · [D68](../02-design.md) nothing is hard-deleted but an unclaimed demo · [D69](../02-design.md) a document's owner is a type and a pointer · [D70](../02-design.md) a removal mid-call saves nothing.
 
@@ -56,7 +56,7 @@
 ## 16.4 Resuming any withdrawn attempt
 
 - **16.4.1 MUST** — Any withdrawn, unremoved attempt can be resumed while no other course on its subtopic is open. The open-course index already enforces the second half. *Done: withdraw attempt 1, complete attempt 2, resume attempt 1 — it opens at its own lesson with its own guidance.*
-- **16.4.2 MUST** — When a subtopic holds more than one withdrawn attempt, the return prompt asks which to continue, or to start from scratch. *Done: jsdom test with two withdrawn attempts.*
+- **16.4.2 MUST** — When a student starts a subtopic at a level holding more than one withdrawn attempt, the return prompt asks which to continue, or to start from scratch. Attempts are numbered per level, and the prompt answers the level asked for: a withdrawn 101 is not offered to someone starting 201. *Done: jsdom test with two withdrawn attempts.*
 - **16.4.3 MUST** — `CourseTransitions`' "is the highest attempt" precondition, and the comments that cite D7b's rider, are removed. *Done: grep finds no "highest attempt" in `app/Courses` or `app/Lessons`.*
 
 ## 16.5 Catalog screen

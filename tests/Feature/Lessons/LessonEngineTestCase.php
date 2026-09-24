@@ -48,10 +48,12 @@ abstract class LessonEngineTestCase extends TestCase
 
     /**
      * An `active` course whose syllabus is approved and whose lesson 1 is open.
+     *
+     * @param  array<string, mixed>  $attributes
      */
-    protected function activeCourse(): Course
+    protected function activeCourse(array $attributes = []): Course
     {
-        $course = Course::factory()->status(CourseStatus::SyllabusDraft)->create();
+        $course = Course::factory()->status(CourseStatus::SyllabusDraft)->create($attributes);
 
         // Seeded before the syllabus row, so the factory's version pin reads
         // these rather than writing placeholders of its own -- which keeps the

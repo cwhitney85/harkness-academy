@@ -253,8 +253,8 @@ function SetAside({ course }: { course: OpenCourse }) {
 /**
  * Taking it back up — or the reason there is none.
  *
- * A course a later attempt has replaced says so rather than offering a button
- * that 422s (8.10.3): the refusal is `CourseTransitions`' own answer, asked
+ * A course whose subtopic is taken by another open course says so rather than
+ * offering a button that 422s (8.10.3): the refusal is `CourseTransitions`' own answer, asked
  * before the card was drawn, and in `ResumeRefusal`'s words.
  */
 function PickBackUp({ course }: { course: SetAsideCourse }) {

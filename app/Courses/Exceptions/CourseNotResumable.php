@@ -8,10 +8,8 @@ use App\Models\Course;
 /**
  * A withdrawn course that cannot be picked back up (ledger D7b).
  *
- * Carries *which* of the three checks failed, not only that one did: the flow
- * map (8.6) requires the refusal to distinguish "a later attempt replaced it"
- * from "your other course is open", because the two ask the student for
- * different things.
+ * Carries *which* check failed, not only that one did: the flow map (8.6)
+ * requires the refusal to say what the student can do about it.
  */
 final class CourseNotResumable extends CourseException
 {

@@ -28,14 +28,20 @@ type Subtopic = { id: number; slug: string; title: string };
 type Module = { slug: string; title: string; subtopics: Subtopic[] };
 type Level = { value: number; title: string };
 
-/** D7b's question, asked before a second attempt is created (8.7.6). */
+/** D7b's question, asked before another attempt is created (8.7.6). */
 type Resumable = {
-    course_id: number;
     subtopic_title: string;
     level: string;
-    attempt: number;
-    set_aside_on: string | null;
-    resume_url: string;
+    /** What starting from scratch would make the new course. */
+    next_attempt: number;
+    /** Every attempt that can be picked back up, newest first (16.4.2). */
+    attempts: {
+        course_id: number;
+        attempt: number;
+        standing: string;
+        set_aside_on: string | null;
+        resume_url: string;
+    }[];
 };
 
 /**
@@ -164,7 +170,7 @@ export default function CreateCourse({
 
                 {resumable && (
                     <CarryOnOrStartOver
-                        course={resumable}
+                        question={resumable}
                         onStartOver={() => submit(true)}
                         disabled={form.processing}
                     />
@@ -399,42 +405,80 @@ function Field({
 /**
  * D7b's question, in D7b's words (spec 8.7.6).
  *
- * Asked instead of creating a second course, because a second attempt cannot
- * be merged back into the one it replaced — and starting over is deliberately
- * still on offer, because sometimes that is what the student wants.
+ * Asked instead of creating another course, because a new attempt cannot be
+ * merged back into an old one — and starting over is deliberately still on
+ * offer, because sometimes that is what the student wants. With more than one
+ * attempt set aside it asks which to continue (16.4.2, ledger D64).
  */
 function CarryOnOrStartOver({
-    course,
+    question,
     onStartOver,
     disabled,
 }: {
-    course: Resumable;
+    question: Resumable;
     onStartOver: () => void;
     disabled: boolean;
 }) {
+    const [only] = question.attempts;
+    const several = question.attempts.length > 1;
+
+    const resume = (url: string) =>
+        router.post(url, {}, { preserveScroll: true });
+
     return (
         <aside className="mb-8 border border-t-[3px] border-hairline border-t-wine bg-surface px-5 py-5 sm:px-6">
             <h2 className="label text-wine">You have been here before</h2>
-            <p className="mt-3">
-                You set aside {course.subtopic_title} at the {course.level}{' '}
-                level
-                {course.set_aside_on ? ` on ${course.set_aside_on}` : ''}. Pick
-                up where you left off, or start from scratch?
-            </p>
+            {several ? (
+                <p className="mt-3">
+                    You set aside {question.subtopic_title} at the{' '}
+                    {question.level} level {question.attempts.length} times.
+                    Which would you like to continue, or start from scratch?
+                </p>
+            ) : (
+                <p className="mt-3">
+                    You set aside {question.subtopic_title} at the{' '}
+                    {question.level} level
+                    {only.set_aside_on ? ` on ${only.set_aside_on}` : ''}. Pick
+                    up where you left off, or start from scratch?
+                </p>
+            )}
+            {several && (
+                <ul className="mt-5 divide-y divide-hairline border-y border-hairline">
+                    {question.attempts.map((attempt) => (
+                        <li
+                            key={attempt.course_id}
+                            className="flex flex-wrap items-center justify-between gap-3 py-3"
+                        >
+                            <div>
+                                <p>Attempt {attempt.attempt}</p>
+                                <p className="label">
+                                    {attempt.standing}
+                                    {attempt.set_aside_on
+                                        ? ` · set aside on ${attempt.set_aside_on}`
+                                        : ''}
+                                </p>
+                            </div>
+                            <Button
+                                size="action"
+                                disabled={disabled}
+                                onClick={() => resume(attempt.resume_url)}
+                            >
+                                Continue attempt {attempt.attempt}
+                            </Button>
+                        </li>
+                    ))}
+                </ul>
+            )}
             <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Button
-                    size="action"
-                    disabled={disabled}
-                    onClick={() =>
-                        router.post(
-                            course.resume_url,
-                            {},
-                            { preserveScroll: true },
-                        )
-                    }
-                >
-                    Pick up where I left off
-                </Button>
+                {!several && (
+                    <Button
+                        size="action"
+                        disabled={disabled}
+                        onClick={() => resume(only.resume_url)}
+                    >
+                        Pick up where I left off
+                    </Button>
+                )}
                 <Button
                     size="action"
                     variant="outline"
@@ -445,8 +489,8 @@ function CarryOnOrStartOver({
                 </Button>
             </div>
             <p className="label mt-4">
-                Starting over keeps the old course; it becomes attempt{' '}
-                {course.attempt + 1}.
+                Starting over keeps the old {several ? 'courses' : 'course'};
+                the new one is attempt {question.next_attempt}.
             </p>
         </aside>
     );

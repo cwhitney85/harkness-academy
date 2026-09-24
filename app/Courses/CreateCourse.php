@@ -102,7 +102,7 @@ final class CreateCourse
      * aggregate, and the attempt unique key already rejects a number two
      * concurrent callers computed at once.
      */
-    private function nextAttempt(User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): int
+    public function nextAttempt(User $student, string $moduleSlug, string $subtopicSlug, SkillLevel $level): int
     {
         return 1 + (int) Course::withTrashed()
             ->forLevel($student, $moduleSlug, $subtopicSlug, $level)

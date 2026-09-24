@@ -17,6 +17,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
 use App\Models\Subtopic;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -37,8 +38,8 @@ use Inertia\Response;
  * student back here with something to decide:
  *
  *   - a **withdrawn attempt** at the same subtopic and level asks D7b's
- *     question in D7b's words (8.7.6) instead of quietly starting a second
- *     run and orphaning the first;
+ *     question in D7b's words (8.7.6) instead of quietly starting another
+ *     run -- and with more than one, which to continue (16.4.2);
  *   - a **course already open** in the subtopic offers the way back into it.
  *     The question above should have caught this; what reaches it is the
  *     double tap and the second tab (8.6);
@@ -140,8 +141,11 @@ class CourseController extends Controller
         if (! ($validated['start_over'] ?? false)) {
             $withdrawn = $transitions->resumable($student, $module->slug, $name->slug, $level);
 
-            if ($withdrawn instanceof Course) {
-                return back()->with('resumable', $this->question($withdrawn));
+            if ($withdrawn->isNotEmpty()) {
+                return back()->with('resumable', $this->question(
+                    $withdrawn,
+                    $creator->nextAttempt($student, $module->slug, $name->slug, $level),
+                ));
             }
         }
 
@@ -202,19 +206,25 @@ class CourseController extends Controller
     }
 
     /**
-     * D7b's question, in D7b's words.
+     * D7b's question, in D7b's words, over every attempt it could pick back
+     * up (ledger D64).
      *
+     * @param  Collection<int, Course>  $withdrawn  newest first, never empty
      * @return array<string, mixed>
      */
-    private function question(Course $withdrawn): array
+    private function question(Collection $withdrawn, int $nextAttempt): array
     {
         return [
-            'course_id' => $withdrawn->id,
-            'subtopic_title' => $withdrawn->subtopic_title,
-            'level' => $withdrawn->skill_level->title(),
-            'attempt' => $withdrawn->attempt,
-            'set_aside_on' => $withdrawn->withdrawn_at?->toFormattedDayDateString(),
-            'resume_url' => route('courses.resume', $withdrawn),
+            'subtopic_title' => $withdrawn->first()->subtopic_title,
+            'level' => $withdrawn->first()->skill_level->title(),
+            'next_attempt' => $nextAttempt,
+            'attempts' => $withdrawn->map(fn (Course $course): array => [
+                'course_id' => $course->id,
+                'attempt' => $course->attempt,
+                'standing' => $course->status->title(),
+                'set_aside_on' => $course->withdrawn_at?->toFormattedDayDateString(),
+                'resume_url' => route('courses.resume', $course),
+            ])->all(),
         ];
     }
 

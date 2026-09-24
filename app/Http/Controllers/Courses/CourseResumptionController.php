@@ -22,10 +22,6 @@ use Illuminate\Validation\ValidationException;
  * Where they land on success is not this controller's decision. `resume`
  * clears `withdrawn_at` and leaves `status` alone, which is exactly what makes
  * NextAction -- read a second time -- put them back where they stopped.
- *
- * The refusal must say *which* of the three checks failed, because "a later
- * attempt replaced it" and "your other course is open" ask the student for
- * different things (8.6).
  */
 class CourseResumptionController extends Controller
 {

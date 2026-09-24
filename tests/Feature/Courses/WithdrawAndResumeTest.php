@@ -141,12 +141,11 @@ class WithdrawAndResumeTest extends TestCase
     }
 
     /**
-     * Lesson guidance paths carry no attempt number (4.5.3), so attempt 2 has
-     * already overwritten attempt 1's teaching notes. Resuming attempt 1 would
-     * show the student the newer material under the older lessons.
+     * Each attempt keeps its documents in its own folder, so an older one
+     * resumes as readily as the newest (16.4.1, ledger D64).
      */
     #[Test]
-    public function only_the_highest_attempt_at_a_level_can_be_resumed(): void
+    public function any_withdrawn_attempt_at_a_level_can_be_resumed(): void
     {
         $student = User::factory()->create();
         $algebra = $this->preset('math', 'algebra');
@@ -159,12 +158,11 @@ class WithdrawAndResumeTest extends TestCase
 
         $offered = $this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory);
 
-        $this->assertNotNull($offered);
-        $this->assertTrue($offered->is($second), 'the newest attempt is the one offered back');
-        $this->assertFalse($offered->is($first));
+        $this->assertSame([$second->id, $first->id], $offered->modelKeys(), 'every attempt is offered, newest first');
 
-        $this->expectException(CourseNotResumable::class);
         $this->transitions()->resume($first);
+
+        $this->assertTrue($first->fresh()->isOpen());
     }
 
     #[Test]
@@ -176,26 +174,25 @@ class WithdrawAndResumeTest extends TestCase
         $first = app(CreateCourse::class)->fromCatalog($student, $algebra, SkillLevel::Introductory);
         $this->transitions()->withdraw($first);
 
-        // A different level, same subtopic -- so it holds the subtopic's slot
-        // and its own attempt numbering, leaving $first the highest at 101.
+        // A different level, same subtopic -- so it holds the subtopic's slot.
         app(CreateCourse::class)->fromCatalog($student, $algebra, SkillLevel::Intermediate);
 
-        $this->assertNull($this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory));
+        $this->assertEmpty($this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory));
 
         $this->expectException(CourseNotResumable::class);
         $this->transitions()->resume($first);
     }
 
     #[Test]
-    public function nothing_to_resume_reads_as_null(): void
+    public function nothing_to_resume_reads_as_empty(): void
     {
         $student = User::factory()->create();
 
-        $this->assertNull($this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory));
+        $this->assertEmpty($this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory));
 
         app(CreateCourse::class)->fromCatalog($student, $this->preset('math', 'algebra'), SkillLevel::Introductory);
 
-        $this->assertNull(
+        $this->assertEmpty(
             $this->transitions()->resumable($student, 'math', 'algebra', SkillLevel::Introductory),
             'an open course is carried on, not resumed',
         );
