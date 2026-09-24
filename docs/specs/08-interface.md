@@ -302,6 +302,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 | `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |
 | `admin.catalog.demand` · `admin.catalog.promote` · `admin.catalog.refusals` | admin, outside the thirteen (spec 16.1) |
+| `admin.catalog.index` · `admin.catalog.retitle` · `admin.catalog.modules.remove` · `admin.catalog.subtopics.remove` · `admin.catalog.removed` · `admin.catalog.restore` | admin, outside the thirteen (spec 16.5) |
 
 Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
 

@@ -15,6 +15,7 @@ enum AdminActionType: string
     case PromptEdited = 'prompt.edited';
     case PromptRolledBack = 'prompt.rolled_back';
     case SubtopicPromoted = 'subtopic.promoted';
+    case SubtopicRetitled = 'subtopic.retitled';
     case Removed = 'removal.created';
     case Restored = 'removal.restored';
     case RestoreRefused = 'removal.restore_refused';

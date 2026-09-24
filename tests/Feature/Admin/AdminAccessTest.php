@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Admin\Removals;
 use App\Ai\Tier;
 use App\Models\Module;
 use App\Models\Subtopic;
@@ -43,10 +44,12 @@ class AdminAccessTest extends TestCase
             'model' => Tier::Cheap->primary()['id'],
             'prompt' => 'explainer.select',
             'number' => 1,
-            'subtopic' => Subtopic::findOrCreateFor(
-                Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]),
-                'knot-theory',
-                'Knot Theory',
+            'module' => ($math = Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]))->id,
+            'subtopic' => Subtopic::findOrCreateFor($math, 'knot-theory', 'Knot Theory')->id,
+            'removal' => app(Removals::class)->remove(
+                User::factory()->admin()->create(),
+                Subtopic::findOrCreateFor($math, 'graph-theory', 'Graph Theory'),
+                'A reason',
             )->id,
         ];
 

@@ -1,13 +1,14 @@
 import { Link } from '@inertiajs/react';
 
-import { demand, refusals } from '@/routes/admin/catalog';
+import { demand, index, refusals, removed } from '@/routes/admin/catalog';
 
 /**
- * The views under Admin → Catalog (spec 16.1.5, 16.1.6). 16.5 adds the
- * module and subtopic tree beside them.
+ * The views under Admin → Catalog (spec 16.5, 16.1.5, 16.1.6).
  */
 
 const VIEWS = [
+    { id: 'modules', title: 'Modules', href: index() },
+    { id: 'removed', title: 'Removed', href: removed() },
     { id: 'demand', title: 'Demand', href: demand() },
     { id: 'refusals', title: 'Refusals', href: refusals() },
 ] as const;

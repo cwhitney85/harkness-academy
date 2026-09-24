@@ -29,6 +29,15 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
 
         Route::get('log', ActionLogController::class)->name('admin.log');
 
+        // The catalog's modules and subtopics, what removing them hid, and
+        // restoring it (16.5, ledger D57).
+        Route::get('catalog', [CatalogController::class, 'index'])->name('admin.catalog.index');
+        Route::put('catalog/subtopics/{subtopic}', [CatalogController::class, 'retitle'])->name('admin.catalog.retitle');
+        Route::post('catalog/modules/{module}/remove', [CatalogController::class, 'removeModule'])->name('admin.catalog.modules.remove');
+        Route::post('catalog/subtopics/{subtopic}/remove', [CatalogController::class, 'removeSubtopic'])->name('admin.catalog.subtopics.remove');
+        Route::get('catalog/removed', [CatalogController::class, 'removed'])->name('admin.catalog.removed');
+        Route::post('catalog/removals/{removal}/restore', [CatalogController::class, 'restore'])->name('admin.catalog.restore');
+
         // What students type that the catalog does not offer, and what the
         // scope check turned away (16.1.5, 16.1.6).
         Route::get('catalog/demand', [CatalogController::class, 'demand'])->name('admin.catalog.demand');

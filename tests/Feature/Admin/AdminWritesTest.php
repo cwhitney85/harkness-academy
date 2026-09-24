@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Admin\Removals;
 use App\Ai\Tier;
 use App\Models\AdminAction;
 use App\Models\Module;
@@ -66,7 +67,31 @@ class AdminWritesTest extends TestCase
     {
         $viewing = fn (self $test, User $student) => $test->post("/admin/users/{$student->id}/view-as");
 
+        // One module per write: the routes run in one database, and slugs are unique.
+        $module = fn (string $slug) => Module::query()->create(['slug' => $slug, 'title' => $slug, 'position' => 0]);
+        $subtopic = fn (string $slug) => Subtopic::findOrCreateFor($module($slug), 'algebra', 'Algebra');
+
         return [
+            'admin.catalog.retitle' => function (self $test) use ($subtopic) {
+                $algebra = $subtopic('retitled');
+
+                return fn () => $test->put("/admin/catalog/subtopics/{$algebra->id}", ['title' => 'Elementary Algebra']);
+            },
+            'admin.catalog.modules.remove' => function (self $test) use ($module) {
+                $removed = $module('removed');
+
+                return fn () => $test->post("/admin/catalog/modules/{$removed->id}/remove", ['reason' => 'A reason']);
+            },
+            'admin.catalog.subtopics.remove' => function (self $test) use ($subtopic) {
+                $algebra = $subtopic('subtopic-removed');
+
+                return fn () => $test->post("/admin/catalog/subtopics/{$algebra->id}/remove", ['reason' => 'A reason']);
+            },
+            'admin.catalog.restore' => function (self $test) use ($subtopic) {
+                $removal = app(Removals::class)->remove(User::factory()->admin()->create(), $subtopic('restored'), 'A reason');
+
+                return fn () => $test->post("/admin/catalog/removals/{$removal->id}/restore", ['reason' => 'A reason']);
+            },
             'admin.catalog.promote' => function (self $test) {
                 $knots = Subtopic::findOrCreateFor(Module::query()->create(['slug' => 'math', 'title' => 'Math', 'position' => 0]), 'knot-theory', 'Knot Theory');
 
