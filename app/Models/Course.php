@@ -217,6 +217,20 @@ class Course extends Model
     }
 
     /**
+     * Adds `cost`: what this course's calls cost, leaving out any an admin
+     * made acting as the student (spec 17.1, 17.2.1).
+     *
+     * @param  Builder<Course>  $query
+     */
+    public function scopeWithCost(Builder $query): void
+    {
+        $query->addSelect(['cost' => UsageEvent::query()
+            ->selectRaw('coalesce(sum(cost_usd), 0)')
+            ->whereColumn('usage_events.course_id', 'courses.id')
+            ->whereNull('acting_user_id')]);
+    }
+
+    /**
      * Every course one student has taken in one subtopic, at any level.
      *
      * The scope of the exclusivity rule (ledger D7a/D7b) and of the subtopic

@@ -205,6 +205,10 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       │   └─ Preview, from either ──► POST /admin/users/{user}/view-as ──► S1 as the student, the banner on every screen (13.4)
       │         ├─ Step up, with a reason ──► POST /admin/view-as/step-up ──► the same screen, acting as them
       │         └─ Exit, or 60 minutes, or logout ──► DELETE /admin/view-as ──► GET admin
+      GET admin/courses ──► Admin → Courses, filtered by standing, level and module (17.2.1)
+      │   └─ Open, or from a user's page ──► GET /admin/courses/{course} ──► one course taken apart (17.2.2)
+      │         ├─ Remove, with a reason ──► POST /admin/courses/{course}/remove ──► the same screen, removed (17.2.3)
+      │         └─ Restore, with a reason ──► POST /admin/catalog/removals/{removal}/restore ──► the same screen
       GET admin/log ──► Admin → Log (13.2.3)
       GET admin/models ──► Admin → Models (14.4)
       │   └─ Prices ──► PUT /admin/models/{model} ──► the same screen
@@ -301,6 +305,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `well-known.passkeys` | machine endpoint; no student edge |
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
 | `admin.users.show` · `admin.users.plan` | admin, outside the thirteen (spec 17.1) |
+| `admin.courses.index` · `admin.courses.show` · `admin.courses.remove` | admin, outside the thirteen (spec 17.2) |
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
 | `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 | `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |

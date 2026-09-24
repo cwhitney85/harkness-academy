@@ -4,6 +4,7 @@ import { Fact, PreviewButton } from '@/components/admin-controls';
 import AdminShell from '@/components/admin-shell';
 import { money } from '@/lib/utils';
 import { home } from '@/routes/admin';
+import { show as showCourse } from '@/routes/admin/courses';
 import { plan as changePlan } from '@/routes/admin/users';
 
 /**
@@ -150,7 +151,12 @@ export default function AdminUser({
                             {courses.map((course) => (
                                 <tr key={course.id}>
                                     <td>
-                                        {course.title}
+                                        <Link
+                                            href={showCourse(course.id)}
+                                            className="underline-offset-4 hover:underline"
+                                        >
+                                            {course.title}
+                                        </Link>
                                         <span className="block text-[13px] text-muted-ink">
                                             {course.module}
                                         </span>

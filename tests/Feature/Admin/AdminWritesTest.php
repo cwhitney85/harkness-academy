@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Admin\Removals;
 use App\Ai\Tier;
 use App\Models\AdminAction;
+use App\Models\Course;
 use App\Models\Module;
 use App\Models\Prompt;
 use App\Models\Subtopic;
@@ -114,6 +115,11 @@ class AdminWritesTest extends TestCase
                 ]);
 
                 return fn () => $test->post('/admin/prompts/explainer.select/versions/1');
+            },
+            'admin.courses.remove' => function (self $test, User $student) {
+                $course = Course::factory()->for($student, 'student')->create(['module_slug' => 'removed-course']);
+
+                return fn () => $test->post("/admin/courses/{$course->id}/remove", ['reason' => 'A reason']);
             },
             'admin.users.plan' => fn (self $test, User $student) => fn () => $test->put("/admin/users/{$student->id}/plan", ['plan' => 'demo']),
             'admin.users.view-as' => fn (self $test, User $student) => fn () => $viewing($test, $student),

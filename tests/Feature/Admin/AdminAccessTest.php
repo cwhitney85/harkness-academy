@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Admin\Removals;
 use App\Ai\Tier;
+use App\Models\Course;
 use App\Models\Module;
 use App\Models\Subtopic;
 use App\Models\User;
@@ -41,6 +42,7 @@ class AdminAccessTest extends TestCase
         // prompt is bound by its key rather than its id (15.2.1).
         $ids = [
             'user' => $student->id,
+            'course' => Course::factory()->for($student, 'student')->create(['module_slug' => 'art'])->id,
             'model' => Tier::Cheap->primary()['id'],
             'prompt' => 'explainer.select',
             'number' => 1,

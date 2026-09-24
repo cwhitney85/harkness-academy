@@ -79,9 +79,7 @@ class UserController extends Controller
 
         $courses = Course::withTrashed()
             ->where('user_id', $user->id)
-            ->addSelect(['cost' => UsageEvent::query()->selectRaw('coalesce(sum(cost_usd), 0)')
-                ->whereColumn('usage_events.course_id', 'courses.id')
-                ->whereNull('acting_user_id')])
+            ->withCost()
             ->latest('id')
             ->get();
 

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { RailHead } from '@/components/rail';
 import { home, log, models, prompts } from '@/routes/admin';
 import { index as catalog } from '@/routes/admin/catalog';
+import { index as courses } from '@/routes/admin/courses';
 
 /**
  * The frame every admin screen is set in — the fourth shell (spec 13.3,
@@ -23,6 +24,7 @@ import { index as catalog } from '@/routes/admin/catalog';
 
 export const NAV = [
     { id: 'users', title: 'Users', href: home() },
+    { id: 'courses', title: 'Courses', href: courses() },
     { id: 'catalog', title: 'Catalog', href: catalog() },
     { id: 'prompts', title: 'Prompts', href: prompts() },
     { id: 'models', title: 'Models', href: models() },

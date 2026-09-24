@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ActionLogController;
 use App\Http\Controllers\Admin\AiModelController;
 use App\Http\Controllers\Admin\CatalogController;
+use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ViewAsController;
@@ -28,6 +29,12 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('/', [UserController::class, 'index'])->name('admin.home');
         Route::get('users/{user}', [UserController::class, 'show'])->withTrashed()->name('admin.users.show');
         Route::put('users/{user}/plan', [UserController::class, 'plan'])->name('admin.users.plan');
+
+        // Every course, one course taken apart, and removing one; restoring
+        // one is Catalog → Removed's route (17.2).
+        Route::get('courses', [CourseController::class, 'index'])->name('admin.courses.index');
+        Route::get('courses/{course}', [CourseController::class, 'show'])->withTrashed()->name('admin.courses.show');
+        Route::post('courses/{course}/remove', [CourseController::class, 'remove'])->name('admin.courses.remove');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
 

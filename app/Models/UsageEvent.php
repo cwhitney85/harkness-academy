@@ -29,6 +29,16 @@ class UsageEvent extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * The admin who made this call acting as the student (spec 13.4.5).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function actingUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acting_user_id')->withTrashed();
+    }
+
     protected function casts(): array
     {
         return [
