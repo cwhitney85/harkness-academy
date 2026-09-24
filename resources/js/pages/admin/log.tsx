@@ -1,5 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 
+import { Filter, Pager } from '@/components/admin-controls';
+import type { Page } from '@/components/admin-controls';
 import AdminShell from '@/components/admin-shell';
 import { log } from '@/routes/admin';
 
@@ -23,12 +25,6 @@ type Filters = {
     subject: string | null;
 };
 
-type Page = {
-    data: Row[];
-    prev_page_url: string | null;
-    next_page_url: string | null;
-};
-
 /** `App\Models\User` reads as `User`. */
 const basename = (type: string) => type.split('\\').pop() ?? type;
 
@@ -37,7 +33,7 @@ export default function AdminLog({
     filters,
     options,
 }: {
-    actions: Page;
+    actions: Page<Row>;
     filters: Filters;
     options: {
         actors: { id: number; name: string }[];
@@ -133,50 +129,7 @@ export default function AdminLog({
                 </div>
             )}
 
-            <div className="mt-6 flex gap-6">
-                {actions.prev_page_url && (
-                    <Link href={actions.prev_page_url} className="label">
-                        Newer
-                    </Link>
-                )}
-                {actions.next_page_url && (
-                    <Link href={actions.next_page_url} className="label">
-                        Older
-                    </Link>
-                )}
-            </div>
+            <Pager page={actions} newer="Newer" older="Older" />
         </AdminShell>
-    );
-}
-
-function Filter({
-    label,
-    value,
-    empty,
-    options,
-    onChange,
-}: {
-    label: string;
-    value: string;
-    empty: string;
-    options: [string, string][];
-    onChange: (value: string) => void;
-}) {
-    return (
-        <label className="flex flex-col gap-[5px]">
-            <span className="label">{label}</span>
-            <select
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="min-h-11 min-w-[190px] border border-hairline bg-surface px-3 focus-visible:outline-2 focus-visible:outline-brass"
-            >
-                <option value="">{empty}</option>
-                {options.map(([key, text]) => (
-                    <option key={key} value={key}>
-                        {text}
-                    </option>
-                ))}
-            </select>
-        </label>
     );
 }

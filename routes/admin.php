@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\ActionLogController;
 use App\Http\Controllers\Admin\AiModelController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\PromptController;
-use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ViewAsController;
 use App\Http\Middleware\RequireSecondFactor;
 use Illuminate\Support\Facades\Route;
@@ -23,9 +23,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
     ->prefix('admin')
     ->group(function (): void {
-        // Until 17.1 builds Users, the admin's home is the list of students
-        // viewing-as starts from (17.1.4).
-        Route::get('/', [StudentController::class, 'index'])->name('admin.home');
+        // The admin's home is Users, where viewing-as starts (17.1). A
+        // deleted account keeps its page.
+        Route::get('/', [UserController::class, 'index'])->name('admin.home');
+        Route::get('users/{user}', [UserController::class, 'show'])->withTrashed()->name('admin.users.show');
+        Route::put('users/{user}/plan', [UserController::class, 'plan'])->name('admin.users.plan');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
 

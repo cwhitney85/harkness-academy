@@ -2,6 +2,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 import AdminShell from '@/components/admin-shell';
+import { money } from '@/lib/utils';
 import { update } from '@/routes/admin/models';
 
 /**
@@ -42,13 +43,6 @@ const PRICE_COLUMNS: [keyof Prices, string][] = [
     ['cache_read_per_mtok', 'Cache read'],
     ['cache_write_per_mtok', 'Cache write'],
 ];
-
-const money = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-});
 
 export default function AdminModels({
     models,

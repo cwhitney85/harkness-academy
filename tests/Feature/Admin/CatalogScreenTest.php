@@ -135,7 +135,7 @@ class CatalogScreenTest extends TestCase
                 ->where('refusals.1.student', [
                     'name' => 'Ada',
                     'email' => 'ada@example.test',
-                    'url' => route('admin.home'),
+                    'url' => route('admin.users.show', $student),
                 ]));
     }
 

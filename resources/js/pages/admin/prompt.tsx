@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
+import { Fact } from '@/components/admin-controls';
 import AdminShell from '@/components/admin-shell';
 import { prompts } from '@/routes/admin';
 import { activate, show, update } from '@/routes/admin/prompts';
@@ -263,20 +264,5 @@ export default function AdminPrompt({
                 </>
             )}
         </AdminShell>
-    );
-}
-
-function Fact({
-    term,
-    children,
-}: {
-    term: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <div>
-            <dt className="label">{term}</dt>
-            <dd className="mt-0.5">{children}</dd>
-        </div>
     );
 }

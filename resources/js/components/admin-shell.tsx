@@ -22,6 +22,7 @@ import { index as catalog } from '@/routes/admin/catalog';
  */
 
 export const NAV = [
+    { id: 'users', title: 'Users', href: home() },
     { id: 'catalog', title: 'Catalog', href: catalog() },
     { id: 'prompts', title: 'Prompts', href: prompts() },
     { id: 'models', title: 'Models', href: models() },
@@ -35,8 +36,8 @@ export default function AdminShell({
     title,
     children,
 }: {
-    /** The nav entry this screen is, or none for the student list. */
-    current?: AdminScreen;
+    /** The nav entry this screen is. */
+    current: AdminScreen;
     title: string;
     children: ReactNode;
 }) {
@@ -67,15 +68,6 @@ export default function AdminShell({
                         </Link>
                     ))}
                 </nav>
-
-                {/* Where viewing-as starts until 17.1's Users screen does
-                    (17.1.4). An action, not a screen, so not in NAV. */}
-                <Link
-                    href={home()}
-                    className="label flex min-h-11 items-center border-t border-field-green text-ground/60 hover:text-ground md:mt-auto"
-                >
-                    View as a student
-                </Link>
             </aside>
 
             <main className="flex min-w-0 grow flex-col">

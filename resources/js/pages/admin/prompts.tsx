@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 
 import AdminShell from '@/components/admin-shell';
+import { money } from '@/lib/utils';
 import { show } from '@/routes/admin/prompts';
 
 /**
@@ -20,13 +21,6 @@ type PromptRow = {
     calls: number;
     cost: number;
 };
-
-const money = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-});
 
 export default function AdminPrompts({
     prompts,

@@ -244,9 +244,7 @@ class CatalogController extends Controller
                     'student' => [
                         'name' => $refusal->student->name,
                         'email' => $refusal->student->email,
-                        // The student list until 17.1.2 gives each student a
-                        // page of their own.
-                        'url' => route('admin.home'),
+                        'url' => route('admin.users.show', $refusal->user_id),
                     ],
                 ])
                 ->all(),

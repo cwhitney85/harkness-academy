@@ -199,8 +199,10 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       GET .well-known/passkey-endpoints answers password managers, never a student
 
   ADMIN (outside the thirteen; spec 13, the admin shell; reached from the user menu for an admin only)
-      GET admin ──► the students an admin may view as (17.1 replaces it with Users)
-      │   └─ Preview ──► POST /admin/users/{user}/view-as ──► S1 as the student, the banner on every screen (13.4)
+      GET admin ──► Admin → Users, searched and filtered by plan (17.1.1)
+      │   ├─ Open ──► GET /admin/users/{user} ──► one account, its courses, cost and memory (17.1.2)
+      │   │     └─ Change plan ──► PUT /admin/users/{user}/plan ──► the same screen (17.1.3)
+      │   └─ Preview, from either ──► POST /admin/users/{user}/view-as ──► S1 as the student, the banner on every screen (13.4)
       │         ├─ Step up, with a reason ──► POST /admin/view-as/step-up ──► the same screen, acting as them
       │         └─ Exit, or 60 minutes, or logout ──► DELETE /admin/view-as ──► GET admin
       GET admin/log ──► Admin → Log (13.2.3)
@@ -298,6 +300,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
 | `well-known.passkeys` | machine endpoint; no student edge |
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
+| `admin.users.show` · `admin.users.plan` | admin, outside the thirteen (spec 17.1) |
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
 | `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 | `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |

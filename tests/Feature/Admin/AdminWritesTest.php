@@ -115,6 +115,7 @@ class AdminWritesTest extends TestCase
 
                 return fn () => $test->post('/admin/prompts/explainer.select/versions/1');
             },
+            'admin.users.plan' => fn (self $test, User $student) => fn () => $test->put("/admin/users/{$student->id}/plan", ['plan' => 'demo']),
             'admin.users.view-as' => fn (self $test, User $student) => fn () => $viewing($test, $student),
             'admin.view-as.step-up' => function (self $test, User $student) use ($viewing) {
                 $viewing($test, $student);
