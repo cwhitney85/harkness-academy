@@ -30,6 +30,14 @@ class UsageEvent extends Model
     }
 
     /**
+     * @return BelongsTo<Lesson, $this>
+     */
+    public function lesson(): BelongsTo
+    {
+        return $this->belongsTo(Lesson::class);
+    }
+
+    /**
      * The admin who made this call acting as the student (spec 13.4.5).
      *
      * @return BelongsTo<User, $this>

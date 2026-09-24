@@ -5,6 +5,7 @@ import { RailHead } from '@/components/rail';
 import { home, log, models, prompts } from '@/routes/admin';
 import { index as catalog } from '@/routes/admin/catalog';
 import { index as courses } from '@/routes/admin/courses';
+import { overview as usage } from '@/routes/admin/usage';
 
 /**
  * The frame every admin screen is set in — the fourth shell (spec 13.3,
@@ -28,6 +29,7 @@ export const NAV = [
     { id: 'catalog', title: 'Catalog', href: catalog() },
     { id: 'prompts', title: 'Prompts', href: prompts() },
     { id: 'models', title: 'Models', href: models() },
+    { id: 'usage', title: 'Usage', href: usage() },
     { id: 'log', title: 'Log', href: log() },
 ] as const;
 

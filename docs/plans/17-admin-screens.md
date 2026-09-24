@@ -13,11 +13,11 @@
 - [x] **17.2.1** — Courses list: student, module/subtopic, level, attempt, standing (incl. removed), cost, created; filters. *Fixture.*
 - [x] **17.2.2** — Course detail: criteria, working knowledge, syllabus + revisions, lessons with sections and messages, checkpoints and results, homework/quizzes/attempts, final exam, generation requests and failures, cost by feature, usage rows. *Renders Colin's course.*
 - [x] **17.2.3** — Remove and Restore on a course (16.2).
-- [ ] **17.3.1** — Usage overview: cost by day, feature, plan over a date range. *Matches SQL.*
-- [ ] **17.3.2** — Performance: per task × model — calls, median, p95, mean in/out tokens, cache share, cost/call, failure and failover rates. *Matches SQL on a fixture.*
-- [ ] **17.3.3** — Act-as rows excluded by default, toggle. *Test.*
-- [ ] **17.3.4** SHOULD — Event browser, filterable, rows link to user, course, lesson. *Fixture.*
-- [ ] **17.3.5** SHOULD — Performance under 1s on a million seeded rows. *Benchmark.*
+- [x] **17.3.1** — Usage overview: cost by day, feature, plan over a date range. *Matches SQL.*
+- [x] **17.3.2** — Performance: per task × model — calls, median, p95, mean in/out tokens, cache share, cost/call, failure and failover rates. *Matches SQL on a fixture.*
+- [x] **17.3.3** — Act-as rows excluded by default, toggle. *Test.*
+- [x] **17.3.4** SHOULD — Event browser, filterable, rows link to user, course, lesson. *Fixture.*
+- [~] **17.3.5** SHOULD — Performance under 1s on a million seeded rows. *Benchmark.*
 
 ## Log
 
@@ -30,3 +30,4 @@
 - **Restore from a course's page only when its own removal hid it.** A course swept up by its subtopic's or module's removal says so and points at Catalog → Removed; restoring there brings back the whole subtopic, too big to hide behind a course's button.
 - **Stale docblock, spec 16's code:** `ExamAnswerSheet` still says a sheet "is deleted the moment the book is handed in"; 16.2.12 keeps it. Not this package's file — for Colin.
 - **Interview transcripts:** 17.2.4 says they are discarded after summary (WONT), but system.md §5 says `interview_messages` are kept for the life of the course. The course page shows none either way; the two documents disagree — for Colin.
+- **17.3.5 benchmark** (throwaway `opentutor_bench`, 1M synthetic rows over 90 days, 18 tasks × 3 models, Postgres 17). The performance query as first written: 30-day default 0.78–1.03 s, all 90 days 1.3–1.7 s. EXPLAIN: seq scan ~245 ms, a sort by three text keys spilling 20 MB to disk ~390 ms, aggregate ~215 ms. Tried: `work_mem` 64 MB (no gain; worse on 90 days), an index on `created_at` (no gain alone; ~0 on top of the fix — not added, it would slow every call's insert), one array `percentile_cont` (no gain; Postgres already shares the sort). **What worked: grouping by `collate "C"` keys, and tier as a group key instead of `string_agg(distinct)`** — 30 days 0.45 s, 90 days 1.2 s. For Colin: 17.3.5 passes if "on a million seeded rows" means the default view with a million rows in the table; it fails if it means a range covering all million. Going under 1 s there needs a rollup table, which is new structure and a decision — percentiles do not sum across days.

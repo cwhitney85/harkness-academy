@@ -42,9 +42,12 @@ test('the nav shows exactly the landed screens', () => {
     const nav = within(screen.getByRole('navigation'));
 
     expect(nav.getAllByRole('link').map((link) => link.textContent)).toEqual([
+        'Users',
+        'Courses',
         'Catalog',
         'Prompts',
         'Models',
+        'Usage',
         'Log',
     ]);
     expect(

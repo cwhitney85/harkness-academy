@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-
+import { Tabs } from '@/components/admin-controls';
 import { demand, index, refusals, removed } from '@/routes/admin/catalog';
 
 /**
@@ -18,23 +17,5 @@ export default function CatalogViews({
 }: {
     current: (typeof VIEWS)[number]['id'];
 }) {
-    return (
-        <nav className="mb-[26px] flex gap-6 border-b border-hairline">
-            {VIEWS.map((view) => (
-                <Link
-                    key={view.id}
-                    href={view.href}
-                    aria-current={view.id === current ? 'page' : undefined}
-                    className={[
-                        'label -mb-px flex min-h-11 items-center border-b-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass',
-                        view.id === current
-                            ? 'border-wine text-wine'
-                            : 'border-transparent text-muted-ink hover:text-ink',
-                    ].join(' ')}
-                >
-                    {view.title}
-                </Link>
-            ))}
-        </nav>
-    );
+    return <Tabs views={VIEWS} current={current} />;
 }

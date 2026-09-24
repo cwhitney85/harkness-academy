@@ -269,6 +269,7 @@ export default function AdminCourse({
             {lessons.map((lesson) => (
                 <Fold
                     key={lesson.id}
+                    id={`lesson-${lesson.position}`}
                     summary={
                         <>
                             {lesson.position}. {lesson.title ?? 'Untitled'}
@@ -492,14 +493,16 @@ function Empty({ children }: { children: ReactNode }) {
 
 /** A long thing, closed until asked for. */
 function Fold({
+    id,
     summary,
     children,
 }: {
+    id?: string;
     summary: ReactNode;
     children: ReactNode;
 }) {
     return (
-        <details className="border-b border-hairline py-2">
+        <details id={id} className="border-b border-hairline py-2">
             <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-3">
                 {summary}
             </summary>

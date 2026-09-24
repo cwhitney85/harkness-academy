@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AiModelController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\PromptController;
+use App\Http\Controllers\Admin\UsageController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ViewAsController;
 use App\Http\Middleware\RequireSecondFactor;
@@ -35,6 +36,12 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('courses/{course}', [CourseController::class, 'show'])->withTrashed()->name('admin.courses.show');
         Route::post('courses/{course}/remove', [CourseController::class, 'remove'])->name('admin.courses.remove');
+
+        // What calls cost, how each task performs on each model, and every
+        // call (17.3).
+        Route::get('usage', [UsageController::class, 'overview'])->name('admin.usage.overview');
+        Route::get('usage/performance', [UsageController::class, 'performance'])->name('admin.usage.performance');
+        Route::get('usage/events', [UsageController::class, 'events'])->name('admin.usage.events');
 
         Route::get('log', ActionLogController::class)->name('admin.log');
 

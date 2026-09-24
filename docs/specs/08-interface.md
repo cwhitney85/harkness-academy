@@ -212,6 +212,9 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       GET admin/log ──► Admin → Log (13.2.3)
       GET admin/models ──► Admin → Models (14.4)
       │   └─ Prices ──► PUT /admin/models/{model} ──► the same screen
+      GET admin/usage ──► Admin → Usage, cost by day, feature and plan over a range (17.3.1)
+      │   ├─ Performance ──► GET /admin/usage/performance ──► per task × model (17.3.2)
+      │   └─ Events ──► GET /admin/usage/events ──► every call, linking to its student, course and lesson (17.3.4)
       GET admin/prompts ──► Admin → Prompts (15.2.1)
       │   └─ Open ──► GET /admin/prompts/{prompt} ──► one prompt, its contract and its body (15.2.2)
       │         ├─ Save ──► PUT /admin/prompts/{prompt} ──► the same screen, a version newer
@@ -306,6 +309,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
 | `admin.users.show` · `admin.users.plan` | admin, outside the thirteen (spec 17.1) |
 | `admin.courses.index` · `admin.courses.show` · `admin.courses.remove` | admin, outside the thirteen (spec 17.2) |
+| `admin.usage.overview` · `admin.usage.performance` · `admin.usage.events` | admin, outside the thirteen (spec 17.3) |
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
 | `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
 | `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |
