@@ -24,7 +24,7 @@
 ## 17.3 Usage
 
 - **17.3.1 MUST** — The overview shows cost by day, by feature and by plan over a date range. *Done: matches SQL.*
-- **17.3.2 MUST** — The performance table shows, per task × model: calls, median and p95 latency, mean input and output tokens, cache share of input, cost per call, failure and failover rates. *Done: matches SQL on a fixture.*
+- **17.3.2 MUST** — The performance table shows, per task — a prompt, with its tier ([D52](../02-design.md)) — × model: calls, median and p95 latency, mean input and output tokens, cache share of input, cost per call, failure and failover rates. *Done: matches SQL on a fixture.*
 - **17.3.3 MUST** — Act-as rows are excluded by default, with a toggle. *Done: test.*
 - **17.3.4 SHOULD** — An event browser, filterable, linking each row to its user, course and lesson. *Done: fixture.*
 - **17.3.5 SHOULD** — The performance table loads in under a second on a million seeded rows, adding an index if needed. *Falsified by: a benchmark over one second.*

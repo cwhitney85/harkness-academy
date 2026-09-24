@@ -258,3 +258,11 @@ Adding `SoftDeletes` to a model has two effects that reach code nobody is editin
 `Route::getControllerClass()` returns `App\Http\Controllers\…` for a route declared with a plain `Route::get` inside a group, and `\App\Http\Controllers\…` for one declared through a chain such as `Route::middleware('auth')->get(…)`: `RouteRegistrar::compileAction` prepends the backslash, the router does not. A test matching the class with `str_starts_with($class, 'App\\…')` therefore passed while a chained route mounted an admin controller outside the gate — it could only ever match the routes already declared the ordinary way.
 
 **Compare a route's controller class after `ltrim($class, '\\')`. And a guard test is not proven by passing: plant the violation it exists to catch, see it fail, then remove it.**
+
+## T25. Sorting by text under the database's collation is the slow part of a report, and neither memory nor an index touches it
+
+*Found 2026-09-24, benchmarking spec 17.3.5 on a million `usage_events` rows.*
+
+The performance table groups a million rows by three text columns and takes percentiles. It ran 0.8–1.0 s over thirty days and 1.3–1.7 s over ninety. EXPLAIN showed a sort spilling 20 MB to disk, so the obvious fixes were tried first. **Raising `work_mem` to 64 MB gained nothing, and made the ninety-day query worse. An index on `created_at` gained nothing either.** Asking for both percentiles as one `percentile_cont(array[…])` gained nothing too, because Postgres already shares one sort between ordered-set aggregates with the same `ORDER BY`. The cost was comparing strings under the database's language collation, a million times over.
+
+**Group report keys with `collate "C"` when they are identifiers rather than words** — prompt keys, model ids, tiers, slugs. Byte order sorts them just as well and halved the query. And never group by an expression that only exists to fold a column into one value (`string_agg(distinct tier)`): it put that column in the sort key anyway. Make it a real group key.

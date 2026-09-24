@@ -98,6 +98,7 @@
 | D68 | Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept | current — amends D25 and spec 6.3.4, 12.5.1 |
 | D69 | A document's owner is a type and a pointer; the writing course decides which | current — amends D58 |
 | D70 | A course removed while the model answers saves nothing, and its student is told | current |
+| D71 | Usage from before rows named their course stays unattributed, and admin says so | current — Colin to confirm |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1179,4 +1180,12 @@ The migration found two documents in development whose course had been deleted b
 Rejected: **the start check alone** (the spec as written; leaves the window) · **re-checking inside each generator's write** (five places to keep in step, and each still pays for its retry) · **holding a lock on the course row for the length of the call** (minutes of lock, which blocks the removal itself).
 
 A streamed turn is not covered. The student is watching it arrive, and the removal meets them on their next screen.
+
+## D71. Usage from before rows named their course stays unattributed, and admin says so (resolved 2026-09-24, spec 17 items 17.1.2, 17.2.2, build session — Colin to confirm)
+
+Spec 14.3 gave each usage row a `course_id`, with no backfill. Every row in the development database predates it, so every course of Colin's costs $0 on Admin → Users and Courses, while the account has cost $7.44. A bare $0 reads as a free course. **Chosen: leave the rows as they are, and show the account's unattributed sum as its own line under its courses**: the subtopic check, which runs before a course exists, plus every call from before rows named their course. A course page with no attributed calls says where they are.
+
+Rejected: **a heuristic backfill** that matches a call to a course by its student, time and feature. A student can have several courses open across subtopics at once, so it would write guesses into what is otherwise a receipt table, and no later reader could tell a guess from a record. 14.3.4 made the same choice for `plan`.
+
+Falsified if: Colin wants 17.2.2's acceptance step, "open your course: every part renders", to show his existing courses' costs. Then a one-off, labelled attribution is the question, not a silent backfill.
 
