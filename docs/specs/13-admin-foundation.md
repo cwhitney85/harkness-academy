@@ -23,7 +23,7 @@
 ## 13.2 Action log
 
 - **13.2.1 MUST** — `admin_actions`: actor, action, subject type and id, reason (nullable), payload (json), created_at. No update or delete path exists. *Done: the model exposes neither; a test proves the table only grows.*
-- **13.2.2 MUST** — Every admin write records through one recorder. *Done: an architecture test finds that each non-GET `/admin*` route writes exactly one row.*
+- **13.2.2 MUST** — Every admin write records through one recorder, in the same transaction as the write, so a change never stands without its row. *Done: an architecture test finds that each non-GET `/admin*` route writes exactly one row, and that with the row's insert failing, every table is as it was.*
 - **13.2.3 SHOULD** — Admin → Log lists actions, filterable by actor, action and subject. *Done: renders every action type in a fixture.*
 
 ## 13.3 Shell

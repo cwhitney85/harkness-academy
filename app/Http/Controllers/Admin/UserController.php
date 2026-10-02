@@ -11,6 +11,7 @@ use App\Models\UsageEvent;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -163,9 +164,11 @@ class UserController extends Controller
 
         $was = $user->plan;
 
-        $user->forceFill(['plan' => $plan])->save();
+        DB::transaction(function () use ($request, $user, $plan, $was, $log): void {
+            $user->forceFill(['plan' => $plan])->save();
 
-        $log->record($request->user(), AdminActionType::PlanChanged, $user, payload: ['plan' => ['was' => $was, 'now' => $plan]]);
+            $log->record($request->user(), AdminActionType::PlanChanged, $user, payload: ['plan' => ['was' => $was, 'now' => $plan]]);
+        });
 
         return back();
     }

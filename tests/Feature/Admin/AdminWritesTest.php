@@ -13,8 +13,10 @@ use App\Models\User;
 use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route as Router;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -56,6 +58,47 @@ class AdminWritesTest extends TestCase
 
             $this->assertSame($before + 1, AdminAction::query()->count(), "[{$name}] did not write exactly one row.");
         }
+    }
+
+    /**
+     * Spec 13.2.2 -- the row commits with the write it records, or neither
+     * does: an admin change with no log row is an unaudited one.
+     */
+    #[Test]
+    public function no_admin_write_outlives_its_failed_log_row(): void
+    {
+        $logFails = false;
+
+        AdminAction::creating(function () use (&$logFails): void {
+            if ($logFails) {
+                throw new RuntimeException('The action log is down.');
+            }
+        });
+
+        foreach ($this->writes() as $name => $setUp) {
+            $this->flushSession();
+            $write = $setUp($this->actingAs(User::factory()->admin()->create()), User::factory()->create());
+
+            $before = $this->fingerprint();
+
+            $logFails = true;
+            $write();
+            $logFails = false;
+
+            $this->assertSame($before, $this->fingerprint(), "[{$name}] kept its write when its log row failed.");
+        }
+    }
+
+    /**
+     * Every row of every table, hashed: what "nothing changed" means here.
+     */
+    private function fingerprint(): string
+    {
+        return DB::table('pg_tables')->where('schemaname', 'public')->orderBy('tablename')->pluck('tablename')
+            ->map(fn (string $table): string => DB::selectOne(
+                "select md5(coalesce(string_agg(t::text, '|' order by t::text), '')) as hash from \"{$table}\" t"
+            )->hash)
+            ->implode('');
     }
 
     /**

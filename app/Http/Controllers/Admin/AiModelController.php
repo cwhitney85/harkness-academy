@@ -11,6 +11,7 @@ use App\Models\AiModel;
 use App\Models\UsageEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -105,14 +106,16 @@ class AiModelController extends Controller
         $columns = array_keys($prices);
         $was = $model->only($columns);
 
-        $model->update($prices);
+        DB::transaction(function () use ($request, $model, $prices, $columns, $was, $log): void {
+            $model->update($prices);
 
-        $log->record(
-            $request->user(),
-            AdminActionType::AiModelRepriced,
-            $model,
-            payload: ['was' => $was, 'now' => $model->only($columns)],
-        );
+            $log->record(
+                $request->user(),
+                AdminActionType::AiModelRepriced,
+                $model,
+                payload: ['was' => $was, 'now' => $model->only($columns)],
+            );
+        });
 
         return back();
     }

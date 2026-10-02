@@ -73,14 +73,16 @@ class CatalogController extends Controller
 
         $was = $subtopic->title;
 
-        $subtopic->update(['title' => $title]);
+        DB::transaction(function () use ($request, $subtopic, $title, $was, $log): void {
+            $subtopic->update(['title' => $title]);
 
-        $log->record(
-            $request->user(),
-            AdminActionType::SubtopicRetitled,
-            $subtopic,
-            payload: ['title' => ['was' => $was, 'now' => $title]],
-        );
+            $log->record(
+                $request->user(),
+                AdminActionType::SubtopicRetitled,
+                $subtopic,
+                payload: ['title' => ['was' => $was, 'now' => $title]],
+            );
+        });
 
         return back();
     }
@@ -213,17 +215,19 @@ class CatalogController extends Controller
 
         $was = $subtopic->title;
 
-        $subtopic->update([
-            'listed' => true,
-            'title' => trim($validated['title'] ?? '') ?: $was,
-        ]);
+        DB::transaction(function () use ($request, $subtopic, $validated, $was, $log): void {
+            $subtopic->update([
+                'listed' => true,
+                'title' => trim($validated['title'] ?? '') ?: $was,
+            ]);
 
-        $log->record(
-            $request->user(),
-            AdminActionType::SubtopicPromoted,
-            $subtopic,
-            payload: ['title' => ['was' => $was, 'now' => $subtopic->title]],
-        );
+            $log->record(
+                $request->user(),
+                AdminActionType::SubtopicPromoted,
+                $subtopic,
+                payload: ['title' => ['was' => $was, 'now' => $subtopic->title]],
+            );
+        });
 
         return back();
     }
