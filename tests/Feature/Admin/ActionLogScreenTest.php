@@ -4,6 +4,8 @@ namespace Tests\Feature\Admin;
 
 use App\Admin\ActionLog;
 use App\Admin\AdminActionType;
+use App\Admin\Removals;
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -31,6 +33,47 @@ class ActionLogScreenTest extends TestCase
             ->where('actions.data.0.subject.name', 'Maria Alvarez')
             ->where('actions.data.0.actor', $admin->name)
             ->where('options.actions', array_column(AdminActionType::cases(), 'value')));
+    }
+
+    /**
+     * A row names what it was about after that thing is removed or deleted:
+     * the log is the record of it.
+     */
+    #[Test]
+    public function a_removed_or_deleted_subject_and_a_deleted_admin_keep_their_names(): void
+    {
+        $admin = User::factory()->admin()->create(['name' => 'Former Admin']);
+        $student = User::factory()->create(['name' => 'Maria Alvarez']);
+        $course = Course::factory()->for($student, 'student')->create(['subtopic_title' => 'Algebra']);
+        $log = app(ActionLog::class);
+
+        $log->record($admin, AdminActionType::PlanChanged, $student);
+        app(Removals::class)->remove($admin, $course, 'test data');
+
+        $student->delete();
+        $admin->delete();
+
+        $this->actingAs(User::factory()->admin()->create())->get('/admin/log')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('actions.data.0.subject.name', 'Algebra')
+                ->where('actions.data.0.actor', 'Former Admin')
+                ->where('actions.data.1.subject.name', 'Maria Alvarez')
+                ->where('options.actors.0.name', 'Former Admin'));
+    }
+
+    #[Test]
+    public function a_subject_the_demo_sweep_deleted_is_labelled_a_deleted_demo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $demo = User::factory()->create(['plan' => 'demo', 'created_at' => now()->subYear()]);
+
+        app(ActionLog::class)->record($admin, AdminActionType::ViewAsStarted, $demo);
+
+        $this->artisan('demo:sweep')->assertSuccessful();
+
+        $this->actingAs($admin)->get('/admin/log')
+            ->assertInertia(fn (Assert $page) => $page->where('actions.data.0.subject.name', "deleted demo #{$demo->id}"));
     }
 
     #[Test]

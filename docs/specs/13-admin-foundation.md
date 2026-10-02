@@ -24,7 +24,7 @@
 
 - **13.2.1 MUST** — `admin_actions`: actor, action, subject type and id, reason (nullable), payload (json), created_at. No update or delete path exists. *Done: the model exposes neither; a test proves the table only grows.*
 - **13.2.2 MUST** — Every admin write records through one recorder, in the same transaction as the write, so a change never stands without its row. *Done: an architecture test finds that each non-GET `/admin*` route writes exactly one row, and that with the row's insert failing, every table is as it was.*
-- **13.2.3 SHOULD** — Admin → Log lists actions, filterable by actor, action and subject. *Done: renders every action type in a fixture.*
+- **13.2.3 SHOULD** — Admin → Log lists actions, filterable by actor, action and subject. A row keeps naming its admin and its subject after either is removed or deleted; a subject the demo sweep deleted outright — the only hard delete (D68) — reads `deleted demo #id`. *Done: renders every action type in a fixture; a removed course, a deleted student and a deleted admin are each named, and a swept demo is labelled.*
 
 ## 13.3 Shell
 

@@ -108,7 +108,7 @@ class CatalogController extends Controller
      */
     public function removed(): Response
     {
-        $removals = Removal::with(['action.actor:id,name', 'action.subject' => fn (MorphTo $subject) => $subject->withTrashed()->morphWith([
+        $removals = Removal::with(['action.actor' => fn ($actor) => $actor->withTrashed()->select('id', 'name'), 'action.subject' => fn (MorphTo $subject) => $subject->withTrashed()->morphWith([
             Subtopic::class => ['module' => fn ($module) => $module->withTrashed()],
             Course::class => ['student' => fn ($student) => $student->withTrashed()],
         ])])

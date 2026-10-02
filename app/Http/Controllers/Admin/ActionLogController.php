@@ -6,6 +6,7 @@ use App\Admin\AdminActionType;
 use App\Http\Controllers\Controller;
 use App\Models\AdminAction;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -25,8 +26,11 @@ class ActionLogController extends Controller
             'subject' => ['nullable', 'string'],
         ]);
 
-        $actions = AdminAction::query()
-            ->with(['actor:id,name', 'subject'])
+        // Removed and deleted rows included: the log is the record of them.
+        $actions = AdminAction::with([
+            'actor' => fn ($actor) => $actor->withTrashed()->select('id', 'name'),
+            'subject' => fn (MorphTo $subject) => $subject->withTrashed(),
+        ])
             ->when($filters['actor'] ?? null, fn ($query, $actor) => $query->where('actor_id', $actor))
             ->when($filters['action'] ?? null, fn ($query, $action) => $query->where('action', $action))
             ->when($filters['subject'] ?? null, fn ($query, $subject) => $query->where('subject_type', $subject))
@@ -40,13 +44,15 @@ class ActionLogController extends Controller
                 'action' => $row->action->value,
                 'subject' => $row->subject_type === null ? null : [
                     'type' => $row->subject_type,
-                    // The subject may be gone; the row still says what it was.
                     // A catalog model names itself `display_name` (14.4.2), a
-                    // subtopic `title` (16.1.5).
+                    // subtopic `title` (16.1.5), a course `subtopic_title`. A
+                    // subject that is gone can only be an unclaimed demo the
+                    // sweep deleted: nothing else deletes a row outright (D68).
                     'name' => $row->subject?->getAttribute('name')
                         ?? $row->subject?->getAttribute('display_name')
                         ?? $row->subject?->getAttribute('title')
-                        ?? "#{$row->subject_id}",
+                        ?? $row->subject?->getAttribute('subtopic_title')
+                        ?? "deleted demo #{$row->subject_id}",
                 ],
                 'reason' => $row->reason,
             ]);
@@ -59,7 +65,7 @@ class ActionLogController extends Controller
                 'subject' => $filters['subject'] ?? null,
             ],
             'options' => [
-                'actors' => User::query()
+                'actors' => User::withTrashed()
                     ->whereIn('id', AdminAction::query()->select('actor_id'))
                     ->orderBy('name')
                     ->get(['id', 'name']),

@@ -184,6 +184,19 @@ class CatalogTreeTest extends TestCase
                 ->where('removals.0.courses', 1));
     }
 
+    #[Test]
+    public function a_removal_by_an_admin_who_has_since_deleted_their_account_still_names_them(): void
+    {
+        $former = User::factory()->admin()->create(['name' => 'Former Admin']);
+        app(Removals::class)->remove($former, $this->course('algebra'), 'test data');
+        $former->delete();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.catalog.removed'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('removals.0.by', 'Former Admin'));
+    }
+
     /**
      * The demo sweep is the one hard delete (D68): a removal of a demo's
      * course outlives the course, and hides nothing any more.
