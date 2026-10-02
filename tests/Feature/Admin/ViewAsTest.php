@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Tests\Feature\Lessons\SectionStreamTestCase;
 
@@ -277,6 +278,18 @@ class ViewAsTest extends SectionStreamTestCase
 
         $this->assertSame($this->student->email, $this->student->fresh()->email);
         $this->assertSame('Renamed', $this->student->fresh()->name);
+    }
+
+    #[Test]
+    public function a_view_whose_exit_cannot_be_logged_does_not_end(): void
+    {
+        $this->preview();
+
+        AdminAction::creating(fn () => throw new RuntimeException('The action log is down.'));
+
+        $this->delete('/admin/view-as')->assertServerError();
+
+        $this->assertNotNull(session('viewing_as'), 'The view ended with no row to say so.');
     }
 
     #[Test]

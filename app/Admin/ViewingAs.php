@@ -73,13 +73,17 @@ final class ViewingAs
     }
 
     /**
+     * Post: one `admin_actions` row says why the view ended, and the session
+     * holds no view -- in that order, so a view never ends unlogged (13.4.5).
+     * If the row cannot be written, the view stands.
+     *
      * @param  'exit'|'expired'|'logout'  $cause
      */
     public function end(Session $session, string $cause): void
     {
-        $session->forget(self::SESSION_KEY);
-
         app(ActionLog::class)->record($this->admin(), AdminActionType::ViewAsExited, $this->student(), payload: ['cause' => $cause]);
+
+        $session->forget(self::SESSION_KEY);
     }
 
     public function isPreview(): bool

@@ -3,9 +3,10 @@ import { Form } from '@inertiajs/react';
 import type { RouteFormDefinition } from '@/wayfinder';
 
 /**
- * A removal or a restore, asked from the row it acts on (spec 16.5.1). Both
- * need a reason, which the log keeps, and say what they will do beside it. A
- * restore that is refused says why here (16.2.6), and the form stays open.
+ * A removal or a restore, asked from the row it acts on (spec 16.5.1), or an
+ * account's restore (17.1.6). Each needs a reason, which the log keeps, and
+ * says what it will do beside it. A restore that is refused says why here
+ * (16.2.6), and the form stays open.
  */
 export default function ReasonForm({
     form,
