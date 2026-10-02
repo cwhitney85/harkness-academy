@@ -101,7 +101,8 @@ class CatalogController extends Controller
 
     /**
      * Every removal still in effect, newest first, whatever it removed: a
-     * course's removal is restored here too (16.5.1, 17.2.3).
+     * course's removal is restored here too (16.5.1, 17.2.3). One whose
+     * course the demo sweep has since deleted hides nothing, so it is not.
      */
     public function removed(): Response
     {
@@ -112,7 +113,7 @@ class CatalogController extends Controller
             ])])
             ->latest('id')
             ->get()
-            ->filter(fn (Removal $removal): bool => $removal->action->subject->removal_id === $removal->id);
+            ->filter(fn (Removal $removal): bool => $removal->action->subject?->removal_id === $removal->id);
 
         $courses = Course::onlyTrashed()
             ->whereIn('removal_id', $removals->modelKeys())

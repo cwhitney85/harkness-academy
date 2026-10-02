@@ -61,7 +61,7 @@
 
 ## 16.5 Catalog screen
 
-- **16.5.1 MUST** — Admin → Catalog shows the module and subtopic tree with Remove, and a Removed view with Restore; both ask for a reason. The tree includes unlisted student subtopics, so a typed name can be removed. Removed lists every removal still in effect, a course's included — Restore is per removal, and 17.2.3's course Remove restores here. A refused restore says why on its row. *Done: feature test round trip.*
+- **16.5.1 MUST** — Admin → Catalog shows the module and subtopic tree with Remove, and a Removed view with Restore; both ask for a reason. The tree includes unlisted student subtopics, so a typed name can be removed. Removed lists every removal still in effect, a course's included — Restore is per removal, and 17.2.3's course Remove restores here. A refused restore says why on its row. *Done: feature test round trip; a removal whose course the demo sweep has since deleted is not listed, and the screen still renders.*
 - **16.5.2 MAY** — Retitling a catalog subtopic; its slug stays frozen.
 
 ## Acceptance test

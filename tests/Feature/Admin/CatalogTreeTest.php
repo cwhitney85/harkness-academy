@@ -184,6 +184,29 @@ class CatalogTreeTest extends TestCase
                 ->where('removals.0.courses', 1));
     }
 
+    /**
+     * The demo sweep is the one hard delete (D68): a removal of a demo's
+     * course outlives the course, and hides nothing any more.
+     */
+    #[Test]
+    public function a_removal_whose_course_the_demo_sweep_deleted_is_not_listed(): void
+    {
+        $demo = User::factory()->create(['plan' => 'demo', 'created_at' => now()->subYear()]);
+        $removals = app(Removals::class);
+
+        $removals->remove($this->admin, $this->course('algebra', $demo), 'demo noise');
+        $kept = $removals->remove($this->admin, $this->course('geometry'), 'test data');
+
+        $this->artisan('demo:sweep')->assertSuccessful();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.catalog.removed'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('removals', 1)
+                ->where('removals.0.id', $kept->id));
+    }
+
     #[Test]
     public function retitling_a_subtopic_keeps_its_slug_and_its_courses_paths_and_is_logged(): void
     {
