@@ -14,7 +14,7 @@ createdb opentutor && createdb opentutor_test
 composer install
 cp .env.example .env && php artisan key:generate
 # set DB_USERNAME / DB_PASSWORD in .env
-php artisan migrate
+php artisan migrate && php artisan prompts:sync   # prompts live in the database (spec 15)
 npm install && npm run build
 composer dev   # app, queue worker, logs, and vite
 ```
@@ -40,16 +40,20 @@ composer ci:check  # the above plus eslint, prettier, tsc
 
 v1 shipped on 2026-09-07: one student took one honest course cycle end to end, in a
 browser and again on a phone, with no developer touching the database
-([docs/system.md §8](docs/system.md)). What comes next, in the order it is worth doing:
+([docs/system.md §8](docs/system.md)). Since then:
 
-**Admin and performance.** Specced 2026-09-18 as the `admin-and-performance` unit, specs
-[13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md). An admin role and
-shell with view-as, a model catalog and per-model cost behind every AI call, prompts editable live,
-removal and restore of modules, subtopics and courses, and screens for users, courses and
-usage. It lays the ground for the two units after it. 13, 14 and 15 are built; 16 and 17 are not.
+- **A public demo** (spec [12](docs/specs/12-demo.md), 2026-09-17) — a public route mints a `demo`
+  account for a one-lesson course, offered a real account at the end.
+- **Admin and performance** (specs [13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md),
+  2026-10-02) — an admin area with view-as, a model catalog with per-model cost behind every AI
+  call, prompts edited live, removal and restore of modules, subtopics and courses, and screens for
+  users, courses and usage.
 
-**Evaluating a prompt.** Not specced. A/B experiments were specced inside 15 and deferred
-([D66](docs/02-design.md)): with no quality signal the comparison shows only cost and latency, and with
+What comes next, in the order it is worth doing:
+
+**Evaluating a prompt.** Not specced. Prompts are now edited live in production, and nothing checks
+the edited text — the tests hold only the files in `prompts/` ([D65](docs/02-design.md)). A/B
+experiments were specced inside 15 and deferred ([D66](docs/02-design.md)): with no quality signal the comparison shows only cost and latency, and with
 nine courses there is nothing to split. What returns is its own package — a golden set of captured inputs
 run through two prompt versions and read side by side, then a quality signal attached to the usage row,
 then the split. The model is its primary axis, not the prompt body.
@@ -78,14 +82,6 @@ it marked is how homework feels, and per-question reveal turns a worksheet into 
 guessing game with feedback. Building this amends D32, which means the endpoint takes a
 set of answers, the disclosure moves to the hand-in, and the sheet grows the "Hand it in"
 button the artboard drew and 8.9.1 deliberately did not build.
-
-**A public demo.** Specced 2026-09-15 as [spec 12](docs/specs/12-demo.md), unbuilt. The app can only be
-entered with an invitation code ([D45](docs/02-design.md)), which makes it impossible to show to anyone
-Colin has not personally invited. A public route mints an ordinary account on a `demo` plan, that plan
-resolves to a one-lesson course through the depth mechanism package 4 already has, and the visitor meets
-the real interviews, the real syllabus, a real lesson and real graded homework before being offered an
-account that keeps the working knowledge it wrote. One route, one config key, one ending screen — and
-about $0.70 of Anthropic tokens per visit, uncapped, which [12.6.1](docs/specs/12-demo.md) argues for.
 
 **Progress reporting for long jobs.** A queued syllabus or exam generation now says only
 that it is working, and names the artefact ([8.12.2](docs/specs/08-interface.md)). Real
