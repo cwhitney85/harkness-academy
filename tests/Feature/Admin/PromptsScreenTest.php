@@ -14,10 +14,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
- * Spec 15.2.1-15.2.3 -- Admin → Prompts lists the 2.3.2 inventory with what it
+ * Spec 15.2.1-15.2.6 -- Admin → Prompts lists the 2.3.2 inventory with what it
  * has cost, and is the one place a prompt's text is written (ledger D65).
  *
  * The fixture is the real `prompts/` tree, seeded by `PromptRegistrySeeder`
@@ -86,7 +87,6 @@ class PromptsScreenTest extends TestCase
         $this->assertSame(2, $active->number);
         $this->assertSame(PromptSource::Admin, $active->source);
         $this->assertSame($admin->id, $active->author_id);
-        $this->assertNull($active->file_hash);
         $this->assertStringContainsString('In one sentence.', $active->body);
 
         $this->assertStringContainsString(
@@ -335,6 +335,84 @@ class PromptsScreenTest extends TestCase
                 ->where('diff.from', 1)
                 ->where('diff.to', 2)
                 ->where('versions.1.active', true));
+    }
+
+    #[Test]
+    public function a_save_after_a_rollback_is_numbered_past_the_newest_version(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $prompt = $this->prompt('explainer.select');
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'In one sentence.'),
+            'tier' => 'cheap',
+        ])->assertSessionHasNoErrors();
+
+        $second = $this->prompt('explainer.select')->activeVersion;
+
+        $this->actingAs($admin)->post('/admin/prompts/explainer.select/versions/1')->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'In two sentences.'),
+            'tier' => 'cheap',
+        ])->assertSessionHasNoErrors();
+
+        $active = $this->prompt('explainer.select')->activeVersion;
+
+        $this->assertSame(3, $active->number);
+        $this->assertStringContainsString('In two sentences.', $active->body);
+        $this->assertSame($second->body, $second->fresh()->body, 'Version 2 is untouched.');
+    }
+
+    #[Test]
+    public function a_save_whose_log_row_fails_writes_no_version(): void
+    {
+        $prompt = $this->prompt('explainer.select');
+
+        AdminAction::creating(fn () => throw new RuntimeException('The action log is down.'));
+
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->actingAs(User::factory()->admin()->create())->put('/admin/prompts/explainer.select', [
+                'body' => $this->body($prompt, 'In one sentence.'),
+                'tier' => 'cheap',
+            ]);
+            $this->fail('The save should have failed with its log row.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('The action log is down.', $e->getMessage());
+        }
+
+        $this->assertSame(1, $this->prompt('explainer.select')->versions()->count());
+        $this->assertSame(1, $this->prompt('explainer.select')->activeVersion->number);
+    }
+
+    /**
+     * Spec 15.2.6 -- a deploy that adds a var to a file leaves the running
+     * text without it; the list says so until an edit uses it.
+     */
+    #[Test]
+    public function a_prompt_whose_running_text_leaves_out_a_declared_var_is_marked_until_an_edit_uses_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $prompt = $this->prompt('explainer.select');
+
+        // What `prompts:sync` writes when the file declares one more var.
+        $prompt->update(['vars' => [...$prompt->vars, 'goals']]);
+
+        $this->actingAs($admin)->get('/admin/prompts')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('prompts.3.key', 'explainer.select')
+                ->where('prompts.3.unused', ['goals'])
+                ->where('prompts.2.unused', []));
+
+        $this->actingAs($admin)->put('/admin/prompts/explainer.select', [
+            'body' => $this->body($prompt, 'Mind {{ goals }}.'),
+            'tier' => 'cheap',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get('/admin/prompts')
+            ->assertInertia(fn (Assert $page) => $page->where('prompts.3.unused', []));
     }
 
     /**

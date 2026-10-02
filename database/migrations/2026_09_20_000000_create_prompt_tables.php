@@ -5,8 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The prompt registry (spec 15.1.1, ledger D65): a file seeds a prompt and
- * archives it, and the database owns what runs.
+ * The prompt registry (spec 15.1.1, ledger D65): a file seeds a prompt, and
+ * the database owns what runs.
  *
  * `prompts` holds the contract the calling code depends on -- `output` and
  * `vars` -- which comes only from the file. `prompt_versions` holds what the
@@ -41,7 +41,6 @@ return new class extends Migration
             $table->string('tier', 16);
             $table->string('source', 8);
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('file_hash', 64)->nullable();
             $table->timestamp('created_at');
 
             $table->unique(['prompt_id', 'number']);

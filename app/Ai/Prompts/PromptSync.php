@@ -21,9 +21,12 @@ use Illuminate\Support\Facades\DB;
  * again. Nothing here compares a file against a version, because there is
  * only one writer of a body and it is not this class.
  *
- * `prompts:pull` is the other direction, and the only one: it writes active
- * versions back into the files so the repo, the test seeder and git history
- * hold what is actually running (spec 15.2.5).
+ * Nothing writes the other way. The files are starting text and may lag what
+ * runs; an edit reaches the repo only when it is copied there by hand.
+ *
+ * A file may add a var the running body does not use yet. That is accepted:
+ * `prompts:sync` names it (spec 15.1.8), and calls run without the new
+ * material until the body is edited to use it (15.1.9).
  *
  * The whole run is one transaction, so a refusal (spec 15.1.4) leaves the
  * registry exactly as it was.
@@ -65,7 +68,6 @@ final class PromptSync
             'body' => $definition->body,
             'tier' => $definition->tier,
             'source' => PromptSource::File,
-            'file_hash' => $this->files->hash($key),
         ]));
 
         return PromptSyncOutcome::Seeded;

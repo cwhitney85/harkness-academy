@@ -12,6 +12,7 @@ use App\Models\AiTier;
 use App\Models\UsageEvent;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Exceptions\RateLimitedException;
 use Laravel\Ai\Providers\Provider;
@@ -75,6 +76,24 @@ class CatalogTest extends TestCase
         AiTier::query()->where('name', 'cheap')->sole()->update(['ai_model_id' => Tier::Top->primary()['id']]);
 
         $this->assertSame(Tier::Top->model(), Tier::Cheap->model(), 'A write through the model clears the cache.');
+    }
+
+    /**
+     * Spec 14.1.3 -- as 15.1.5 for the registry: a call landing between the
+     * clear and the commit would re-cache the old price forever.
+     */
+    #[Test]
+    public function the_catalog_is_cleared_only_once_a_price_change_commits(): void
+    {
+        Tier::Cheap->primary();
+
+        DB::transaction(function (): void {
+            AiModel::query()->findOrFail(Tier::Cheap->primary()['id'])->update(['input_per_mtok' => 2]);
+
+            $this->assertTrue(Cache::has('ai.catalog'), 'Cleared before the price change committed.');
+        });
+
+        $this->assertFalse(Cache::has('ai.catalog'), 'Not cleared once the price change committed.');
     }
 
     #[Test]

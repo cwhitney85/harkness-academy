@@ -9,7 +9,9 @@ import { show } from '@/routes/admin/prompts';
  * running, where that version came from, and what it has cost. Set in the
  * admin shell's `.ledger` language, as drawn on `AdminLog`.
  *
- * The text itself is edited one prompt at a time, on `admin/prompt`.
+ * The text itself is edited one prompt at a time, on `admin/prompt`. A prompt
+ * whose running text leaves out a var its file declares is marked (15.2.6):
+ * the model goes without that material until the text is edited to use it.
  */
 
 type PromptRow = {
@@ -18,6 +20,7 @@ type PromptRow = {
     version: number;
     source: string;
     tier: string;
+    unused: string[];
     calls: number;
     cost: number;
 };
@@ -35,8 +38,8 @@ export default function AdminPrompts({
             <p className="mb-[26px] max-w-[62ch] text-muted-ink">
                 Every prompt the app can send, with what it served over the last{' '}
                 {days} days. The words that run are the active version’s, edited
-                here — a prompt file seeds version 1 and then archives what is
-                running, and a deploy never changes a prompt’s text.
+                here — a prompt file seeds version 1, and a deploy never changes
+                a prompt’s text.
             </p>
 
             <div className="overflow-x-auto">
@@ -60,6 +63,12 @@ export default function AdminPrompts({
                                     <span className="block text-[13px] text-muted-ink">
                                         {prompt.output}
                                     </span>
+                                    {prompt.unused.length > 0 && (
+                                        <span className="block text-[13px] text-wine">
+                                            Needs an edit — doesn’t use{' '}
+                                            {prompt.unused.join(', ')}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="whitespace-nowrap">
                                     v{prompt.version}

@@ -5,6 +5,7 @@ namespace App\Ai;
 use App\Models\AiModel;
 use App\Models\AiTier;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The model catalog and the tiers over it, as one cached read (spec 14.1.3).
@@ -37,9 +38,13 @@ final class Catalog
         return self::load()['models'][$id] ?? null;
     }
 
+    /**
+     * Clear the catalog once the write that called this has committed -- not
+     * before, or a call landing in between would cache the old rows forever.
+     */
     public static function forget(): void
     {
-        Cache::memo()->forget(self::KEY);
+        DB::afterCommit(fn () => Cache::memo()->forget(self::KEY));
     }
 
     /**

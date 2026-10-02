@@ -14,6 +14,8 @@ use App\Models\Prompt;
 use App\Models\PromptVersion;
 use App\Models\UsageEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\TextResponse;
@@ -21,8 +23,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 15.1.5, 15.1.6 -- what the gateway reads is the active version, and
- * what it costs is written against that version.
+ * Spec 15.1.5, 15.1.6 -- what the gateway reads is the active version, cached
+ * until a write commits, and what it costs is written against that version.
  */
 class PromptRegistryTest extends TestCase
 {
@@ -139,6 +141,31 @@ class PromptRegistryTest extends TestCase
             $this->prompts()->version('explainer.select'),
             UsageEvent::sole()->prompt_version_id,
         );
+    }
+
+    /**
+     * Spec 15.1.5 -- a call landing between the clear and the commit would
+     * re-cache the old version forever, so the clear waits for the commit.
+     */
+    #[Test]
+    public function the_registry_is_cleared_only_once_a_save_commits(): void
+    {
+        $this->prompts()->get('explainer.select');
+
+        DB::transaction(function (): void {
+            $prompt = Prompt::query()->with('activeVersion')->where('key', 'explainer.select')->sole();
+
+            $prompt->activate($prompt->versions()->create([
+                'number' => 2,
+                'body' => $prompt->activeVersion->body,
+                'tier' => Tier::Cheap,
+                'source' => PromptSource::Admin,
+            ]));
+
+            $this->assertTrue(Cache::has(Prompt::CACHE_KEY), 'Cleared before the save committed.');
+        });
+
+        $this->assertFalse(Cache::has(Prompt::CACHE_KEY), 'Not cleared once the save committed.');
     }
 
     private function explain(): void

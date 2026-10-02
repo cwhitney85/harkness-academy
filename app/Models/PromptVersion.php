@@ -17,11 +17,6 @@ use LogicException;
  * exactly the text that ran. The model enforces it rather than a convention:
  * there is no update path.
  *
- * `file_hash` is the sha256 of the file version 1 was seeded from, and is
- * null exactly when `source` is `admin` -- `source` names the case, the null
- * does not. Nothing decides anything from it; it records which file text a
- * seeded body came from, for a reader comparing the two later.
- *
  * @property int $id
  * @property int $prompt_id
  * @property int $number
@@ -29,7 +24,6 @@ use LogicException;
  * @property Tier $tier
  * @property PromptSource $source
  * @property ?int $author_id
- * @property ?string $file_hash
  * @property Carbon $created_at
  */
 class PromptVersion extends Model

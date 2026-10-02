@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Ai\Prompts\PromptDefinition;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * One prompt in the 2.3.2 inventory, and the versions of it that have run
@@ -49,9 +51,26 @@ class Prompt extends Model
         static::deleted(fn () => self::forgetCache());
     }
 
+    /**
+     * Clear the registry once the write that called this has committed.
+     *
+     * Not before: a call landing between the forget and the commit would read
+     * the old version and cache it forever (spec 15.1.5).
+     */
     public static function forgetCache(): void
     {
-        Cache::memo()->forget(self::CACHE_KEY);
+        DB::afterCommit(fn () => Cache::memo()->forget(self::CACHE_KEY));
+    }
+
+    /**
+     * The declared vars a body leaves out -- material the calling code passes
+     * that the model would never see (spec 15.1.8, 15.2.2).
+     *
+     * @return list<string>
+     */
+    public function varsUnusedBy(string $body): array
+    {
+        return array_values(array_diff($this->vars, PromptDefinition::placeholders($body)));
     }
 
     /**

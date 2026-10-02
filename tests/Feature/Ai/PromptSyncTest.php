@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Ai;
 
+use App\Ai\Gateway;
+use App\Ai\GatewayAgent;
 use App\Ai\Prompts\Exceptions\PromptSyncFailed;
 use App\Ai\Prompts\PromptFiles;
 use App\Ai\Prompts\PromptSource;
@@ -10,6 +12,7 @@ use App\Ai\Prompts\PromptSyncOutcome;
 use App\Ai\Tier;
 use App\Models\Prompt;
 use App\Models\PromptVersion;
+use App\Models\UsageEvent;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
@@ -17,7 +20,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 15.1.1-15.1.4 (ledger D65) -- the file owns the contract, the editor
+ * Spec 15.1.1-15.1.4, 15.1.8, 15.1.9 (ledger D65) -- the file owns the contract, the editor
  * owns the body, and a deploy reads a file's body exactly once.
  *
  * The prompts here are written into a directory of this test's own, so a file
@@ -186,6 +189,60 @@ class PromptSyncTest extends TestCase
         $this->expectExceptionMessage('audience');
 
         $this->sync();
+    }
+
+    /**
+     * Spec 15.1.8 -- accepted, because only a declared var can be edited into
+     * the body, and named, because until then the model goes without it.
+     */
+    #[Test]
+    public function the_command_names_a_var_the_file_added_that_the_running_text_does_not_use(): void
+    {
+        $this->write('Explain {{ topic }}.');
+        $this->sync();
+
+        $this->write('Explain {{ topic }} for {{ audience }}.', ['topic', 'audience']);
+
+        $this->app->instance(PromptFiles::class, new PromptFiles($this->directory));
+
+        $this->artisan('prompts:sync')
+            ->expectsOutputToContain('[demo.tuneable] declares audience')
+            ->assertSuccessful();
+
+        $this->assertSame(['topic', 'audience'], $this->prompt()->vars);
+    }
+
+    /**
+     * Spec 15.1.9 -- the call runs without the new material rather than
+     * stopping the feature until the body is edited (ledger D65).
+     */
+    #[Test]
+    public function a_call_still_runs_while_the_running_text_leaves_out_a_declared_var(): void
+    {
+        config()->set('ai.default', 'anthropic');
+        config()->set('ai.providers.anthropic.key', 'test-key');
+
+        $this->write('Explain {{ topic }}.');
+        $this->sync();
+
+        $this->write('Explain {{ topic }} for {{ audience }}.', ['topic', 'audience']);
+        $this->sync();
+
+        $sent = null;
+
+        GatewayAgent::fake(function (string $message) use (&$sent): string {
+            $sent = $message;
+
+            return 'Explained.';
+        });
+
+        app(Gateway::class)
+            ->prompt(self::KEY, ['topic' => 'tides', 'audience' => 'sailors'])
+            ->feature('test')
+            ->generate();
+
+        $this->assertSame("Explain tides.\n", $sent);
+        $this->assertSame($this->prompt()->active_version_id, UsageEvent::sole()->prompt_version_id);
     }
 
     /**

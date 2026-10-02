@@ -2,7 +2,6 @@
 
 namespace App\Ai\Prompts;
 
-use App\Ai\Prompts\Exceptions\InvalidPromptFile;
 use App\Ai\Prompts\Exceptions\UnknownPromptKey;
 use Illuminate\Support\Str;
 use SplFileInfo;
@@ -20,8 +19,7 @@ use Symfony\Component\Finder\Finder;
  *
  * What runs is the active version in the database, not these files: a file's
  * body seeds version 1 and is never read again, so it goes stale as soon as
- * the editor is used. Read what runs through `PromptRepository`, and bring
- * these files back up to date with `prompts:pull`.
+ * the editor is used. Read what runs through `PromptRepository`.
  */
 final class PromptFiles
 {
@@ -85,24 +83,6 @@ final class PromptFiles
             .DIRECTORY_SEPARATOR
             .str_replace('.', DIRECTORY_SEPARATOR, $key)
             .'.md';
-    }
-
-    /**
-     * The file's content hash -- what `prompts:sync` compares to decide
-     * whether a file has changed since the version it last made from it.
-     *
-     * @throws UnknownPromptKey
-     */
-    public function hash(string $key): string
-    {
-        $this->get($key);
-
-        $path = $this->path($key);
-        $hash = hash_file('sha256', $path);
-
-        return $hash === false
-            ? throw InvalidPromptFile::for($path, 'the file could not be read.')
-            : $hash;
     }
 
     /**

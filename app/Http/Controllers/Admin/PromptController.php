@@ -67,6 +67,9 @@ class PromptController extends Controller
                     'version' => $prompt->activeVersion->number,
                     'source' => $prompt->activeVersion->source->value,
                     'tier' => $prompt->activeVersion->tier->value,
+                    // A var a deploy added that the running text does not use
+                    // yet; the model goes without it until an edit (15.2.6).
+                    'unused' => $prompt->varsUnusedBy($prompt->activeVersion->body),
                     'calls' => $usage[$prompt->key]['calls'] ?? 0,
                     'cost' => $usage[$prompt->key]['cost'] ?? 0.0,
                 ])
@@ -131,18 +134,20 @@ class PromptController extends Controller
             ]);
         }
 
-        $prompt->activate($version);
+        DB::transaction(function () use ($request, $prompt, $was, $version, $log): void {
+            $prompt->activate($version);
 
-        $log->record(
-            $request->user(),
-            AdminActionType::PromptRolledBack,
-            $prompt,
-            payload: [
-                'key' => $prompt->key,
-                'was' => ['version' => $was->number, 'tier' => $was->tier->value],
-                'now' => ['version' => $version->number, 'tier' => $version->tier->value],
-            ],
-        );
+            $log->record(
+                $request->user(),
+                AdminActionType::PromptRolledBack,
+                $prompt,
+                payload: [
+                    'key' => $prompt->key,
+                    'was' => ['version' => $was->number, 'tier' => $was->tier->value],
+                    'now' => ['version' => $version->number, 'tier' => $version->tier->value],
+                ],
+            );
+        });
 
         return to_route('admin.prompts.show', $prompt);
     }
@@ -152,8 +157,9 @@ class PromptController extends Controller
      *
      * Pre:  the body interpolates exactly the vars the file declares, and the
      *       tier is one this prompt may move to.
-     * Post: one new immutable version, active, and one `admin_actions` row.
-     *       No other prompt's rendering changes.
+     * Post: one new immutable version, numbered past every earlier one and
+     *       active, and one `admin_actions` row, committed together. No other
+     *       prompt's rendering changes.
      */
     public function update(Request $request, Prompt $prompt, ActionLog $log): RedirectResponse
     {
@@ -177,9 +183,11 @@ class PromptController extends Controller
 
         $tier = isset($validated['tier']) ? Tier::from($validated['tier']) : $active->tier;
 
-        $version = DB::transaction(function () use ($prompt, $active, $body, $tier, $request): PromptVersion {
+        DB::transaction(function () use ($prompt, $active, $body, $tier, $request, $log): void {
             $version = $prompt->versions()->create([
-                'number' => $active->number + 1,
+                // Past the highest, not the active: after a rollback the
+                // active version is not the newest (15.2.4).
+                'number' => 1 + (int) $prompt->versions()->max('number'),
                 'body' => $body,
                 'tier' => $tier,
                 'source' => PromptSource::Admin,
@@ -188,19 +196,17 @@ class PromptController extends Controller
 
             $prompt->activate($version);
 
-            return $version;
+            $log->record(
+                $request->user(),
+                AdminActionType::PromptEdited,
+                $prompt,
+                payload: [
+                    'key' => $prompt->key,
+                    'was' => ['version' => $active->number, 'tier' => $active->tier->value],
+                    'now' => ['version' => $version->number, 'tier' => $version->tier->value],
+                ],
+            );
         });
-
-        $log->record(
-            $request->user(),
-            AdminActionType::PromptEdited,
-            $prompt,
-            payload: [
-                'key' => $prompt->key,
-                'was' => ['version' => $active->number, 'tier' => $active->tier->value],
-                'now' => ['version' => $version->number, 'tier' => $version->tier->value],
-            ],
-        );
 
         return to_route('admin.prompts.show', $prompt);
     }
@@ -257,10 +263,8 @@ class PromptController extends Controller
      */
     private function assertBodyMatchesTheContract(Prompt $prompt, string $body): void
     {
-        $used = PromptDefinition::placeholders($body);
-
-        $missing = array_values(array_diff($prompt->vars, $used));
-        $undeclared = array_values(array_diff($used, $prompt->vars));
+        $missing = $prompt->varsUnusedBy($body);
+        $undeclared = array_values(array_diff(PromptDefinition::placeholders($body), $prompt->vars));
 
         $problems = [];
 
@@ -302,8 +306,7 @@ class PromptController extends Controller
      * Keyed by `usage_events.prompt_key` rather than through the version,
      * because the column is what 2.2 has always written and a prompt's cost is
      * the cost of every version of it.
-     */
-    /**
+     *
      * @return array<string, array{calls: int, cost: float}>
      */
     private function sevenDayUsage(): array
