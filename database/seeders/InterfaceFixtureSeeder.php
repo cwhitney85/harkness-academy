@@ -21,7 +21,9 @@ use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Quiz;
+use App\Models\Subtopic;
 use App\Models\User;
 use Database\Seeders\Fixtures\ConversationalSpanish;
 use Database\Seeders\Fixtures\CourseFixture;
@@ -99,7 +101,10 @@ class InterfaceFixtureSeeder extends Seeder
         // Memory documents are deliberately *not* cleared: the path API has no
         // delete, and re-putting the same content simply adds a version. The
         // tree ends up saying exactly what it said before.
-        Course::query()->where('user_id', $student->id)->delete();
+        //
+        // A hard delete: this resets fixtures, it does not remove a student's
+        // course, so it is not a removal (16.2) and leaves no mark.
+        Course::query()->where('user_id', $student->id)->forceDelete();
 
         foreach ($this->fixtures() as $fixture) {
             $this->build($student, $fixture);
@@ -141,6 +146,11 @@ class InterfaceFixtureSeeder extends Seeder
     {
         $course = Course::query()->create([
             'user_id' => $student->id,
+            'subtopic_id' => Subtopic::findOrCreateFor(
+                Module::query()->where('slug', $fixture->moduleSlug)->sole(),
+                $fixture->slug,
+                $fixture->title,
+            )->id,
             'module_slug' => $fixture->moduleSlug,
             'subtopic_slug' => $fixture->slug,
             'subtopic_title' => $fixture->title,
@@ -177,8 +187,8 @@ class InterfaceFixtureSeeder extends Seeder
      */
     private function writeDocuments(Course $course, CourseFixture $fixture): void
     {
-        $this->memory->put($course->student, $course->workingKnowledgePath(), $fixture->workingKnowledge);
-        $this->memory->put($course->student, CourseCriteria::pathFor($course), $fixture->criteria);
+        $this->memory->put($course, $course->workingKnowledgePath(), $fixture->workingKnowledge);
+        $this->memory->put($course, CourseCriteria::pathFor($course), $fixture->criteria);
     }
 
     /**
@@ -280,7 +290,7 @@ class InterfaceFixtureSeeder extends Seeder
             $lesson->forceFill(['summary_json' => $fixture->summary])->save();
 
             $this->memory->put(
-                $lesson->course->student,
+                $lesson->course,
                 SummaryDocument::pathFor($lesson),
                 SummaryDocument::render($lesson, LessonSummary::of($fixture->summary)),
             );

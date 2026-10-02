@@ -8,16 +8,12 @@ use Illuminate\Support\Str;
 /**
  * Where one lesson's teaching notes live in the memory tree (spec 4.5.3).
  *
- * `{module}/{subtopic}/{level}/{lesson-slug}/GUIDANCE.md`.
+ * `{module}/{subtopic}/{level}/a{attempt}/{lesson-slug}/GUIDANCE.md`.
  *
  * **Model-facing only.** Exactly one consumer reads these documents: the
  * lesson engine (5.1). The student's syllabus view renders from the approved
  * syllabus JSON instead, so the two can never drift. GuidanceDoorTest fails
  * the build if a route or component reaches for one.
- *
- * The path carries no attempt number, so a second attempt at a level
- * overwrites the first's notes -- which is why only the highest attempt is
- * resumable (ledger D7b).
  */
 final class LessonGuidance
 {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -18,9 +19,13 @@ use Illuminate\Support\Carbon;
  * @property int $position
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at set with `removal_id`, by a removal (spec 16.2.1)
+ * @property int|null $removal_id
  */
 class Module extends Model
 {
+    use SoftDeletes;
+
     protected $guarded = [];
 
     /**

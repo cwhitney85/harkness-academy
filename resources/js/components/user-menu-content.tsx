@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings, Smartphone } from 'lucide-react';
+import { LogOut, Settings, Shield, Smartphone } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -9,6 +9,7 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { install, logout } from '@/routes';
+import { home as admin } from '@/routes/admin';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -58,6 +59,18 @@ export function UserMenuContent({ user }: Props) {
                         Install on your phone
                     </Link>
                 </DropdownMenuItem>
+                {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={admin()}
+                            onClick={cleanup}
+                        >
+                            <Shield className="mr-2" />
+                            Administration
+                        </Link>
+                    </DropdownMenuItem>
+                )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

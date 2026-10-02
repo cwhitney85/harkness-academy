@@ -14,6 +14,7 @@ Each `.dc.html` file is one artboard. `canvas.json` places them, names the pages
 | **A · dosage** | Three settings of direction A — Restrained, Spirited, Full. Superseded, kept for the record of what was cut. |
 | **First directions** | The original three directions (Chalkboard, Foolscap, Assembly Hall) across lesson, syllabus and homework. Superseded. |
 | **B · brand** | The name, the mark and the front door ([D44](../../02-design.md), [D46](../../02-design.md), spec 8.13). The two artboards titled CHOSEN are what ships; the rest is the record of what they beat. |
+| **C · admin** | The admin shell — the fourth shell ([D61](../../02-design.md), spec 13.3) — on its Log screen, and the view-as banner in its three states (13.4.4). |
 
 ## Rebuilding the canvas
 

@@ -134,8 +134,8 @@ class ModuleRefresherTest extends AssessmentTestCase
         ]);
 
         $tree = app(MemoryTree::class);
-        $tree->put($student, $course->workingKnowledgePath(), self::GEOMETRY_WK);
-        $tree->put($student, CourseCriteria::pathFor($course), self::CRITERIA);
+        $tree->put($course, $course->workingKnowledgePath(), self::GEOMETRY_WK);
+        $tree->put($course, CourseCriteria::pathFor($course), self::CRITERIA);
 
         // The same shape of syllabus with its own vocabulary, so a slug can
         // prove which subtopic it came from.

@@ -1,12 +1,17 @@
 <?php
 
-namespace App\Ai;
+namespace App\Ai\Providers;
 
+use App\Ai\Catalog;
 use InvalidArgumentException;
+use Laravel\Ai\Responses\Data\Usage;
 
 /**
- * The workaround for laravel/ai#119 (spec 2.4). See docs/anthropic-specific.md
- * entry #1 for why this exists and what to delete when it stops being needed.
+ * Anthropic's cache markers, token counts and pricing (spec 14.2.1).
+ *
+ * Cache markers are the workaround for laravel/ai#119 (spec 2.4). See
+ * docs/anthropic-specific.md entry #1 for why it exists and what to delete
+ * when it stops being needed.
  *
  * laravel/ai builds the Anthropic body with `$body['system'] = $instructions`
  * -- a bare string, which has nowhere to hang a `cache_control`. Its last act
@@ -21,14 +26,13 @@ use InvalidArgumentException;
  *     lands on the last cacheable block, so a growing lesson transcript keeps
  *     hitting cache within one conversation.
  *
- * Provider-neutral by construction: options are keyed by driver, and a
- * non-Anthropic driver gets an empty array.
+ * @phpstan-import-type ModelRow from Catalog
  */
-final class PromptCaching
+final class AnthropicProvider implements AiProvider
 {
     /**
      * The only two cache lifetimes Anthropic accepts. Not a duration you dial:
-     * `5m` is the default and costs 1.25x to write, `1h` costs 2x.
+     * `5m` is the default and costs 1.25x input to write, `1h` costs 2x.
      *
      * @var list<string>
      */
@@ -41,9 +45,9 @@ final class PromptCaching
      *
      * @return array<string, mixed>
      */
-    public static function providerOptions(string $driver, string $instructions): array
+    public function providerOptions(string $instructions): array
     {
-        if ($driver !== 'anthropic' || ! config('ai.prompt_caching.enabled')) {
+        if (! config('ai.prompt_caching.enabled')) {
             return [];
         }
 
@@ -68,11 +72,53 @@ final class PromptCaching
     }
 
     /**
+     * Anthropic's `input_tokens` already excludes cache reads and writes, and
+     * laravel/ai passes it through as `promptTokens`, so there is nothing to
+     * subtract.
+     */
+    public function tokens(Usage $reported): Usage
+    {
+        return $reported;
+    }
+
+    /**
+     * The catalog's cache-write price is the five-minute one. An hour-long
+     * cache is billed at 2x input instead, so that price is derived here.
+     *
+     * @param  ModelRow  $model
+     */
+    public function cost(array $model, Usage $usage): float
+    {
+        $cacheWrite = $usage->cacheWriteInputTokens > 0 && self::ttl() === '1h' ? $model['input'] * 2 : $model['cache_write'];
+
+        return round((
+            $usage->promptTokens * $model['input']
+            + $usage->cacheReadInputTokens * $model['cache_read']
+            + $usage->cacheWriteInputTokens * $cacheWrite
+            + $usage->completionTokens * $model['output']
+        ) / 1_000_000, 8);
+    }
+
+    /**
      * @return array{type: string, ttl?: string}
      *
      * @throws InvalidArgumentException if the configured TTL is not one Anthropic accepts.
      */
     public static function cacheControl(): array
+    {
+        $ttl = self::ttl();
+
+        // The 5m default is implicit; sending it explicitly is redundant and
+        // only widens the surface that can invalidate a prefix.
+        return $ttl === self::DEFAULT_TTL
+            ? ['type' => 'ephemeral']
+            : ['type' => 'ephemeral', 'ttl' => $ttl];
+    }
+
+    /**
+     * @throws InvalidArgumentException if the configured TTL is not one Anthropic accepts.
+     */
+    private static function ttl(): string
     {
         $ttl = config('ai.prompt_caching.ttl', self::DEFAULT_TTL);
 
@@ -86,10 +132,6 @@ final class PromptCaching
             ));
         }
 
-        // The 5m default is implicit; sending it explicitly is redundant and
-        // only widens the surface that can invalidate a prefix.
-        return $ttl === self::DEFAULT_TTL
-            ? ['type' => 'ephemeral']
-            : ['type' => 'ephemeral', 'ttl' => $ttl];
+        return $ttl;
     }
 }

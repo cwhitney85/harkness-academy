@@ -19,8 +19,6 @@ final class PromptLoader
 {
     private const FRONTMATTER = '/^---\R(?<frontmatter>.*?)\R---\R(?<body>.*)$/s';
 
-    private const PLACEHOLDER = '/\{\{\s*(?<name>[a-z0-9_]+)\s*\}\}/';
-
     public function load(string $path, string $expectedKey): PromptDefinition
     {
         $contents = file_get_contents($path);
@@ -60,7 +58,7 @@ final class PromptLoader
 
         $this->assertPlaceholdersAreDeclared($body, $vars, $path);
 
-        return new PromptDefinition($key, $tier, $output, $schema, $vars, $body, $path);
+        return new PromptDefinition($key, $tier, $output, $schema, $vars, $body);
     }
 
     /**
@@ -68,24 +66,15 @@ final class PromptLoader
      */
     private function parseOutput(string $value, string $path): array
     {
-        if (! str_contains($value, '/')) {
-            $output = PromptOutput::tryFrom($value)
-                ?? throw InvalidPromptFile::for($path, "[{$value}] is not a known output contract.");
+        $parsed = PromptOutput::parse($value);
 
-            if ($output === PromptOutput::Json) {
-                throw InvalidPromptFile::for($path, 'a json output must name a schema, e.g. json/quiz.v1.');
-            }
-
-            return [$output, null];
+        if ($parsed !== null) {
+            return $parsed;
         }
 
-        [$kind, $schema] = explode('/', $value, 2);
-
-        if ($kind !== PromptOutput::Json->value || $schema === '') {
-            throw InvalidPromptFile::for($path, "[{$value}] is not a known output contract.");
-        }
-
-        return [PromptOutput::Json, $schema];
+        throw InvalidPromptFile::for($path, $value === PromptOutput::Json->value
+            ? 'a json output must name a schema, e.g. json/quiz.v1.'
+            : "[{$value}] is not a known output contract.");
     }
 
     /**
@@ -118,10 +107,7 @@ final class PromptLoader
      */
     private function assertPlaceholdersAreDeclared(string $body, array $vars, string $path): void
     {
-        preg_match_all(self::PLACEHOLDER, $body, $matches);
-
-        $used = array_values(array_unique($matches['name']));
-        $undeclared = array_diff($used, $vars);
+        $undeclared = array_diff(PromptDefinition::placeholders($body), $vars);
 
         if ($undeclared !== []) {
             throw InvalidPromptFile::for(

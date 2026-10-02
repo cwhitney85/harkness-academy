@@ -38,7 +38,7 @@ class DashboardController extends Controller
             // counts them; a completed card names its module and NextAction
             // resolves the rollup from the same row. One load rather than
             // three queries per card.
-            ->with(['lessons', 'module'])
+            ->with(['lessons', 'module', 'subtopic.module'])
             ->orderByDesc('updated_at')
             ->get();
 

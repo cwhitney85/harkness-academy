@@ -206,8 +206,9 @@ class CourseCreationScreenTest extends TestCase
                 'level' => 101,
             ])
             ->assertRedirect()
-            ->assertSessionHas('resumable', fn (array $question): bool => $question['course_id'] === $withdrawn->id
-                && $question['resume_url'] === route('courses.resume', $withdrawn));
+            ->assertSessionHas('resumable', fn (array $question): bool => $question['attempts'][0]['course_id'] === $withdrawn->id
+                && $question['attempts'][0]['resume_url'] === route('courses.resume', $withdrawn)
+                && $question['next_attempt'] === 2);
 
         $this->assertSame(1, Course::query()->count(), 'The question replaces the second course, it does not follow it.');
     }
@@ -257,22 +258,31 @@ class CourseCreationScreenTest extends TestCase
     }
 
     /**
-     * A refusal that names which of the three checks failed (8.6), because
-     * "a later attempt replaced it" asks the student for something different
-     * from "your other course is open".
+     * 16.4.2 -- with more than one attempt set aside, the question offers each,
+     * newest first, and the older one resumes as readily as the newer (D64).
      */
     #[Test]
-    public function a_superseded_attempt_says_so_rather_than_resuming(): void
+    public function every_attempt_set_aside_is_offered_and_any_can_be_resumed(): void
     {
         $student = User::factory()->create();
         $old = Course::factory()->for($student, 'student')->withdrawn()->create();
-        Course::factory()->for($student, 'student')->state(['attempt' => 2])->withdrawn()->create();
+        $newer = Course::factory()->for($student, 'student')->state(['attempt' => 2])->withdrawn()->create();
+
+        $this->actingAs($student)
+            ->post(route('courses.store'), [
+                'source' => 'free_text',
+                'module_slug' => 'math',
+                'name' => 'Algebra',
+                'level' => 101,
+            ])
+            ->assertSessionHas('resumable', fn (array $question): bool => array_column($question['attempts'], 'course_id') === [$newer->id, $old->id]
+                && $question['next_attempt'] === 3);
 
         $this->actingAs($student)
             ->post(route('courses.resume', $old))
-            ->assertSessionHasErrors('resume');
+            ->assertSessionHasNoErrors();
 
-        $this->assertTrue($old->fresh()?->isWithdrawn());
+        $this->assertTrue($old->fresh()?->isOpen());
     }
 
     #[Test]

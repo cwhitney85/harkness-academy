@@ -56,6 +56,21 @@ class Quiz extends Model
     }
 
     /**
+     * A quiz's URL answers only while its course is not removed, as the
+     * course's own does (spec 16.2.4). A module refresher has no course.
+     *
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null): Builder
+    {
+        return parent::resolveRouteBindingQuery($query, $value, $field)
+            ->where(fn (Builder $query) => $query
+                ->whereNull('course_id')
+                ->orWhereIn('course_id', Course::query()->select('id')));
+    }
+
+    /**
      * @return BelongsTo<Course, $this>
      */
     public function course(): BelongsTo

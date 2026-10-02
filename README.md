@@ -1,6 +1,9 @@
 # Harkness Academy
 
-An LLM personal tutor. Laravel 13 + Inertia/React + Postgres, Anthropic-direct.
+An LLM personal tutor. Laravel 13 + Inertia/React + Postgres. Every AI call reaches its model
+through a database catalog, and one class per provider owns that provider's cache markers, token
+counting and pricing (spec [14](docs/specs/14-routing-and-usage.md)). Anthropic is the only provider
+built; **multiple providers is the plan**, and always was ([D1](docs/02-design.md)).
 
 ## Local setup
 
@@ -39,6 +42,27 @@ v1 shipped on 2026-09-07: one student took one honest course cycle end to end, i
 browser and again on a phone, with no developer touching the database
 ([docs/system.md §8](docs/system.md)). What comes next, in the order it is worth doing:
 
+**Admin and performance.** Specced 2026-09-18 as the `admin-and-performance` unit, specs
+[13](docs/specs/13-admin-foundation.md)–[17](docs/specs/17-admin-screens.md). An admin role and
+shell with view-as, a model catalog and per-model cost behind every AI call, prompts editable live,
+removal and restore of modules, subtopics and courses, and screens for users, courses and
+usage. It lays the ground for the two units after it. 13, 14 and 15 are built; 16 and 17 are not.
+
+**Evaluating a prompt.** Not specced. A/B experiments were specced inside 15 and deferred
+([D66](docs/02-design.md)): with no quality signal the comparison shows only cost and latency, and with
+nine courses there is nothing to split. What returns is its own package — a golden set of captured inputs
+run through two prompt versions and read side by side, then a quality signal attached to the usage row,
+then the split. The model is its primary axis, not the prompt body.
+
+**Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
+and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.
+
+**Model switching.** The rest of the move to multiple providers that Anthropic-direct was always the
+first step of ([D1](docs/02-design.md)). Spec 14 landed the catalog, the tiers as rows and the provider
+class; what is left is [14.6](docs/specs/14-routing-and-usage.md)'s three exclusions — provider classes
+beyond Anthropic, changing a tier's model from admin, importing prices for a larger catalog — and
+same-provider fallback within a tier, which the SDK's failover cannot do ([D52](docs/02-design.md)).
+
 **Explicit teaching style, and personas the student picks.** A course already carries a
 style column and the persona is already a prompt file, but exactly one style ships and
 nothing chooses it. What is missing is the choice: a student says how they want to be
@@ -72,4 +96,4 @@ which is a job-instrumentation change and not a copy change.
 pad in the design canvas is drawn and reserved for it) · a refresher drawn at random across
 everything the student knows · questions per lesson as a student input, 1–5 · email nudges
 · dark mode · essay and project homework · a model selector · bring-your-own-key · billing
-and plan tiers · an admin surface beyond `memory:show` · accounts for under-18s.
+and plan tiers · accounts for under-18s.

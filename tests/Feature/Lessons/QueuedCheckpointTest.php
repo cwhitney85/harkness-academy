@@ -3,6 +3,7 @@
 namespace Tests\Feature\Lessons;
 
 use App\Courses\GenerationKind;
+use App\Courses\GenerationState;
 use App\Courses\LessonStatus;
 use App\Lessons\Checkpoints\WriteCheckpoint;
 use App\Lessons\LessonState;
@@ -93,7 +94,7 @@ class QueuedCheckpointTest extends SectionStreamTestCase
         $this->teach(1, $frames);
 
         $this->assertSame(1, Quiz::query()->count());
-        $this->assertSame(0, GenerationRequest::query()->count());
+        $this->assertSame(GenerationState::Landed, GenerationRequest::query()->sole()->state);
         $this->assertSame([false, false], $this->writing());
     }
 
@@ -109,7 +110,7 @@ class QueuedCheckpointTest extends SectionStreamTestCase
 
         (new WriteCheckpoint($this->lesson->id, 1))->failed(new RuntimeException('worker reclaimed'));
 
-        $this->assertSame(0, GenerationRequest::query()->count());
+        $this->assertSame(GenerationState::Failed, GenerationRequest::query()->sole()->state);
         $this->assertSame([false, false], $this->writing());
     }
 

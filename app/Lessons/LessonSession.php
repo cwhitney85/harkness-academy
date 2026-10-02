@@ -137,7 +137,6 @@ final class LessonSession
                     'section_concepts' => $this->sections->conceptList($index),
                 ])
                 ->feature('lesson.section')
-                ->for($this->lesson->course->user_id)
                 ->instructions($this->context->systemPromptFor($this->lesson))
                 // Everything said in earlier sections, and nothing from this
                 // one: a section is regenerated from the transcript that
@@ -204,7 +203,6 @@ final class LessonSession
             $this->gateway
                 ->prompt('lesson.qa', ['question' => $text])
                 ->feature('lesson.qa')
-                ->for($this->lesson->course->user_id)
                 ->instructions($this->context->systemPromptFor($this->lesson))
                 // The question is the outgoing message, so the history stops
                 // short of it -- sending both would put the same words in
@@ -234,7 +232,8 @@ final class LessonSession
     ): ?LessonMessage {
         $message = null;
 
-        $call->sessionTier($this->context->tier())
+        $call->about($this->lesson)
+            ->sessionTier($this->context->tier(), $this->context->modelFor($this->lesson))
             ->stream()
             ->then(function (AgentResponse $response) use (&$message, $kind, $index, $turnId): void {
                 if (trim($response->text) === '') {

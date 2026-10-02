@@ -4,7 +4,6 @@ namespace App\Courses;
 
 use App\Models\Course;
 use App\Models\Lesson;
-use App\Models\Module;
 
 /**
  * Where a course picks back up (spec 8.6, "Where a resume lands").
@@ -45,12 +44,11 @@ final class NextAction
             // is then read a second time (8.6, 8.10.3).
             CourseStatus::Withdrawn => route('dashboard'),
 
-            // The rollup for the module this course sat under (8.10.2). A
-            // course whose catalog row has gone has no rollup to land on, and
-            // the dashboard is where its card sits either way.
-            CourseStatus::Completed => $course->module instanceof Module
-                ? route('modules.show', $course->module)
-                : route('dashboard'),
+            // The rollup for the module this course sat under (8.10.2),
+            // through the course's own link. A module with courses under it
+            // cannot be deleted, and removing one hides its courses with it
+            // (16.2.14), so there is always one to land on.
+            CourseStatus::Completed => route('modules.show', $course->subtopic->module),
         };
     }
 

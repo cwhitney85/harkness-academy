@@ -3,10 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Admin\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -26,15 +28,17 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property string $plan
+ * @property Role $role
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at the student deleted the account (spec 16.2.10)
  */
 #[Fillable(['name', 'email', 'password', 'tos_accepted_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, PasskeyAuthenticatable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * Column defaults this model applies before the database gets a say.
@@ -49,6 +53,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     protected $attributes = [
         'plan' => 'standard',
+        'role' => 'student',
     ];
 
     /**
@@ -63,6 +68,15 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Whether this person may reach `/admin` (spec 13.1). Reads neither plan
+     * nor skill level (13.1.4).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === Role::Admin;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -73,6 +87,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'tos_accepted_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
             /* @chisel-2fa */
             'two_factor_confirmed_at' => 'datetime',
             /* @end-chisel-2fa */

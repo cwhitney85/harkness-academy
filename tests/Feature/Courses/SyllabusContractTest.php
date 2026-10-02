@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Courses;
 
-use App\Ai\Prompts\PromptRepository;
+use App\Ai\Prompts\PromptFiles;
 use App\Ai\Tier;
 use App\Courses\Syllabus\SyllabusSchema;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
@@ -55,8 +55,8 @@ class SyllabusContractTest extends TestCase
         ], $fields);
     }
 
-    private function prompts(): PromptRepository
+    private function prompts(): PromptFiles
     {
-        return app(PromptRepository::class);
+        return app(PromptFiles::class);
     }
 }

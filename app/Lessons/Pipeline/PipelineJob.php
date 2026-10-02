@@ -2,6 +2,7 @@
 
 namespace App\Lessons\Pipeline;
 
+use App\Courses\SkipRemovedCourse;
 use App\Models\Lesson;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -57,12 +58,23 @@ abstract class PipelineJob implements ShouldQueue
         return $backoff;
     }
 
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
+
     public function handle(CompletionPipeline $pipeline): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
-        // The course was deleted under us. There is nothing left to summarize
-        // and nothing to park -- the chain is done because its subject is gone.
+        // The course was deleted or removed under us (16.2.8). There is nothing
+        // left to summarize and nothing to park -- the chain is done because
+        // its subject is gone.
         if ($lesson === null) {
             return;
         }

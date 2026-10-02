@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Courses\SubtopicOrigin;
 use App\Models\Module;
 use Illuminate\Database\Seeder;
 
@@ -85,7 +86,12 @@ class CourseCatalogSeeder extends Seeder
             foreach ($module['subtopics'] as $subtopicSlug => $title) {
                 $record->subtopics()->updateOrCreate(
                     ['slug' => $subtopicSlug],
-                    ['title' => $title, 'position' => $position++],
+                    [
+                        'title' => $title,
+                        'position' => $position++,
+                        'origin' => SubtopicOrigin::Catalog,
+                        'listed' => true,
+                    ],
                 );
             }
         }

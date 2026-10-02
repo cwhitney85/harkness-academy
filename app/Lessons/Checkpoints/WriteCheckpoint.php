@@ -3,6 +3,7 @@
 namespace App\Lessons\Checkpoints;
 
 use App\Courses\GenerationKind;
+use App\Courses\SkipRemovedCourse;
 use App\Models\GenerationRequest;
 use App\Models\Lesson;
 use Illuminate\Bus\Queueable;
@@ -34,28 +35,42 @@ class WriteCheckpoint implements ShouldQueue
     /** One attempt, for `DrawUpSyllabus`'s reason: the generator already retries. */
     public int $tries = 1;
 
+    /** What the margin says when a section has no checkpoint (11.3). */
+    private const FAILURE = 'No questions for this section this time.';
+
     public function __construct(
         public readonly int $lessonId,
         public readonly int $sectionIndex,
     ) {}
 
     /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
+
+    /**
      * Pre:  the section's teaching turn is in the transcript.
-     * Post: the course's checkpoint request is gone, and the section has a
-     *       checkpoint unless generation failed open. A redelivered job adopts
+     * Post: the course's checkpoint request has landed with the section's
+     *       checkpoint, or failed open without one. A redelivered job adopts
      *       the checkpoint that already exists.
      */
     public function handle(CheckpointGenerator $checkpoints): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
         if (! $lesson instanceof Lesson) {
             return;
         }
 
-        $checkpoints->forSection($lesson, $this->sectionIndex);
+        $checkpoint = $checkpoints->forSection($lesson, $this->sectionIndex);
+        $request = GenerationRequest::for($lesson->course, GenerationKind::Checkpoint);
 
-        GenerationRequest::for($lesson->course, GenerationKind::Checkpoint)?->settle();
+        $checkpoint === null ? $request?->fail(self::FAILURE) : $request?->settle();
     }
 
     /**
@@ -64,7 +79,7 @@ class WriteCheckpoint implements ShouldQueue
      */
     public function failed(?Throwable $e): void
     {
-        $lesson = Lesson::query()->find($this->lessonId);
+        $lesson = Lesson::query()->whereHas('course')->find($this->lessonId);
 
         if (! $lesson instanceof Lesson) {
             return;
@@ -76,6 +91,6 @@ class WriteCheckpoint implements ShouldQueue
             'reason' => $e?->getMessage(),
         ]);
 
-        GenerationRequest::for($lesson->course, GenerationKind::Checkpoint)?->settle();
+        GenerationRequest::for($lesson->course, GenerationKind::Checkpoint)?->fail(self::FAILURE);
     }
 }

@@ -8,6 +8,7 @@ use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
 use App\Courses\DepthParameters;
 use App\Courses\Exceptions\CourseNotOpen;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Courses\Exceptions\MissingCourseDocument;
 use App\Courses\Exceptions\SyllabusNotDraftable;
 use App\Courses\Exceptions\SyllabusUnusable;
@@ -156,6 +157,9 @@ final class SyllabusGenerator
         for ($attempt = 1; $attempt <= self::ATTEMPTS; $attempt++) {
             try {
                 return $this->ask($promptKey, $vars, $course);
+            } catch (CourseRemoved $e) {
+                // Gone mid-call (16.2.8): a retry would pay again for nothing.
+                throw $e;
             } catch (Throwable $e) {
                 $failure = $e;
             }
@@ -181,14 +185,14 @@ final class SyllabusGenerator
      * @param  array<string, string>  $vars
      * @return array<string, mixed>
      *
-     * @throws UndeclaredConcept|SyllabusUnusable
+     * @throws UndeclaredConcept|SyllabusUnusable|CourseRemoved
      */
     private function ask(string $promptKey, array $vars, Course $course): array
     {
         $response = $this->gateway
             ->prompt($promptKey, $vars)
             ->feature(self::FEATURE)
-            ->for($course->user_id)
+            ->about($course)
             ->schema(SyllabusSchema::definition())
             ->generate();
 

@@ -6,13 +6,17 @@ use App\Ai\Prompts\Exceptions\PromptVariableMismatch;
 use App\Ai\Tier;
 
 /**
- * One prompt file in `prompts/` -- its frontmatter contract plus its template
- * body (spec 2.3.1).
+ * A prompt's contract plus the template body that runs (spec 2.3.1).
  *
- * Invariant, enforced at load by the loader: every `{{ placeholder }}` in the
- * body is declared in `vars`. A definition that reaches this class is already
- * internally consistent, so the only way `render()` can fail is a caller that
- * passes the wrong variables.
+ * The contract -- `output` and `vars` -- comes from the file; the body and the
+ * tier come from whichever version is active (spec 15.1.1, ledger D65). Both
+ * halves of the registry serve this same shape, so a call site cannot tell
+ * whether it is holding a file or a live edit.
+ *
+ * Invariant, enforced where a definition is built: every `{{ placeholder }}`
+ * in the body is declared in `vars`. A definition that reaches this class is
+ * already internally consistent, so the only way `render()` can fail is a
+ * caller that passes the wrong variables.
  */
 final readonly class PromptDefinition
 {
@@ -26,8 +30,23 @@ final readonly class PromptDefinition
         public ?string $schema,
         public array $vars,
         public string $body,
-        public string $path,
     ) {}
+
+    /**
+     * The variable names a body interpolates.
+     *
+     * The one reader of the `{{ name }}` syntax: the loader holds a file's
+     * body to its own `vars` with it (spec 2.3.1), and `prompts:sync` holds a
+     * live edit to the file's (spec 15.1.4).
+     *
+     * @return list<string>
+     */
+    public static function placeholders(string $body): array
+    {
+        preg_match_all('/\{\{\s*(?<name>[a-z0-9_]+)\s*\}\}/', $body, $matches);
+
+        return array_values(array_unique($matches['name']));
+    }
 
     /**
      * Render the template.

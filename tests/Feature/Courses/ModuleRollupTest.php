@@ -148,7 +148,7 @@ class ModuleRollupTest extends TestCase
             'Knot Theory',
             SkillLevel::Advanced,
         );
-        app(MemoryTree::class)->put($student, $course->workingKnowledgePath(), '# Solid: trefoils');
+        app(MemoryTree::class)->put($course, $course->workingKnowledgePath(), '# Solid: trefoils');
         $this->complete($course);
 
         $this->assertStringContainsString(
@@ -183,7 +183,7 @@ class ModuleRollupTest extends TestCase
     {
         $course = app(CreateCourse::class)->fromCatalog($student, $this->preset($module, $subtopic), $level);
 
-        app(MemoryTree::class)->put($student, $course->workingKnowledgePath(), "# Solid: something about {$subtopic}");
+        app(MemoryTree::class)->put($course, $course->workingKnowledgePath(), "# Solid: something about {$subtopic}");
 
         return $course;
     }

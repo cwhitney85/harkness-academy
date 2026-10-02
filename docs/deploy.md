@@ -25,12 +25,16 @@ composer install --no-dev && npm ci --include=dev && npm run build && php artisa
 **4. Deploy command.**
 
 ```sh
-php artisan migrate --force
+php artisan migrate --force && php artisan prompts:sync
 ```
+
+`prompts:sync` writes each prompt's contract — its declared output and variables — from `prompts/` on every release, and creates a version only for a prompt that has none (spec [15.1.2](specs/15-prompt-registry.md)). It never reads the body of a prompt that already has one, so a release cannot change what any prompt says; prompt text is edited in Admin → Prompts and copied back into the repo by hand when wanted (ledger [D65](02-design.md)). Running it twice does nothing the second time. It exits non-zero without writing anything if a prompt file has dropped a variable the active version still uses — edit that prompt in Admin to stop using it, or put it back in the file, and deploy again. It warns, and still succeeds, when a file adds a variable the running text does not use; edit that prompt in Admin after the deploy so the model gets the new material.
 
 Nothing else. Cloud restarts queue workers itself, and `optimize:clear` / `storage:link` are actively harmful here.
 
-**5. Attach Postgres.** Infrastructure canvas → **Add database** → **Laravel Serverless Postgres**. Region must match the compute cluster. Smallest instance and 5GB storage are ample for dogfooding; enable **scale to zero** so an idle app costs nothing.
+**Before a release whose migrations rewrite rows**, note the time, then deploy. Production is covered by the cluster's point-in-time recovery (step 5): if the release goes wrong, Organization → Resources → Databases → the cluster → **Restore from point-in-time**, to a minute before. A restore creates a new cluster from that moment and leaves the current one alone; point the environment at the new one, redeploy, and delete whichever cluster is not wanted. Moving course documents into attempt folders ([16.3.2](specs/16-catalog-removal-ownership.md)) is the first such release. The development database has no such history, so take `php artisan db:backup` before migrating it.
+
+**5. Attach Postgres.** Infrastructure canvas → **Add database** → **Laravel Serverless Postgres**. Region must match the compute cluster. Smallest instance and 5GB storage are ample for dogfooding; enable **scale to zero** so an idle app costs nothing. Set **backups retention** to 5 days (the cluster's settings → Backups retention → Edit; set 2026-09-23). At 0 there is no point-in-time recovery at all, and the dialog's button says "Save and disable backups". Retention is billed per GB-month of backup, which at a database of about 10 MB is pennies.
 
 Cloud injects `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` automatically. **Do not set those by hand** — a custom variable overrides the injected one and will silently point production at the wrong database.
 
@@ -80,11 +84,11 @@ Infrastructure canvas → **Add compute** → **Managed queue**:
 | `--force` | off |
 | Autoscaling | min 0, max 3 workers |
 
-**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call is capped at 300 seconds by `config/ai.php`, so at 60 the worker kills every syllabus and exam generation mid-call — the same failure this queue exists to remove, one layer down and harder to see.
+**`--timeout` is the one that matters, and its default of 60 seconds is wrong for this app.** A `top`-tier call is capped at 300 seconds by its `ai_tiers` row (spec [14.1.2](specs/14-routing-and-usage.md)), so at 60 the worker kills every syllabus and exam generation mid-call — the same failure this queue exists to remove, one layer down and harder to see.
 
 360 sits just above the app's own ceiling, so our error handling wins over the worker's. It does not cover the theoretical worst case of both attempts running the full 300 seconds, and deliberately: the retry exists for *unusable output*, not slowness, so a second attempt normally begins within seconds of the first and both fit well inside 360. The case it truncates — a first attempt burning the entire 300s — is the one where retrying is least likely to help.
 
-**Both numbers are ceilings, not measurements.** `usage_events.latency_ms` records every call and the Queues dashboard graphs processing duration; after a handful of real generations, tighten `top` in `config/ai.php` and this timeout with it. That also shrinks the Flex exposure below.
+**Both numbers are ceilings, not measurements.** `usage_events.latency_ms` records every call and the Queues dashboard graphs processing duration; after a handful of real generations, tighten `top`'s `timeout` in `ai_tiers` and this timeout with it. That also shrinks the Flex exposure below.
 
 **Cloud will warn that timeouts over 90 seconds want the Pro class, and it is right.** Flex workers run on interruptible capacity with a 90-second shutdown grace, so any job over 90 seconds can be killed mid-run and redelivered — no timeout value changes that. Both generation jobs are idempotent, so a redelivery is safe; it costs one more `top`-tier call. Staying on Flex accepts that trade. Regular interruptions on the Queues dashboard are the signal to move to Pro, not the warning itself.
 
@@ -173,7 +177,7 @@ grep -n fastcgi_read_timeout /etc/nginx/conf.d/default.conf
 
 The second match is the one that governs; the first is a different location block. If it still reads `20s` after a deploy, the setting did not take.
 
-**60 seconds is below what the tiers allow, and that is a standing constraint rather than a solved problem.** `config/ai.php` gives `mid` 120 seconds and `top` 300, so any call the application still believes in past 60 is one the host has already killed — the application's error handling never runs, and the student is told nothing useful by the layer that gave up first. The ordering the queue gets right (`--timeout` 360 above `top`'s 300) cannot be bought here at any price.
+**60 seconds is below what the tiers allow, and that is a standing constraint rather than a solved problem.** `ai_tiers` gives `mid` 120 seconds and `top` 300, so any call the application still believes in past 60 is one the host has already killed — the application's error handling never runs, and the student is told nothing useful by the layer that gave up first. The ordering the queue gets right (`--timeout` 360 above `top`'s 300) cannot be bought here at any price.
 
 **So nothing inside a streamed request may go quiet for 60 seconds.** Run `php artisan usage:latency` (spec 2.2.1) from the Commands tab to see which prompts are near the line; anything that runs to completion without writing bytes — a non-streamed `generate()` after `turn.end`, for instance — belongs on the queue rather than in the request.
 

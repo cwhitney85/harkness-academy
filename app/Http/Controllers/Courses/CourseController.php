@@ -17,8 +17,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
 use App\Models\Subtopic;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,8 +38,8 @@ use Inertia\Response;
  * student back here with something to decide:
  *
  *   - a **withdrawn attempt** at the same subtopic and level asks D7b's
- *     question in D7b's words (8.7.6) instead of quietly starting a second
- *     run and orphaning the first;
+ *     question in D7b's words (8.7.6) instead of quietly starting another
+ *     run -- and with more than one, which to continue (16.4.2);
  *   - a **course already open** in the subtopic offers the way back into it.
  *     The question above should have caught this; what reaches it is the
  *     double tap and the second tab (8.6);
@@ -89,8 +91,10 @@ class CourseController extends Controller
         // is empty and empty is what `required` means.
         $validated = $request->validate([
             'source' => ['required', 'in:catalog,free_text'],
-            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', 'exists:subtopics,id'],
-            'module_slug' => ['nullable', 'required_if:source,free_text', 'string', 'exists:modules,slug'],
+            // Only what the picker offers: an unlisted student row reached
+            // through this door would skip the scope check (16.1.4).
+            'subtopic_id' => ['nullable', 'required_if:source,catalog', 'integer', Rule::exists('subtopics', 'id')->where('listed', true)->whereNull('deleted_at')],
+            'module_slug' => ['nullable', 'required_if:source,free_text', 'string', Rule::exists('modules', 'slug')->whereNull('deleted_at')],
             'name' => ['nullable', 'required_if:source,free_text', 'string', 'max:120'],
             'level' => ['required', 'integer', 'in:101,201,301'],
             // The student has answered D7b's question with "start from
@@ -137,8 +141,11 @@ class CourseController extends Controller
         if (! ($validated['start_over'] ?? false)) {
             $withdrawn = $transitions->resumable($student, $module->slug, $name->slug, $level);
 
-            if ($withdrawn instanceof Course) {
-                return back()->with('resumable', $this->question($withdrawn));
+            if ($withdrawn->isNotEmpty()) {
+                return back()->with('resumable', $this->question(
+                    $withdrawn,
+                    $creator->nextAttempt($student, $module->slug, $name->slug, $level),
+                ));
             }
         }
 
@@ -199,19 +206,25 @@ class CourseController extends Controller
     }
 
     /**
-     * D7b's question, in D7b's words.
+     * D7b's question, in D7b's words, over every attempt it could pick back
+     * up (ledger D64).
      *
+     * @param  Collection<int, Course>  $withdrawn  newest first, never empty
      * @return array<string, mixed>
      */
-    private function question(Course $withdrawn): array
+    private function question(Collection $withdrawn, int $nextAttempt): array
     {
         return [
-            'course_id' => $withdrawn->id,
-            'subtopic_title' => $withdrawn->subtopic_title,
-            'level' => $withdrawn->skill_level->title(),
-            'attempt' => $withdrawn->attempt,
-            'set_aside_on' => $withdrawn->withdrawn_at?->toFormattedDayDateString(),
-            'resume_url' => route('courses.resume', $withdrawn),
+            'subtopic_title' => $withdrawn->first()->subtopic_title,
+            'level' => $withdrawn->first()->skill_level->title(),
+            'next_attempt' => $nextAttempt,
+            'attempts' => $withdrawn->map(fn (Course $course): array => [
+                'course_id' => $course->id,
+                'attempt' => $course->attempt,
+                'standing' => $course->status->title(),
+                'set_aside_on' => $course->withdrawn_at?->toFormattedDayDateString(),
+                'resume_url' => route('courses.resume', $course),
+            ])->all(),
         ];
     }
 
@@ -236,7 +249,9 @@ class CourseController extends Controller
     }
 
     /**
-     * The preset catalog (spec 4.1) -- starting points, never a limit.
+     * The preset catalog (spec 4.1) -- starting points, never a limit. Listed
+     * rows only: a student's typed subtopic joins it when it is promoted
+     * (16.1.4).
      *
      * @return list<array<string, mixed>>
      */
@@ -244,7 +259,11 @@ class CourseController extends Controller
     {
         $modules = [];
 
-        foreach (Module::query()->with('subtopics')->orderBy('position')->cursor() as $module) {
+        // `get`, not `cursor`: a cursor drops eager loads, constraint and all,
+        // and the lazy load it falls back to would offer unlisted rows.
+        $listed = Module::query()->with(['subtopics' => fn ($subtopics) => $subtopics->listed()]);
+
+        foreach ($listed->orderBy('position')->get() as $module) {
             $subtopics = [];
 
             foreach ($module->subtopics as $subtopic) {

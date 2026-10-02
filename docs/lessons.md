@@ -168,3 +168,111 @@ Nothing in a desktop browser reproduces it, and no test catches it — the field
 The Chrome that browser automation drives is Colin's, and it keeps whatever it was last signed in as. The demo's welcome page redirected any signed-in demo account past itself. That browser was still signed in to a guest from an earlier build, so the check landed on course creation — and was reported as the browser's state rather than as the bug. Colin then hit the same redirect and never saw the page.
 
 **When a page's behaviour depends on who is signed in, a redirect in the check is a finding, not noise.** Either check the signed-in branch on purpose, or say plainly that the signed-out page was not seen. A page a stranger is meant to see should not have a signed-in branch that skips it.
+
+## T14. `migrate:fresh` drops tables, not functions
+
+*Found 2026-09-18, building spec 13.*
+
+`RefreshDatabase` rebuilds the test database with `migrate:fresh`, which drops every table and view — and leaves Postgres functions where they are. The append-only trigger on `admin_actions` needs a function, and a plain `CREATE FUNCTION` passed on the first test run and failed every run after it, on every test in the suite.
+
+**A migration that creates a function says `CREATE OR REPLACE FUNCTION`.** The same holds for anything else `migrate:fresh` leaves behind: types, extensions, sequences made by hand.
+
+## T15. A user set on the guard outlives the request, in tests
+
+*Found 2026-09-18, building spec 13.4.*
+
+Viewing as a student sets the student as the request's user, leaving the session signed in as the admin. In production that lasts one request, because the next one reads its user from the session again. The test client reuses one application, so the auth guard kept the student, and the next request in the test arrived as the student. Every view-as check after the first then read as a mismatch. Octane keeps the application alive between requests in the same way.
+
+**Middleware that swaps the user puts the original back in a `finally`.** Context is the exception: a streamed response does its work after the middleware returns, and what it reads from Context must still be there.
+
+## T16. The cache will not hand back an object
+
+*Found 2026-09-19, building spec 14.1.*
+
+`config/cache.php` sets `serializable_classes` to `false`, so the cache refuses to unserialize any object. An Eloquent model or collection put in the cache is written without complaint and comes back broken on the next read. With the array store the tests use, the value never gets serialized, so the tests pass anyway.
+
+**Cache plain arrays.** `App\Ai\Catalog` is the example: it maps its rows to arrays before it caches them.
+
+**When a reader needs models, rebuild them on the way out: `AiModel::hydrate($rows)`.** That gives real models with their casts, no query, and a cache that still holds only plain data. Don't turn `serializable_classes` on instead: it loosens the gadget-chain guard for the whole app, and a cached object breaks when a deploy changes its class. `(object) $row` is no substitute — a bare object with no casts or methods.
+
+## T17. A set-null foreign key can fail inside the transaction that wrote the row
+
+*Found 2026-09-19, building spec 14.3.3.*
+
+Deleting a user cascades to their courses and lessons, and each of those sets a `usage_events` row's `course_id` or `lesson_id` null. If the usage row was written in the same transaction as the delete, Postgres re-checks every foreign key on it whenever any one of those set-nulls updates it, and it may do so after the course is gone but before the course's own set-null has reached the row. The delete then fails with a foreign-key violation on `usage_events`. A row written in an earlier transaction skips that re-check, so the nightly sweep never trips it. Every `RefreshDatabase` test does, because the whole test is one transaction.
+
+**A nullable foreign key whose parent can be deleted through a cascade that also reaches the same row is `deferrable initially deferred`.** The check then runs at commit, after every set-null. `usage_events.course_id` and `lesson_id` are the examples.
+
+## T18. Data a test suite needs before its transaction has one hook, and it is not the obvious one
+
+*Found 2026-09-20, building spec 15.1.*
+
+Package 15 moved prompts into the database, so every test that makes an AI call needs the 18 `prompts` rows before it runs. `RefreshDatabase` looks like it has a hook for exactly this — `afterRefreshingDatabase()` — and it is the wrong one twice over: it runs on **every** test, not once, and it runs **after** `beginDatabaseTransaction()`, so whatever it writes is rolled back with the test that wrote it. `migrateDatabases()` is the right side of the transaction but cannot be overridden from `Tests\TestCase`, because a trait's method in the subclass beats an inherited one from the parent class.
+
+**Name a seeder: `protected $seeder = SomeSeeder::class;` on `Tests\TestCase`.** `migrate:fresh --seeder=` runs it once per process, after the migrations and before the transaction, so the rows are there for the whole run. `Database\Seeders\PromptRegistrySeeder` is the example. It runs that seeder *instead of* `DatabaseSeeder`, which is what is wanted here — nothing else is seeded into every test.
+
+## T19. `wayfinder:generate` by hand drops the form variants the vite plugin asks for
+
+*Found 2026-09-21, building spec 15.2.*
+
+`vite.config.ts` configures `wayfinder({ formVariants: true })`, so every generated route gets a `.form` helper and eighteen files across `resources/js` import one. Running `php artisan wayfinder:generate` by hand regenerates without that option and strips them all, and the failure surfaces as eighteen unrelated TypeScript errors in auth and settings screens — nowhere near the route you were adding.
+
+**Run `php artisan wayfinder:generate --with-form`, or just let vite do it.** The generated tree is gitignored, so a bad run is invisible to `git status` and only `npx tsc --noEmit` catches it.
+
+## T20. A body that drops a declared variable fails silently, and `render()` is not the guard
+
+*Found 2026-09-21, building spec 15.2.*
+
+`PromptDefinition::render()` compares the *supplied* variables to the *declared* ones, and never looks at the body. So two things pass straight through it: a body interpolating `{{ x }}` that `vars` does not declare leaves `{{ x }}` in the prompt text verbatim, and a body that has stopped using a declared `{{ x }}` renders fine while the call site keeps passing the material and the model never sees it. The second is the dangerous one — nothing anywhere errors, and the prompt just quietly gets worse.
+
+**Both directions are checked where a body is written, not where it is rendered**: `prompts:sync` refuses a file that drops a var the active version uses ([15.1.4](specs/15-prompt-registry.md)), and the editor refuses a save whose body and the file's `vars` disagree either way ([15.2.2](specs/15-prompt-registry.md)). The gap that remains: a file that *adds* a var the running body does not use is still silent, because the file's `vars` import and its body does not (ledger [D65](02-design.md)).
+
+## T21. `cursor()` drops eager loads, and the constraint on them with it
+
+*Found 2026-09-23, building spec 16.1.*
+
+`Module::query()->with(['subtopics' => fn ($q) => $q->listed()])->cursor()` never runs the `with`. A cursor holds one model at a time, so it cannot eager load, and it does not say so. Each module then lazy-loads `subtopics` on first access, **without the closure**. While the eager load was only an optimisation the cost was an N+1 nobody noticed. Once it carried a rule, the picker offered every row the rule was there to hide.
+
+**If a `with` carries a constraint, iterate with `get()` or `lazy()`, never `cursor()`.** `lazy()` chunks and does eager load.
+
+## T22. `withCount` ignores a custom select, so it cannot count distinct
+
+*Found 2026-09-23, building spec 16.1.*
+
+`withCount(['courses as students_count' => fn ($q) => $q->selectRaw('count(distinct user_id)')])` still emits `count(*)`. The closure's `where`s apply and its select does not, so three courses by two students read as three students, with no error.
+
+**Pass the expression as the column: `withAggregate('courses as students_count', DB::raw('distinct courses.user_id'), 'count')`.** An expression is used verbatim, giving `count(distinct courses.user_id)`. Larastan cannot type an aggregate alias on the model, though. When several aggregates are wanted for one screen, a grouped `DB::table` query, as `CatalogController::demand` has it, is simpler than annotating the model.
+
+## T23. Soft deletes hide a row only from Eloquent, and change `delete()` everywhere at once
+
+*Found 2026-09-23, building spec 16.2.*
+
+Adding `SoftDeletes` to a model has two effects that reach code nobody is editing. **Anything that reads the table without Eloquent still sees removed rows.** Three places did: Catalog → Demand's `DB::table` query counted removed courses, and course creation's `Rule::exists('subtopics', …)` and `exists:modules,slug` accepted a removed subtopic's id from a hand-built POST. `whereHas` and route binding do respect the scope. **And every existing `delete()` on that model silently becomes a soft delete.** The demo sweep, which is meant to be the one hard delete, would have started keeping rows. The fixture seeder's reset would have broken outright, because a soft delete sets `deleted_at` without a `removal_id` and trips the check that ties the two together.
+
+**When a model gains `SoftDeletes`, grep for its table in `DB::table`, raw joins and `exists:`/`Rule::exists` rules, and add `whereNull('deleted_at')`. Then grep for `->delete()` on it and decide each one: soft, or `forceDelete()`.**
+
+## T24. A route's controller class may start with a backslash, depending on how the route was declared
+
+*Found 2026-09-23, widening 13.1.2's gate test for spec 16.3.4.*
+
+`Route::getControllerClass()` returns `App\Http\Controllers\…` for a route declared with a plain `Route::get` inside a group, and `\App\Http\Controllers\…` for one declared through a chain such as `Route::middleware('auth')->get(…)`: `RouteRegistrar::compileAction` prepends the backslash, the router does not. A test matching the class with `str_starts_with($class, 'App\\…')` therefore passed while a chained route mounted an admin controller outside the gate — it could only ever match the routes already declared the ordinary way.
+
+**Compare a route's controller class after `ltrim($class, '\\')`. And a guard test is not proven by passing: plant the violation it exists to catch, see it fail, then remove it.**
+
+## T25. Sorting by text under the database's collation is the slow part of a report, and more memory does not touch it
+
+*Found 2026-09-24, benchmarking spec 17.3.5 on a million `usage_events` rows.*
+
+The performance table groups a million rows by three text columns and takes percentiles. It ran 0.8–1.0 s over thirty days and 1.3–1.7 s over ninety. EXPLAIN showed a sort spilling 20 MB to disk, so the obvious fixes were tried first. **Raising `work_mem` to 64 MB gained nothing, and made the ninety-day query worse. An index on `created_at` gained nothing either, on those rows.** Asking for both percentiles as one `percentile_cont(array[…])` gained nothing too, because Postgres already shares one sort between ordered-set aggregates with the same `ORDER BY`. The cost was comparing strings under the database's language collation, a million times over.
+
+Remeasured 2026-10-02 on a million rows spread over 180 days, the same index did pay: 311 → 181 ms on this table over thirty days, and four to seven times on the seven- and thirty-day sums on Prompts, Models and Usage. How far the 2026-09-24 rows were spread was not recorded. An index only skips what the range leaves out, so it gains little when the range is most of the table — **seed a benchmark over a realistic span, and record the span with the result.**
+
+**Group report keys with `collate "C"` when they are identifiers rather than words** — prompt keys, model ids, tiers, slugs. Byte order sorts them just as well and halved the query. And never group by an expression that only exists to fold a column into one value (`string_agg(distinct tier)`): it put that column in the sort key anyway. Make it a real group key.
+
+## T26. Fortify's password confirmation belongs to the session, not to the user
+
+*Found 2026-10-01, reviewing spec 13.4 before the admin-and-performance unit merged.*
+
+`password.confirm` passes when the session holds a recent `auth.password_confirmed_at`, whoever the request's user is. Viewing as a student keeps the admin's session and swaps only the request's user, so an admin who had confirmed their own password in the last three hours — which setting up the second factor `/admin` requires does — passed every confirmation gate on the student's account. In preview, the student's two-factor secret and recovery codes were one GET away; in act-as, so was disabling their second factor or registering a passkey that signs in as them outside any audit.
+
+**Anything that changes the request's user without changing the session inherits the session's confirmations. List the routes behind `password.confirm` and `RequirePassword`, and refuse them while the user is borrowed.**

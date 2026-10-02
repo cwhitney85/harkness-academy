@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Serif:ital@0;1&family=Caveat:wght@500;600&display=swap">
+  <style>
+    :root{
+      --ground:oklch(0.962 0.010 95); --surface:oklch(0.988 0.006 95);
+      --ink:oklch(0.24 0.028 155); --muted:oklch(0.50 0.020 145);
+      --hunter:oklch(0.34 0.075 155); --railgreen:oklch(0.205 0.042 155);
+      --wine:oklch(0.36 0.115 22); --brass:oklch(0.70 0.110 82);
+      --gold:oklch(0.83 0.090 88); --rule:oklch(0.87 0.012 95);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--ground);color:var(--ink);
+      font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+    a{color:var(--wine)} a:hover{color:oklch(0.30 0.125 22)}
+    .disp{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-0.008em}
+    .lab{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .hand{font-family:"Caveat",cursive;font-size:21px;line-height:1.3;color:var(--wine)}
+    /* W3, the wordmark (D46). The negative right margin gives back the
+       trailing letter-space so the block sits flush against the crest. */
+    .w3{font-family:"Instrument Serif",Georgia,serif;text-transform:uppercase;
+      letter-spacing:.30em;margin-right:-.30em;line-height:1.12}
+    /* The ledger (spec 13.3.1): tabular records, set like an account book --
+       a firm rule under the heads, hairlines between entries, figures that
+       line up. app.css carries the same rules as `.ledger`. */
+    .ledger{width:100%; border-collapse:collapse; font-size:15.5px; font-variant-numeric:tabular-nums}
+    .ledger th{font-size:11.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); font-weight:400; text-align:left; padding:0 18px 8px 0; border-bottom:1px solid var(--ink)}
+    .ledger td{padding:11px 18px 11px 0; border-bottom:1px solid var(--rule); vertical-align:baseline}
+  </style>
+</helmet>
+
+<!-- The view-as banner (spec 13.4.4, ledger D60): the first thing in the
+     column of every student shell while an admin is viewing, above the
+     shell's own header, so it never covers the rail or the answer strip.
+     Preview is field green -- looking, nothing can be written. Act-as is
+     wine -- the colour of the one action the lesson asks for, because here
+     every press is real. Exit is on both. Stepping up asks why before it
+     does anything. Each state is drawn over the lesson's column header;
+     the rail (252px) is left blank. -->
+<div style="width:1440px; height:420px; background:var(--ground); padding:30px 0; display:flex; flex-direction:column; gap:30px">
+<div style="display:flex; flex-direction:column; gap:8px">
+  <div class="lab" style="padding:0 40px">Preview</div>
+  <div style="margin-left:252px; border-left:1px solid var(--rule)">
+  <div style="display:flex; align-items:center; gap:14px; min-height:44px; padding:0 40px; background:var(--hunter); color:oklch(0.95 0.012 100)">
+    <span class="lab" style="color:var(--gold)">Previewing</span>
+    <span style="font-size:15.5px">Maria Alvarez</span>
+    <span style="font-size:15px; opacity:.8">Read-only — nothing you press is saved</span>
+    <span style="flex-grow:1"></span>
+    <span class="lab" style="color:var(--gold); border:1px solid var(--gold); padding:5px 10px">Step up to act as</span><span class="lab" style="color:inherit; text-decoration:underline; text-underline-offset:4px">Exit</span>
+  </div>
+  <div style="padding:22px 40px 14px; display:flex; align-items:baseline; gap:16px; border-bottom:1px solid var(--rule); background:var(--ground)">
+    <div class="lab">Lesson 2 of 5</div><div style="flex-grow:1"></div><div class="lab">Section 2 of 4</div>
+  </div>
+  </div>
+</div>
+<div style="display:flex; flex-direction:column; gap:8px">
+  <div class="lab" style="padding:0 40px">Preview, stepping up</div>
+  <div style="margin-left:252px; border-left:1px solid var(--rule)">
+  <div style="display:flex; align-items:center; gap:14px; min-height:44px; padding:0 40px; background:var(--hunter); color:oklch(0.95 0.012 100)">
+    <span class="lab" style="color:var(--gold)">Previewing</span>
+    <span style="font-size:15.5px">Maria Alvarez</span>
+    <span style="font-size:15px; opacity:.8"></span>
+    <span style="flex-grow:1"></span>
+    <div style="width:360px; border:1px solid oklch(0.44 0.055 155); background:oklch(0.26 0.050 155); padding:6px 10px; color:oklch(0.76 0.035 130); font-size:15px">Why? — e.g. reproducing a bug she reported</div><span class="lab" style="color:var(--railgreen); background:var(--gold); padding:6px 12px">Act as her</span><span class="lab" style="color:inherit; text-decoration:underline; text-underline-offset:4px">Exit</span>
+  </div>
+  <div style="padding:22px 40px 14px; display:flex; align-items:baseline; gap:16px; border-bottom:1px solid var(--rule); background:var(--ground)">
+    <div class="lab">Lesson 2 of 5</div><div style="flex-grow:1"></div><div class="lab">Section 2 of 4</div>
+  </div>
+  </div>
+</div>
+<div style="display:flex; flex-direction:column; gap:8px">
+  <div class="lab" style="padding:0 40px">Acting as</div>
+  <div style="margin-left:252px; border-left:1px solid var(--rule)">
+  <div style="display:flex; align-items:center; gap:14px; min-height:44px; padding:0 40px; background:var(--wine); color:oklch(0.97 0.010 60)">
+    <span class="lab" style="color:var(--gold)">Acting as</span>
+    <span style="font-size:15.5px">Maria Alvarez</span>
+    <span style="font-size:15px; opacity:.8"><em>“Reproducing the checkpoint that answers 422”</em></span>
+    <span style="flex-grow:1"></span>
+    <span class="lab" style="color:inherit; text-decoration:underline; text-underline-offset:4px">Exit</span>
+  </div>
+  <div style="padding:22px 40px 14px; display:flex; align-items:baseline; gap:16px; border-bottom:1px solid var(--rule); background:var(--ground)">
+    <div class="lab">Lesson 2 of 5</div><div style="flex-grow:1"></div><div class="lab">Section 2 of 4</div>
+  </div>
+  </div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

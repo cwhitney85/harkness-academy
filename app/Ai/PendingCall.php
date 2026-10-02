@@ -2,8 +2,12 @@
 
 namespace App\Ai;
 
+use App\Admin\ViewingAs;
 use App\Ai\Prompts\PromptDefinition;
 use App\Ai\Prompts\PromptOutput;
+use App\Courses\Exceptions\CourseRemoved;
+use App\Models\Course;
+use App\Models\Lesson;
 use App\Models\UsageEvent;
 use App\Models\User;
 use Closure;
@@ -15,26 +19,35 @@ use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use LogicException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Throwable;
 
 /**
  * One AI call being assembled (spec 2.1).
  *
  * Preconditions checked before anything reaches a provider:
- *   - the prompt key exists in the inventory (PromptRepository::get)
+ *   - the prompt key exists in the registry (PromptRepository::get)
  *   - the rendered prompt supplies exactly its declared vars (2.3.1)
  *   - `feature` is set, so the usage row can be attributed (2.2)
- *   - the tier resolves to a model (2.1.1)
+ *   - the tier resolves to a model in the catalog (14.1.2)
  *   - a schema is supplied if and only if the prompt declares json output
+ *   - the request is not an admin's preview of a student (spec 13.4.1)
  *
  * Postcondition: exactly one usage_events row per attempt, written even when
- * the provider throws.
+ * the provider throws, naming the prompt version whose body was rendered
+ * (spec 15.1.6).
+ *
+ * @phpstan-import-type ModelRow from Catalog
  */
 final class PendingCall
 {
     private string $feature = '';
 
-    private ?int $userId = null;
+    private ?User $user = null;
+
+    private ?int $courseId = null;
+
+    private ?int $lessonId = null;
 
     private string $instructions = '';
 
@@ -45,6 +58,8 @@ final class PendingCall
     private array $tools = [];
 
     private ?Tier $sessionTier = null;
+
+    private ?int $startedOn = null;
 
     private ?string $userTurn = null;
 
@@ -58,6 +73,7 @@ final class PendingCall
      */
     public function __construct(
         private readonly PromptDefinition $prompt,
+        private readonly int $promptVersionId,
         private readonly UsageRecorder $recorder,
         private readonly array $vars,
     ) {}
@@ -72,9 +88,30 @@ final class PendingCall
         return $this;
     }
 
-    public function for(User|int|null $user): self
+    public function for(User $user): self
     {
-        $this->userId = $user instanceof User ? $user->id : $user;
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * Attach the course or lesson this call serves to its usage row (spec
+     * 14.3.3). A lesson brings its course and a course brings its student, so
+     * a call that names one needs no `for()`. Null attaches nothing: a module
+     * refresher belongs to no one course.
+     */
+    public function about(Course|Lesson|null $subject): self
+    {
+        $course = $subject instanceof Lesson ? $subject->course : $subject;
+
+        if ($course === null) {
+            return $this;
+        }
+
+        $this->lessonId = $subject instanceof Lesson ? $subject->id : null;
+        $this->courseId = $course->id;
+        $this->user = $course->student;
 
         return $this;
     }
@@ -141,11 +178,13 @@ final class PendingCall
 
     /**
      * The tier of the session this call belongs to, for a `tier: session`
-     * prompt such as `lesson.section`.
+     * prompt such as `lesson.section`, and the catalog id of the model the
+     * session started on, which it keeps even if the tier moves (spec 14.1.6).
      */
-    public function sessionTier(Tier $tier): self
+    public function sessionTier(Tier $tier, ?int $startedOn = null): self
     {
         $this->sessionTier = $tier;
+        $this->startedOn = $startedOn;
 
         return $this;
     }
@@ -181,13 +220,16 @@ final class PendingCall
 
     /**
      * Send the call and wait for the whole reply.
+     *
+     * @throws CourseRemoved when the course it is about was removed while the
+     *                       model was answering (16.2.8)
      */
     public function generate(): GatewayResponse
     {
         $this->assertCallable(PromptOutput::Stream);
 
         $tier = $this->tier();
-        $model = $tier->model();
+        $models = $tier->failover($this->startedOn);
         $agent = $this->agent();
 
         $startedAt = hrtime(true);
@@ -195,20 +237,28 @@ final class PendingCall
         try {
             $response = $agent->prompt(
                 $this->outgoing(),
-                model: $model,
+                provider: self::providers($models),
                 timeout: $this->timeout ?? $tier->timeout(),
             );
         } catch (Throwable $e) {
-            $this->recordFailure($tier, $model, $startedAt);
+            $this->recordFailure($tier, $models, $startedAt);
 
             throw $e;
+        }
+
+        $usage = $this->record($tier, $models, $response, $startedAt);
+
+        // Removed while the model was answering (16.2.8, D70): the call is on
+        // the bill, and nothing it says is saved.
+        if ($this->courseId !== null && Course::onlyTrashed()->whereKey($this->courseId)->exists()) {
+            throw CourseRemoved::during($this->courseId);
         }
 
         return new GatewayResponse(
             text: $response->text,
             structured: $response instanceof StructuredAgentResponse ? $response->structured : null,
             toolCalls: $response->toolCalls,
-            usage: $this->record($tier, $model, $response, $startedAt),
+            usage: $usage,
         );
     }
 
@@ -223,13 +273,13 @@ final class PendingCall
         $this->assertStreamable();
 
         $tier = $this->tier();
-        $model = $tier->model();
+        $models = $tier->failover($this->startedOn);
 
         $startedAt = hrtime(true);
 
         return $this->agent()
-            ->stream($this->outgoing(), model: $model, timeout: $this->timeout ?? $tier->timeout())
-            ->then(fn (AgentResponse $response) => $this->record($tier, $model, $response, $startedAt));
+            ->stream($this->outgoing(), provider: self::providers($models), timeout: $this->timeout ?? $tier->timeout())
+            ->then(fn (AgentResponse $response) => $this->record($tier, $models, $response, $startedAt));
     }
 
     private function agent(): GatewayAgent
@@ -265,31 +315,60 @@ final class PendingCall
         return $this->userTurn === null ? '' : $this->prompt->render($this->vars);
     }
 
-    private function record(Tier $tier, string $model, AgentResponse $response, int $startedAt): UsageEvent
+    /**
+     * The failover list in the shape laravel/ai takes: provider => model id.
+     *
+     * @param  non-empty-array<string, ModelRow>  $models
+     * @return array<string, string>
+     */
+    private static function providers(array $models): array
     {
+        return array_map(fn (array $model): string => $model['model'], $models);
+    }
+
+    /**
+     * The row names the model that served -- the one its response's provider
+     * was sent -- and says whether that was the first choice (spec 14.1.5).
+     *
+     * @param  non-empty-array<string, ModelRow>  $models
+     */
+    private function record(Tier $tier, array $models, AgentResponse $response, int $startedAt): UsageEvent
+    {
+        $first = reset($models);
+        $served = $models[$response->meta->provider] ?? $first;
+
         return $this->recorder->record(
             feature: $this->feature,
             promptKey: $this->prompt->key,
-            provider: $response->meta->provider ?? (string) config('ai.default'),
+            promptVersionId: $this->promptVersionId,
             tier: $tier,
-            model: $model,
+            model: $served,
+            outcome: $served['id'] === $first['id'] ? 'ok' : 'failed_over',
             usage: $response->usage,
             latencyMs: $this->elapsedMs($startedAt),
-            userId: $this->userId,
+            user: $this->user,
+            courseId: $this->courseId,
+            lessonId: $this->lessonId,
         );
     }
 
-    private function recordFailure(Tier $tier, string $model, int $startedAt): void
+    /**
+     * @param  non-empty-array<string, ModelRow>  $models
+     */
+    private function recordFailure(Tier $tier, array $models, int $startedAt): void
     {
         $this->recorder->record(
             feature: $this->feature,
             promptKey: $this->prompt->key,
-            provider: (string) config('ai.default'),
+            promptVersionId: $this->promptVersionId,
             tier: $tier,
-            model: $model,
+            model: reset($models),
+            outcome: 'failed',
             usage: new Usage,
             latencyMs: $this->elapsedMs($startedAt),
-            userId: $this->userId,
+            user: $this->user,
+            courseId: $this->courseId,
+            lessonId: $this->lessonId,
         );
     }
 
@@ -340,6 +419,10 @@ final class PendingCall
                     "Call to prompt [{$this->prompt->key}] supplies an empty user turn; there is nothing to answer."
                 );
             }
+        }
+
+        if (ViewingAs::previewing()) {
+            throw new AccessDeniedHttpException('Preview is read-only: no AI call starts while an admin previews a student.');
         }
 
         if ($this->feature === '') {

@@ -2,14 +2,20 @@
 
 namespace Tests\Feature\Courses;
 
+use App\Admin\Removals;
+use App\Courses\CourseCriteria;
 use App\Courses\CourseStatus;
 use App\Courses\GenerationKind;
+use App\Courses\GenerationState;
 use App\Courses\Syllabus\DrawUpSyllabus;
 use App\Courses\Syllabus\SyllabusGenerator;
+use App\Memory\MemoryTree;
 use App\Models\Course;
 use App\Models\CourseSyllabus;
 use App\Models\GenerationRequest;
+use App\Models\UsageEvent;
 use App\Models\User;
+use Database\Factories\CourseSyllabusFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
@@ -188,7 +194,11 @@ class QueuedSyllabusTest extends TestCase
         // loudly rather than quietly costing money.
         (new DrawUpSyllabus($course->id))->handle(app(SyllabusGenerator::class));
 
-        $this->assertNull(GenerationRequest::for($course, GenerationKind::Syllabus));
+        // Kept once landed (16.2.11), and not read as a wait.
+        $this->assertSame(GenerationState::Landed, GenerationRequest::for($course, GenerationKind::Syllabus)?->state);
+        $this->assertFalse($this->inertiaProps(
+            $this->actingAs($course->student)->get(route('courses.syllabus.show', $course)),
+        )['generating']);
     }
 
     /**
@@ -217,6 +227,55 @@ class QueuedSyllabusTest extends TestCase
 
         $this->assertFalse($props['generating']);
         $this->assertStringContainsString('ask again', (string) $props['failure']);
+    }
+
+    /**
+     * 16.2.8 -- a course removed while its syllabus job waits: the job finds
+     * nothing when it starts, spends nothing, and the wait was closed by the
+     * removal rather than failed by the job.
+     */
+    #[Test]
+    public function a_course_removed_while_its_syllabus_job_waits_gets_no_syllabus(): void
+    {
+        Queue::fake();
+
+        $course = $this->course();
+
+        $this->actingAs($course->student)->post(route('courses.syllabus.store', $course));
+        app(Removals::class)->remove(User::factory()->admin()->create(), $course, 'test data');
+
+        (new DrawUpSyllabus($course->id))->handle(app(SyllabusGenerator::class));
+
+        $this->assertSame(0, CourseSyllabus::query()->count());
+        $this->assertSame(0, UsageEvent::query()->count());
+        $this->assertSame(GenerationState::Cancelled, GenerationRequest::query()->sole()->state);
+    }
+
+    /**
+     * 16.2.8, D70 -- removed while the model was answering: the call is on the
+     * bill, nothing it wrote is saved, and the job ends quietly.
+     */
+    #[Test]
+    public function a_course_removed_while_the_model_answers_saves_no_syllabus(): void
+    {
+        $course = $this->course();
+        $tree = app(MemoryTree::class);
+        $tree->put($course, $course->workingKnowledgePath(), '# Solid: fractions');
+        $tree->put($course, CourseCriteria::pathFor($course), '## Goals');
+        GenerationRequest::open($course, GenerationKind::Syllabus);
+
+        $admin = User::factory()->admin()->create();
+        $this->fakeModel(function () use ($course, $admin): array {
+            app(Removals::class)->remove($admin, $course, 'test data');
+
+            return CourseSyllabusFactory::exampleSyllabus();
+        });
+
+        DrawUpSyllabus::dispatchSync($course->id);
+
+        $this->assertSame(0, CourseSyllabus::query()->count());
+        $this->assertSame(1, UsageEvent::query()->where('course_id', $course->id)->count());
+        $this->assertSame(GenerationState::Cancelled, GenerationRequest::query()->sole()->state);
     }
 
     private function course(): Course

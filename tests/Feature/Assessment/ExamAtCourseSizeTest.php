@@ -106,8 +106,8 @@ class ExamAtCourseSizeTest extends AssessmentTestCase
         $course = Course::factory()->status(CourseStatus::SyllabusDraft)->create();
 
         $tree = app(MemoryTree::class);
-        $tree->put($course->student, $course->workingKnowledgePath(), self::WK);
-        $tree->put($course->student, CourseCriteria::pathFor($course), self::CRITERIA);
+        $tree->put($course, $course->workingKnowledgePath(), self::WK);
+        $tree->put($course, CourseCriteria::pathFor($course), self::CRITERIA);
 
         app(ApproveSyllabus::class)($course, CourseSyllabus::factory()->for($course)->create([
             'syllabus_json' => $this->largeSyllabus(),

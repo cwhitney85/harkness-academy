@@ -60,10 +60,10 @@ class SyllabusController extends Controller
             'revisions' => $this->revisions($draft),
             'exam' => $this->exam($draft),
 
-            // Is a generation out? The row is the wait (ledger D25), and its
-            // absence is how the screen knows the draft above is the whole
-            // story rather than a stale one.
-            'generating' => $pending instanceof GenerationRequest && ! $pending->hasFailed(),
+            // Is a generation out? The latest request says (ledger D25, kept
+            // once over by 16.2.11), and one that is not pending is how the
+            // screen knows the draft above is the whole story.
+            'generating' => $pending?->isPending() ?? false,
 
             // Flashed by the three POSTs below when they refuse, or carried on
             // the request row when the failure happened on the queue with no

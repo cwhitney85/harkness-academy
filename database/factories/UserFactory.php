@@ -49,6 +49,17 @@ class UserFactory extends Factory
     }
 
     /**
+     * An admin (spec 13.1) -- with a confirmed second factor, since `/admin`
+     * refuses one without (13.1.5).
+     */
+    public function admin(): static
+    {
+        return $this->withTwoFactor()->state(fn (array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    /**
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static

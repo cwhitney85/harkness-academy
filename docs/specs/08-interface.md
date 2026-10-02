@@ -113,7 +113,7 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       ├─ "Continue" (per course; resume table below) ► S3 · S4 · S5 · S6 · S9
       ├─ "Set aside" ──► POST /courses/{course}/withdraw ──► S1, the card moved to the set-aside list
       ├─ "Pick back up" ──► POST /courses/{course}/resume ──► the resume table's URL for its status
-      │     └─ 422 not resumable ──► S1, naming which: a later attempt replaced it, or its subtopic is occupied
+      │     └─ 422 not resumable ──► S1, naming why: its subtopic is occupied
       └─ a completed course's module ─────────────►    S12
 
   S2  COURSE CREATION                                  GET /courses/create
@@ -197,6 +197,30 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       GET settings ──► GET settings/profile ⇄ GET settings/security
       GET settings/appearance is unreachable from the UI (8.5.6) and stays so until dark mode ships
       GET .well-known/passkey-endpoints answers password managers, never a student
+
+  ADMIN (outside the thirteen; spec 13, the admin shell; reached from the user menu for an admin only)
+      GET admin ──► Admin → Users, searched and filtered by plan (17.1.1)
+      │   ├─ Open ──► GET /admin/users/{user} ──► one account, its courses, cost and memory (17.1.2)
+      │   │     └─ Change plan ──► PUT /admin/users/{user}/plan ──► the same screen (17.1.3)
+      │   └─ Preview, from either ──► POST /admin/users/{user}/view-as ──► S1 as the student, the banner on every screen (13.4)
+      │         ├─ Step up, with a reason ──► POST /admin/view-as/step-up ──► the same screen, acting as them
+      │         └─ Exit, or 60 minutes, or logout ──► DELETE /admin/view-as ──► GET admin
+      GET admin/courses ──► Admin → Courses, filtered by standing, level and module (17.2.1)
+      │   └─ Open, or from a user's page ──► GET /admin/courses/{course} ──► one course taken apart (17.2.2)
+      │         ├─ Remove, with a reason ──► POST /admin/courses/{course}/remove ──► the same screen, removed (17.2.3)
+      │         └─ Restore, with a reason ──► POST /admin/catalog/removals/{removal}/restore ──► the same screen
+      GET admin/log ──► Admin → Log (13.2.3)
+      GET admin/models ──► Admin → Models (14.4)
+      │   └─ Prices ──► PUT /admin/models/{model} ──► the same screen
+      GET admin/usage ──► Admin → Usage, cost by day, feature and plan over a range (17.3.1)
+      │   ├─ Performance ──► GET /admin/usage/performance ──► per task × model (17.3.2)
+      │   └─ Events ──► GET /admin/usage/events ──► every call, linking to its student, course and lesson (17.3.4)
+      GET admin/prompts ──► Admin → Prompts (15.2.1)
+      │   └─ Open ──► GET /admin/prompts/{prompt} ──► one prompt, its contract and its body (15.2.2)
+      │         ├─ Save ──► PUT /admin/prompts/{prompt} ──► the same screen, a version newer
+      │         ├─ Compare ──► GET /admin/prompts/{prompt}?from=&to= ──► the same screen, diffed (15.2.4)
+      │         └─ Run this ──► POST /admin/prompts/{prompt}/versions/{number} ──► the same screen, that version running
+      no second factor ──► GET settings/security (13.1.5); a student ──► 403 (13.1.2)
 ```
 
 ### Where a resume lands
@@ -245,7 +269,7 @@ Three shapes were settled here rather than left to a controller:
 
   *Narrowed from "only when the transcript is empty" (Colin, 2026-09-01, in the 8.7 session), and the two wordings have since converged.* The narrowing was needed because `open()` wrote a student `OPENING_TURN` row **before** the tutor's first question streamed, so a connection dropped during that question left a transcript that was not empty and held nothing anyone said — and under the original wording that student was stranded. Spec 4.6 stopped storing the opener, so an interview the tutor has not spoken in is empty again; the predicate is what survived, because it is the one that states what the rule is protecting. Both halves are enforced in the engine rather than asked of the client — `open()` throws `InterviewAlreadyUnderway` once the tutor has spoken, and "underway" means the transcript has a tutor turn in it, so Done refuses a conversation that never happened.
 - **Generating the first syllabus is its own POST**, not a side effect of the goals interview's Done. A `top`-tier generation on a redirect path has nowhere to report failure; on its own endpoint, a 503 leaves the student on S5 with a button (4.5.1, and the same reasoning as `courses.final-exam.store`). Both syllabus generators carry `throttle:6,1`, matching the exam.
-- **Withdrawal and resumption are POSTs from screens that already exist**, not screens of their own. Both are verbs on a course the student is already looking at, so they read the `lessons.complete` precedent rather than inventing a noun. `withdraw` needs the course open and leaves `status` untouched — that untouched value is what makes `resume` land somewhere; `resume` needs the course withdrawn, the highest attempt at its level, and nothing else open in its subtopic, and its 422 must say *which* of the three failed, because "a later attempt replaced it" and "your other course is open" ask the student for different things (D7b). Two doors reach `resume`: the set-aside list on S1, and S2's question when a student starts the same subtopic again.
+- **Withdrawal and resumption are POSTs from screens that already exist**, not screens of their own. Both are verbs on a course the student is already looking at, so they read the `lessons.complete` precedent rather than inventing a noun. `withdraw` needs the course open and leaves `status` untouched — that untouched value is what makes `resume` land somewhere; `resume` needs the course withdrawn — any attempt, not only the newest ([D64](../02-design.md), 16.4.1) — and nothing else open in its subtopic, and its 422 must name the move the student has left. Two doors reach `resume`: the set-aside list on S1, and S2's question when a student starts the same subtopic again, which asks which attempt when more than one is set aside (16.4.2).
 - **Approval is a POST to a noun** (`/syllabus/approval`), so approving and revising are two URLs rather than one endpoint switching on a field. `CourseStatus` already treats them as two successors of `syllabus_draft`.
 
 Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`, `{refresher}` bind by id, since no model overrides `getRouteKeyName`.
@@ -282,6 +306,15 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `security.edit` · `user-password.update` | settings, outside the twelve |
 | `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
 | `well-known.passkeys` | machine endpoint; no student edge |
+| `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
+| `admin.users.show` · `admin.users.plan` · `admin.users.restore` | admin, outside the thirteen (spec 17.1) |
+| `admin.courses.index` · `admin.courses.show` · `admin.courses.remove` | admin, outside the thirteen (spec 17.2) |
+| `admin.usage.overview` · `admin.usage.performance` · `admin.usage.events` | admin, outside the thirteen (spec 17.3) |
+| `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |
+| `admin.models` · `admin.models.update` | admin, outside the thirteen (spec 14.4) |
+| `admin.prompts` · `admin.prompts.show` · `admin.prompts.update` · `admin.prompts.activate` | admin, outside the thirteen (spec 15.2) |
+| `admin.catalog.demand` · `admin.catalog.promote` · `admin.catalog.refusals` | admin, outside the thirteen (spec 16.1) |
+| `admin.catalog.index` · `admin.catalog.retitle` · `admin.catalog.modules.remove` · `admin.catalog.subtopics.remove` · `admin.catalog.removed` · `admin.catalog.restore` | admin, outside the thirteen (spec 16.5) |
 
 Fortify's auth routes are not declared in `routes/`; they land the student at `home` or `dashboard`, which are edges above.
 
@@ -324,7 +357,7 @@ Fortify's auth routes are not declared in `routes/`; they land the student at `h
 
 - **8.10.1 MUST** — Dashboard replacing the starter-kit placeholder: courses in progress, next action per course. *Done: `placeholder-pattern.tsx` has no remaining import.*
 - **8.10.2 SHOULD** — Module rollup view over `ModuleRollup`. *Done: a completed course's knowledge appears under its module.*
-- **8.10.3 SHOULD** — Setting a course aside and taking it back up, over `CourseTransitions::withdraw`/`resume`: a course card carries "Set aside" behind a confirmation, and set-aside courses are listed apart from the ones in progress. *Done: a set-aside course leaves the in-progress list and returns to it at the status it left; a course a later attempt has replaced says so rather than offering a button that 422s.*
+- **8.10.3 SHOULD** — Setting a course aside and taking it back up, over `CourseTransitions::withdraw`/`resume`: a course card carries "Set aside" behind a confirmation, and set-aside courses are listed apart from the ones in progress. *Done: a set-aside course leaves the in-progress list and returns to it at the status it left; a course whose subtopic another open course holds says so rather than offering a button that 422s.* *Amended by [16.4](16-catalog-removal-ownership.md#164-resuming-any-withdrawn-attempt): a later attempt no longer blocks one.*
 
 *8.7.6 and 8.10.3 ship together or not at all. With no way to set a course aside, no course is ever withdrawn, so 8.7.6's question never fires and `CourseTransitions::withdraw`/`resume` stay engine code no student can reach. Ejecting one ejects both.*
 

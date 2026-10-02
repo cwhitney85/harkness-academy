@@ -5,6 +5,8 @@ namespace Tests;
 use App\Ai\GatewayAgent;
 use App\Ai\StructuredGatewayAgent;
 use Closure;
+use Database\Seeders\PromptRegistrySeeder;
+use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -12,6 +14,20 @@ use Laravel\Fortify\Features;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Every `RefreshDatabase` test starts with the prompt registry synced
+     * from `prompts/` (spec 15.1.2).
+     *
+     * `migrate:fresh --seeder` is the only hook that runs once per process,
+     * after the migrations and before the transaction each test is rolled
+     * back inside -- so the rows survive the whole run. Without them the
+     * database-backed `PromptRepository` (15.1.5) knows no prompt, and every
+     * gateway call in the suite throws `UnknownPromptKey`.
+     *
+     * @var class-string<Seeder>
+     */
+    protected $seeder = PromptRegistrySeeder::class;
+
     /**
      * No test in this suite renders a built asset, so none of them waits on
      * one (spec 1.4).

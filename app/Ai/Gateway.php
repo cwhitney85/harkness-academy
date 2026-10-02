@@ -29,7 +29,7 @@ final class Gateway
      */
     public function prompt(string $key, array $vars = []): PendingCall
     {
-        return new PendingCall($this->prompts->get($key), $this->recorder, $vars);
+        return new PendingCall($this->prompts->get($key), $this->prompts->version($key), $this->recorder, $vars);
     }
 
     /**

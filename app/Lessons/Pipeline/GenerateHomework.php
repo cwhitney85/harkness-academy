@@ -49,7 +49,7 @@ final class GenerateHomework extends PipelineJob
                 'homework_focus' => (string) $lesson->syllabusEntry()['homework_focus'],
             ])
             ->feature('lesson.homework')
-            ->for($lesson->course->user_id)
+            ->about($lesson)
             ->schema(QuizSchema::definition(QuizLength::homework()))
             ->generate();
 

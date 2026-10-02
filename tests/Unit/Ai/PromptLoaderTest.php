@@ -5,9 +5,9 @@ namespace Tests\Unit\Ai;
 use App\Ai\Prompts\Exceptions\InvalidPromptFile;
 use App\Ai\Prompts\Exceptions\PromptVariableMismatch;
 use App\Ai\Prompts\Exceptions\UnknownPromptKey;
+use App\Ai\Prompts\PromptFiles;
 use App\Ai\Prompts\PromptLoader;
 use App\Ai\Prompts\PromptOutput;
-use App\Ai\Prompts\PromptRepository;
 use App\Ai\Tier;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -211,7 +211,7 @@ class PromptLoaderTest extends TestCase
             Body.
             MD);
 
-        $repository = new PromptRepository($this->directory);
+        $repository = new PromptFiles($this->directory);
 
         $this->assertTrue($repository->has('demo.basic'));
 

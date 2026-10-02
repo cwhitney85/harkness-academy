@@ -2,11 +2,16 @@
 
 namespace App\Memory;
 
+use App\Admin\ViewingAs;
 use App\Memory\Exceptions\InvalidMemoryPath;
+use App\Models\Course;
 use App\Models\Memory;
 use App\Models\MemoryVersion;
+use App\Models\Removal;
+use App\Models\Subtopic;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -60,6 +65,7 @@ final class MemoryTree
             ->join('memories', 'memories.id', '=', 'memory_versions.memory_id')
             ->where('memories.user_id', $user->id)
             ->where('memories.path', $path->value)
+            ->whereNull('memories.deleted_at')
             ->orderByDesc('memory_versions.version')
             ->select('memory_versions.id', 'memory_versions.content')
             ->first();
@@ -72,42 +78,51 @@ final class MemoryTree
     }
 
     /**
-     * Write the document at a path, creating it if it does not exist.
+     * Write a document for the course whose workflow is writing it, creating
+     * it if it does not exist (spec 16.3.3).
+     *
+     * The owner follows from the path: the course's working knowledge belongs
+     * to its subtopic (D8), anything under the course's own folder belongs to
+     * the course (D58), and any other path is refused -- a course cannot write
+     * into another course's folder or another subtopic's knowledge.
      *
      * Post: `get` returns exactly this content, and one version row records
-     * this write -- an overwrite never discards what was there before.
+     * this write and the course that made it -- an overwrite never discards
+     * what was there before.
      *
      * @throws InvalidMemoryPath
      */
-    public function put(User $user, string $path, string $content): void
+    public function put(Course $course, string $path, string $content): void
     {
         $path = MemoryPath::parse($path);
 
-        DB::transaction(function () use ($user, $path, $content): void {
+        $owner = match (true) {
+            $path->value === $course->workingKnowledgePath() => $course->subtopic,
+            str_starts_with($path->value, $course->materialsPrefix().'/') => $course,
+            default => throw InvalidMemoryPath::for($path->value, "course #{$course->id} writes only its own documents and its subtopic's working knowledge."),
+        };
+
+        DB::transaction(function () use ($course, $owner, $path, $content): void {
             $memory = Memory::query()
-                ->where('user_id', $user->id)
+                ->where('user_id', $course->user_id)
                 ->where('path', $path->value)
                 ->lockForUpdate()
-                ->first();
+                ->first()
+                ?? new Memory(['user_id' => $course->user_id, 'path' => $path->value]);
 
-            if ($memory === null) {
-                $memory = Memory::query()->create([
-                    'user_id' => $user->id,
-                    'path' => $path->value,
-                    'content' => $content,
-                ]);
+            $version = $memory->exists ? 1 + (int) $memory->versions()->max('version') : 1;
 
-                $version = 1;
-            } else {
-                $memory->update(['content' => $content]);
-
-                $version = (int) MemoryVersion::query()->where('memory_id', $memory->id)->max('version') + 1;
-            }
+            $memory->owner()->associate($owner);
+            $memory->content = $content;
+            $memory->save();
 
             MemoryVersion::query()->create([
                 'memory_id' => $memory->id,
+                'course_id' => $course->id,
                 'version' => $version,
                 'content' => $content,
+                // The admin acting as this student, if one is (spec 13.4.3).
+                'acting_user_id' => ViewingAs::actingUserId(),
                 'created_at' => now(),
             ]);
         });
@@ -149,6 +164,62 @@ final class MemoryTree
         }
 
         return $paths;
+    }
+
+    /**
+     * Every document a student has, removed ones included and marked, each
+     * with its whole history in version order -- the admin's read of the tree
+     * (spec 16.3.4). Only an admin controller may call it, because it shows
+     * what a removal hid from the student (16.2.4).
+     *
+     * Plain arrays, not models: the caller holds nothing it could save.
+     *
+     * @return list<array{path: string, removed: bool, versions: list<array{version: int, course_id: int, acting_user_id: int|null, content: string, created_at: Carbon}>}>
+     */
+    public function history(User $user): array
+    {
+        return array_values(Memory::withTrashed()
+            ->where('user_id', $user->id)
+            ->with(['versions' => fn ($versions) => $versions->orderBy('version')])
+            ->orderByRaw('path collate "C"')
+            ->get()
+            ->map(fn (Memory $memory): array => [
+                'path' => $memory->path,
+                'removed' => $memory->trashed(),
+                'versions' => array_values($memory->versions
+                    ->map(fn (MemoryVersion $version): array => $version->only('version', 'course_id', 'acting_user_id', 'content', 'created_at'))
+                    ->all()),
+            ])
+            ->all());
+    }
+
+    /**
+     * Hide the documents whose owners a removal has just hidden (spec
+     * 16.2.2): its courses' own documents, and the working knowledge of its
+     * subtopics. A document already removed keeps its own removal (16.2.3).
+     *
+     * Crosses students, because a subtopic's removal does. Only `Removals`
+     * calls it, after stamping the owners.
+     */
+    public function remove(Removal $removal): void
+    {
+        $owners = fn (string $model) => $model::onlyTrashed()->where('removal_id', $removal->id)->select('id');
+
+        Memory::query()
+            ->where(fn (Builder $query) => $query
+                ->where(fn (Builder $query) => $query->where('owner_type', Course::class)->whereIn('owner_id', $owners(Course::class)))
+                ->orWhere(fn (Builder $query) => $query->where('owner_type', Subtopic::class)->whereIn('owner_id', $owners(Subtopic::class))))
+            ->update(['deleted_at' => now(), 'removal_id' => $removal->id]);
+    }
+
+    /**
+     * Bring back exactly the documents one removal hid (spec 16.2.3).
+     */
+    public function restore(Removal $removal): void
+    {
+        Memory::onlyTrashed()
+            ->where('removal_id', $removal->id)
+            ->update(['deleted_at' => null, 'removal_id' => null]);
     }
 
     /**

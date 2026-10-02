@@ -17,7 +17,7 @@ Package $ARGUMENTS only, narrowed further to the listed items if the arguments n
 
 ## Rules for this session
 
-- Do not modify other packages. If you need an interface that hasn't landed on master, stop and say so.
+- Do not modify other packages. If you need an interface that hasn't landed on the base branch — the unit branch inside a unit (ledger W6), `master` otherwise — stop and say so.
 - If you hit a spec gap, or a recorded decision seems wrong in practice, stop and ask instead of silently diverging.
 - Session narrative goes in the plan file and nowhere else.
 - Commit at done-condition granularity: one spec item (or small cluster) per commit, spec item number in the message (e.g. `2.4: caching spike — workaround for laravel/ai#119`). No signing, co-author trailers, or attribution lines.

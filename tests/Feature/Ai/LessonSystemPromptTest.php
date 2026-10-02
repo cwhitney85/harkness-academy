@@ -1,19 +1,23 @@
 <?php
 
-namespace Tests\Unit\Ai;
+namespace Tests\Feature\Ai;
 
-use App\Ai\Gateway;
 use App\Ai\LessonSystemPrompt;
 use App\Ai\Prompts\PromptRepository;
-use App\Ai\UsageRecorder;
+use App\Ai\Prompts\PromptSource;
+use App\Models\Prompt;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Spec 2.3.3 -- composition and cache order for `lesson.system`.
+ * Spec 2.3.3 -- composition and cache order for `lesson.system` -- proved
+ * against the active version of each part (spec 15.1.7).
  */
 class LessonSystemPromptTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Test]
     public function it_composes_persona_criteria_wk_and_guidance_in_that_order(): void
     {
@@ -48,7 +52,7 @@ class LessonSystemPromptTest extends TestCase
     #[Test]
     public function the_declared_order_matches_the_order_the_template_actually_renders(): void
     {
-        $body = (new PromptRepository(base_path('prompts')))->get(LessonSystemPrompt::KEY)->body;
+        $body = $this->prompts()->get(LessonSystemPrompt::KEY)->body;
 
         $positions = [];
 
@@ -69,9 +73,7 @@ class LessonSystemPromptTest extends TestCase
     #[Test]
     public function persona_prepends_only_into_lesson_system(): void
     {
-        $repository = new PromptRepository(base_path('prompts'));
-
-        foreach ($repository->all() as $key => $prompt) {
+        foreach ($this->prompts()->all() as $key => $prompt) {
             if ($key === LessonSystemPrompt::KEY) {
                 $this->assertContains('persona', $prompt->vars);
 
@@ -89,22 +91,13 @@ class LessonSystemPromptTest extends TestCase
     #[Test]
     public function editing_the_persona_leaves_every_other_prompt_byte_identical(): void
     {
-        $repository = new PromptRepository(base_path('prompts'));
-
-        $before = $this->renderAllUnrelatedToPersona($repository);
+        $before = $this->renderAllUnrelatedToPersona();
         $lessonSystemBefore = $this->composer()->render($this->persona(), '[criteria_doc]', '[wk_doc]', '[guidance_doc]');
 
-        $personaPath = base_path('prompts/persona/default.md');
-        $original = (string) file_get_contents($personaPath);
+        $this->editPersona();
 
-        try {
-            file_put_contents($personaPath, $original."\nYou also speak entirely in limericks.\n");
-
-            $after = $this->renderAllUnrelatedToPersona(new PromptRepository(base_path('prompts')));
-            $lessonSystemAfter = $this->composer()->render($this->persona(), '[criteria_doc]', '[wk_doc]', '[guidance_doc]');
-        } finally {
-            file_put_contents($personaPath, $original);
-        }
+        $after = $this->renderAllUnrelatedToPersona();
+        $lessonSystemAfter = $this->composer()->render($this->persona(), '[criteria_doc]', '[wk_doc]', '[guidance_doc]');
 
         $this->assertSame($before, $after, 'A persona edit must not change the bytes of any other prompt.');
 
@@ -116,13 +109,30 @@ class LessonSystemPromptTest extends TestCase
     }
 
     /**
+     * A live edit to the persona: a new version, activated, exactly as the
+     * editor of 15.2 will make one.
+     */
+    private function editPersona(): void
+    {
+        $prompt = Prompt::query()->where('key', LessonSystemPrompt::PERSONA_KEY)->sole();
+        $active = $prompt->activeVersion;
+
+        $prompt->activate($prompt->versions()->create([
+            'number' => $active->number + 1,
+            'body' => $active->body."\nYou also speak entirely in limericks.\n",
+            'tier' => $active->tier,
+            'source' => PromptSource::Admin,
+        ]));
+    }
+
+    /**
      * @return array<string, string>
      */
-    private function renderAllUnrelatedToPersona(PromptRepository $repository): array
+    private function renderAllUnrelatedToPersona(): array
     {
         $rendered = [];
 
-        foreach ($repository->all() as $key => $prompt) {
+        foreach ($this->prompts()->all() as $key => $prompt) {
             // The persona itself and the one prompt it composes into are the
             // two an edit is allowed to move; everything else must not budge.
             if (in_array($key, [LessonSystemPrompt::KEY, LessonSystemPrompt::PERSONA_KEY], true)) {
@@ -151,8 +161,11 @@ class LessonSystemPromptTest extends TestCase
 
     private function composer(): LessonSystemPrompt
     {
-        return new LessonSystemPrompt(
-            new Gateway(new PromptRepository(base_path('prompts')), new UsageRecorder),
-        );
+        return app(LessonSystemPrompt::class);
+    }
+
+    private function prompts(): PromptRepository
+    {
+        return app(PromptRepository::class);
     }
 }

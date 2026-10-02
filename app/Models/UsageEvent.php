@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\UsageEventFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class UsageEvent extends Model
 {
+    /** @use HasFactory<UsageEventFactory> */
+    use HasFactory;
+
     public const UPDATED_AT = null;
 
     protected $guarded = [];
@@ -24,6 +29,24 @@ class UsageEvent extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<Lesson, $this>
+     */
+    public function lesson(): BelongsTo
+    {
+        return $this->belongsTo(Lesson::class);
+    }
+
+    /**
+     * The admin who made this call acting as the student (spec 13.4.5).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function actingUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acting_user_id')->withTrashed();
+    }
+
     protected function casts(): array
     {
         return [
@@ -31,6 +54,7 @@ class UsageEvent extends Model
             'cached_input_tokens' => 'integer',
             'cache_write_tokens' => 'integer',
             'output_tokens' => 'integer',
+            'reasoning_tokens' => 'integer',
             'latency_ms' => 'integer',
             'cost_usd' => 'decimal:8',
             'created_at' => 'datetime',

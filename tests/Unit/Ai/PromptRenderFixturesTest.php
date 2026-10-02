@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Ai;
 
-use App\Ai\Prompts\PromptRepository;
+use App\Ai\Prompts\PromptFiles;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -25,7 +25,7 @@ class PromptRenderFixturesTest extends TestCase
      */
     public static function promptKeys(): iterable
     {
-        foreach ((new PromptRepository(dirname(__DIR__, 3).'/prompts'))->keys() as $key) {
+        foreach ((new PromptFiles(dirname(__DIR__, 3).'/prompts'))->keys() as $key) {
             yield $key => [$key];
         }
     }
@@ -34,7 +34,7 @@ class PromptRenderFixturesTest extends TestCase
     #[DataProvider('promptKeys')]
     public function it_renders_to_its_fixture(string $key): void
     {
-        $prompt = (new PromptRepository(base_path('prompts')))->get($key);
+        $prompt = (new PromptFiles(base_path('prompts')))->get($key);
 
         $rendered = $prompt->render(self::sampleVars($prompt->vars));
 
@@ -55,7 +55,7 @@ class PromptRenderFixturesTest extends TestCase
     #[Test]
     public function every_prompt_has_a_fixture_and_every_fixture_has_a_prompt(): void
     {
-        $keys = (new PromptRepository(base_path('prompts')))->keys();
+        $keys = (new PromptFiles(base_path('prompts')))->keys();
 
         $fixtures = array_map(
             fn (string $path): string => str_replace(

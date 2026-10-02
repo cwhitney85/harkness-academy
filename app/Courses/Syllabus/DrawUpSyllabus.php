@@ -7,6 +7,7 @@ use App\Courses\Exceptions\MissingCourseDocument;
 use App\Courses\Exceptions\SyllabusNotDraftable;
 use App\Courses\Exceptions\SyllabusUnusable;
 use App\Courses\GenerationKind;
+use App\Courses\SkipRemovedCourse;
 use App\Models\Course;
 use App\Models\GenerationRequest;
 use Illuminate\Bus\Queueable;
@@ -50,6 +51,16 @@ class DrawUpSyllabus implements ShouldQueue
         public readonly int $courseId,
         public readonly ?string $feedback = null,
     ) {}
+
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
 
     /**
      * Pre:  a `GenerationRequest` for this course's syllabus is open.

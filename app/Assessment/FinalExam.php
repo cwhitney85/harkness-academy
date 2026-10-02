@@ -8,6 +8,7 @@ use App\Assessment\Exceptions\ExamUnusable;
 use App\Assessment\Exceptions\UnansweredQuestion;
 use App\Courses\CourseStatus;
 use App\Courses\CourseTransitions;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Courses\LessonStatus;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Memory\MemoryTree;
@@ -152,11 +153,9 @@ final class FinalExam
     public function sit(Course $course, array $answers): ExamResult
     {
         $exam = $this->seated($course);
+        // The sheet this sitting was drafted on is kept (16.2.12). A re-sit
+        // reads the next sitting's, which starts empty (6.3.4).
         $sitting = $this->grader->sitting($exam, $course->student, $answers);
-
-        // The book is in. What is left of the sheet is a draft of a sitting
-        // that has happened, and a re-sit opens an empty book (6.3.4).
-        ExamAnswerSheet::query()->where($this->sheetKeys($exam, $course, $sitting->number))->delete();
 
         $passed = $sitting->score() >= $this->passMark();
 
@@ -216,8 +215,8 @@ final class FinalExam
      * What the student has ticked in the book they are sitting now (6.3.4).
      *
      * Post: question id => option id, empty when nothing has been ticked --
-     *       which is also what a re-sit reads, because the sheet is cleared at
-     *       hand-in.
+     *       which is also what a re-sit reads, because each sitting has its
+     *       own sheet.
      *
      * @return array<string, string>
      */
@@ -408,7 +407,7 @@ final class FinalExam
                 $response = $this->gateway
                     ->prompt('exam.final', $vars)
                     ->feature(self::FEATURE)
-                    ->for($course->user_id)
+                    ->about($course)
                     ->schema(QuizSchema::definition($length))
                     ->generate();
 
@@ -431,6 +430,9 @@ final class FinalExam
                 }
 
                 $reasons = $defects;
+            } catch (CourseRemoved $e) {
+                // Gone mid-call (16.2.8): a retry would pay again for nothing.
+                throw $e;
             } catch (Throwable $e) {
                 $failure = $e;
             }

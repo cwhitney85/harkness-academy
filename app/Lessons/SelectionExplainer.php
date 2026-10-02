@@ -82,7 +82,7 @@ final class SelectionExplainer
                 'skill_level' => $course->skill_level->pathSegment(),
             ])
             ->feature('lesson.explainer')
-            ->for($course->user_id)
+            ->about($lesson)
             ->generate()
             ->text);
     }

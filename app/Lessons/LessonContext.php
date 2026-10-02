@@ -42,7 +42,7 @@ final class LessonContext
      * Pre: the lesson's course has an approved syllabus and both interview
      *      documents are written.
      * Post: the returned text is `[persona | CRITERIA | WK | GUIDANCE]` in
-     *       that order, and is what PromptCaching puts the `system` cache
+     *       that order, and is what AnthropicProvider puts the `system` cache
      *       breakpoint on.
      *
      * @throws MissingCourseDocument
@@ -75,6 +75,23 @@ final class LessonContext
     public function tier(): Tier
     {
         return $this->gateway->definition(LessonSystemPrompt::KEY)->tier;
+    }
+
+    /**
+     * The catalog id of the model this lesson's session runs on (spec 14.1.6).
+     *
+     * The session tier's model when the lesson first calls one, stamped on the
+     * lesson and kept from then on: Anthropic's cache is keyed per model, so a
+     * lesson moved to another model mid-way would pay to rewrite its whole
+     * prefix, and its transcript would be two tutors'.
+     */
+    public function modelFor(Lesson $lesson): int
+    {
+        if ($lesson->ai_model_id === null) {
+            $lesson->forceFill(['ai_model_id' => $this->tier()->primary()['id']])->save();
+        }
+
+        return $lesson->ai_model_id;
     }
 
     /**

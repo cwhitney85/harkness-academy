@@ -74,7 +74,7 @@ final class ApproveSyllabus
                 ]);
 
                 $this->memory->put(
-                    $course->student,
+                    $course,
                     LessonGuidance::pathFor($course, $lesson),
                     GuidanceDocument::render($syllabus->syllabus_json, $lesson),
                 );

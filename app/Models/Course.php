@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -23,6 +24,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $user_id
+ * @property int $subtopic_id
  * @property string $module_slug
  * @property string $subtopic_slug
  * @property string $subtopic_title
@@ -33,11 +35,15 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $completed_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at set with `removal_id`, by a removal (spec 16.2.1)
+ * @property int|null $removal_id
  */
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     protected $guarded = [];
 
@@ -60,6 +66,19 @@ class Course extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The subtopic row this course was started under (spec 16.1.3).
+     *
+     * Beside the frozen slugs, not instead of them: the slugs are the memory
+     * path, and this row can be retitled or promoted without moving it.
+     *
+     * @return BelongsTo<Subtopic, $this>
+     */
+    public function subtopic(): BelongsTo
+    {
+        return $this->belongsTo(Subtopic::class);
     }
 
     /**
@@ -146,7 +165,9 @@ class Course extends Model
     /**
      * Whether this course currently holds its subtopic's single open slot.
      *
-     * Mirrors the `courses_one_open_per_subtopic` index predicate exactly.
+     * Mirrors the `courses_one_open_per_subtopic` index predicate, less its
+     * `deleted_at IS NULL`: a removed course is hidden rather than closed, and
+     * this is what it would be if restored (16.2.6).
      */
     public function isOpen(): bool
     {
@@ -175,15 +196,14 @@ class Course extends Model
     }
 
     /**
-     * Where this course's own materials hang (spec 4.5.3).
+     * Where this course's own materials hang (spec 4.5.3, 16.3.2).
      *
-     * Carries no attempt number, so a later attempt at the same level
-     * overwrites an earlier one's lesson guidance -- which is why only the
-     * highest attempt may be resumed (ledger D7b).
+     * One folder per attempt, so a later attempt at the same level never
+     * overwrites an earlier one's criteria, guidance or summaries (ledger D58).
      */
     public function materialsPrefix(): string
     {
-        return "{$this->module_slug}/{$this->subtopic_slug}/".$this->skill_level->pathSegment();
+        return "{$this->module_slug}/{$this->subtopic_slug}/".$this->skill_level->pathSegment()."/a{$this->attempt}";
     }
 
     /**
@@ -194,6 +214,20 @@ class Course extends Model
     public function scopeOpen(Builder $query): void
     {
         $query->whereNull('withdrawn_at')->whereNull('completed_at');
+    }
+
+    /**
+     * Adds `cost`: what this course's calls cost, leaving out any an admin
+     * made acting as the student (spec 17.1, 17.2.1).
+     *
+     * @param  Builder<Course>  $query
+     */
+    public function scopeWithCost(Builder $query): void
+    {
+        $query->addSelect(['cost' => UsageEvent::query()
+            ->selectRaw('coalesce(sum(cost_usd), 0)')
+            ->whereColumn('usage_events.course_id', 'courses.id')
+            ->whereNull('acting_user_id')]);
     }
 
     /**

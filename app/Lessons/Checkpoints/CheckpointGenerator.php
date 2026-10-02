@@ -5,6 +5,7 @@ namespace App\Lessons\Checkpoints;
 use App\Ai\Gateway;
 use App\Assessment\QuizKind;
 use App\Assessment\Quizzes;
+use App\Courses\Exceptions\CourseRemoved;
 use App\Courses\Syllabus\SyllabusConcepts;
 use App\Lessons\Exceptions\CheckpointUnusable;
 use App\Lessons\LessonSections;
@@ -108,7 +109,7 @@ final class CheckpointGenerator
                 $response = $this->gateway
                     ->prompt('checkpoint.generate', $vars)
                     ->feature(self::FEATURE)
-                    ->for($lesson->course->user_id)
+                    ->about($lesson)
                     ->schema(CheckpointSchema::definition())
                     ->generate();
 
@@ -117,6 +118,9 @@ final class CheckpointGenerator
                 }
 
                 return Checkpoint::fromModel($response->structured, $sectionIndex, $concepts);
+            } catch (CourseRemoved $e) {
+                // Gone mid-call (16.2.8): a retry would pay again for nothing.
+                throw $e;
             } catch (Throwable $e) {
                 $failure = $e;
             }

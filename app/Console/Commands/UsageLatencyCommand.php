@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Ai\Catalog;
 use App\Models\UsageEvent;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -77,12 +78,12 @@ class UsageLatencyCommand extends Command
     /**
      * The tier's own timeout, in milliseconds.
      *
-     * `session` resolves per call site rather than in config, so it has no cap
-     * of its own to print; the rows carry the tier the call actually ran at.
+     * `session` resolves per call site rather than in the catalog, so it has
+     * no cap of its own to print; the rows carry the tier the call ran at.
      */
     private function tierCapMs(string $tier): int
     {
-        return (int) config('ai.tiers.'.$tier.'.timeout', 0) * 1000;
+        return (Catalog::tier($tier)['timeout'] ?? 0) * 1000;
     }
 
     private function seconds(int $ms): string

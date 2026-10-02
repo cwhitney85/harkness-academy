@@ -3,7 +3,7 @@
 namespace Tests\Feature\Lessons;
 
 use App\Ai\LessonSystemPrompt;
-use App\Ai\PromptCaching;
+use App\Ai\Providers\AnthropicProvider;
 use App\Ai\Tier;
 use App\Lessons\LessonContext;
 use App\Lessons\LessonSections;
@@ -61,7 +61,7 @@ class LessonBootstrapTest extends LessonEngineTestCase
         // block. 5.1's "cache reads observed per 2.4" rests on the assembled
         // prefix being that block -- if the session sent its context any other
         // way, the breakpoint would land somewhere else.
-        $options = PromptCaching::providerOptions('anthropic', $prompt);
+        $options = (new AnthropicProvider)->providerOptions($prompt);
 
         $this->assertSame($prompt, $options['system'][0]['text']);
         $this->assertSame(['type' => 'ephemeral'], $options['system'][0]['cache_control']);

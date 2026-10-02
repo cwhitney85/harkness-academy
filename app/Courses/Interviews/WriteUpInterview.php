@@ -4,6 +4,7 @@ namespace App\Courses\Interviews;
 
 use App\Courses\Exceptions\InterviewSummaryUnusable;
 use App\Courses\GenerationKind;
+use App\Courses\SkipRemovedCourse;
 use App\Models\Course;
 use App\Models\GenerationRequest;
 use Illuminate\Bus\Queueable;
@@ -43,6 +44,16 @@ class WriteUpInterview implements ShouldQueue
         public readonly int $courseId,
         public readonly InterviewKind $kind,
     ) {}
+
+    /**
+     * A course removed mid-call ends the job quietly (16.2.8).
+     *
+     * @return list<object>
+     */
+    public function middleware(): array
+    {
+        return [new SkipRemovedCourse];
+    }
 
     /**
      * Pre:  a `GenerationRequest` for this course's interview write-up is open.

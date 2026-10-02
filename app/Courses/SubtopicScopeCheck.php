@@ -66,10 +66,20 @@ final class SubtopicScopeCheck
      */
     public function check(User $student, Module $module, SubtopicName $name): void
     {
+        // 16.2.7 -- a removed subtopic's name is refused before anything is
+        // asked. Under this module that name *is* the removed row, and a
+        // course started on it would collide with the row, or with its
+        // restore (D57). The student is told only that it is not taught.
+        if (Subtopic::onlyTrashed()->where('module_id', $module->id)->where('slug', $name->slug)->exists()) {
+            throw new SubtopicOutOfScope($name, $module);
+        }
+
         // 4.9.1 -- the gate spends nothing it need not. A slug that matches a
         // starting point under this very module is the catalog's own entry
         // arrived at by typing (`SubtopicName` makes them the same course), so
-        // there is nothing to ask.
+        // there is nothing to ask. A starting point is a listed row (16.1):
+        // an unlisted student row passed once, for someone else, and is asked
+        // about again.
         if ($this->isPresetOf($module, $name)) {
             return;
         }
@@ -225,6 +235,7 @@ final class SubtopicScopeCheck
     private function isPresetOf(Module $module, SubtopicName $name): bool
     {
         return Subtopic::query()
+            ->listed()
             ->where('module_id', $module->id)
             ->where('slug', $name->slug)
             ->exists();
@@ -240,6 +251,7 @@ final class SubtopicScopeCheck
     private function collision(Module $module, SubtopicName $name): string
     {
         $elsewhere = Subtopic::query()
+            ->listed()
             ->with('module')
             ->where('slug', $name->slug)
             ->where('module_id', '!=', $module->id)
@@ -257,9 +269,9 @@ final class SubtopicScopeCheck
     /**
      * The catalog as the model reads it (spec 4.9.2).
      *
-     * From the `modules` and `subtopics` rows rather than from the prompt
-     * file, because an admin UI edits them post-v1 and a prompt that listed
-     * them would go quietly stale.
+     * From the listed `subtopics` rows rather than from the prompt file,
+     * because promotion (16.1.5) adds to them and a prompt that listed them
+     * would go quietly stale. Unlisted student rows are not the catalog.
      *
      * @param  array<string, Module>  $modules
      */
@@ -282,7 +294,7 @@ final class SubtopicScopeCheck
     private function modules(): array
     {
         return Module::query()
-            ->with('subtopics')
+            ->with(['subtopics' => fn ($subtopics) => $subtopics->listed()])
             ->orderBy('position')
             ->get()
             ->keyBy('slug')

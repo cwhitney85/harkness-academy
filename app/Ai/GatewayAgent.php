@@ -2,6 +2,7 @@
 
 namespace App\Ai;
 
+use App\Ai\Providers\Providers;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasProviderOptions;
@@ -57,9 +58,7 @@ class GatewayAgent implements Agent, Conversational, HasProviderOptions, HasTool
      */
     public function providerOptions(Lab|string $provider): array
     {
-        return PromptCaching::providerOptions(
-            $provider instanceof Lab ? $provider->value : $provider,
-            $this->agentInstructions,
-        );
+        return Providers::for($provider instanceof Lab ? $provider->value : $provider)
+            ->providerOptions($this->agentInstructions);
     }
 }

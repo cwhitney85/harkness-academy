@@ -217,7 +217,7 @@ class CreateCourseTest extends TestCase
         );
 
         $this->assertSame('language/spanish/WORKING_KNOWLEDGE.md', $course->workingKnowledgePath());
-        $this->assertSame('language/spanish/101', $course->materialsPrefix());
+        $this->assertSame('language/spanish/101/a1', $course->materialsPrefix());
     }
 
     /**

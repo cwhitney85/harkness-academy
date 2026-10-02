@@ -132,13 +132,12 @@ final class InterviewSession implements CompletionListener
      * the transition service refuses the move from anywhere illegal, so a
      * course cannot be interviewed out of order.
      *
-     * Opening discards whatever the transcript holds, and the tutor having
-     * spoken once is what makes that destructive -- so that is the case this
-     * refuses to leave, since the flow map's client-side precondition is not
-     * somewhere a bug can be caught (spec 8.7.2). Short of it there is nothing
-     * to lose: a student turn only ever follows a tutor turn, so a transcript
-     * with no tutor turn in it is empty, and re-opening is the recovery for a
-     * connection dropped during the tutor's very first question (spec 8.6).
+     * An interview the tutor has already spoken in is refused, since the flow
+     * map's client-side precondition is not somewhere a bug can be caught
+     * (spec 8.7.2). Short of that there is nothing to lose: a student turn
+     * only ever follows a tutor turn, so a transcript with no tutor turn in it
+     * is empty, and re-opening is the recovery for a connection dropped during
+     * the tutor's very first question (spec 8.6).
      *
      * @throws CourseNotOpen|IllegalTransition|InterviewAlreadyUnderway
      */
@@ -155,8 +154,6 @@ final class InterviewSession implements CompletionListener
         if ($this->course->status !== $this->interview->status()) {
             $this->transitions->to($this->course, $this->interview->status());
         }
-
-        $this->transcript->discard();
 
         return $this->ask();
     }
@@ -251,7 +248,7 @@ final class InterviewSession implements CompletionListener
                 'pacing' => $this->budgetSpent ? self::WRAP_UP : self::KEEP_GOING,
             ])
             ->feature($this->interview->feature())
-            ->for($this->course->user_id)
+            ->about($this->course)
             ->messages($history)
             ->userTurn((string) $turn->content)
             ->tools([new SignalComplete($this)])
@@ -284,19 +281,22 @@ final class InterviewSession implements CompletionListener
      *
      * Run by `WriteUpInterview`, never inside a request (11.4).
      *
-     * Fails closed. An unusable summary leaves the transcript intact and the
-     * course where it was, so the student can end the interview again; writing
-     * an empty document instead would erase whatever earlier courses in this
-     * subtopic recorded (ledger D7a).
+     * Fails closed. An unusable summary leaves the course where it was, so the
+     * student can end the interview again; writing an empty document instead
+     * would erase whatever earlier courses in this subtopic recorded (ledger
+     * D7a).
+     *
+     * The transcript is kept either way (ledger D9, amended 2026-09-19).
      *
      * @throws InterviewSummaryUnusable
      */
     public function writeUp(): void
     {
         // Already done -- a second Done press, or a signal that arrived after
-        // the button. The transcript is the record of that: it only goes when
-        // the document lands.
-        if ($this->transcript->isEmpty()) {
+        // the button. The course's status is the record of that: it moves in
+        // the same transaction as the document, and no status leads back into
+        // an interview (CourseStatus::successors).
+        if ($this->course->fresh()?->status !== $this->interview->status()) {
             return;
         }
 
@@ -306,7 +306,7 @@ final class InterviewSession implements CompletionListener
                 $this->interview->summaryVars($this->course, $this->transcript->render()),
             )
             ->feature($this->interview->feature())
-            ->for($this->course->user_id)
+            ->about($this->course)
             ->generate();
 
         $document = trim($summary->text);
@@ -316,9 +316,7 @@ final class InterviewSession implements CompletionListener
         }
 
         DB::transaction(function () use ($document): void {
-            $this->memory->put($this->course->student, $this->interview->documentPath($this->course), $document);
-
-            $this->transcript->discard();
+            $this->memory->put($this->course, $this->interview->documentPath($this->course), $document);
 
             $this->transitions->to($this->course, $this->interview->next());
         });
@@ -329,17 +327,24 @@ final class InterviewSession implements CompletionListener
      */
     private function assertUnderway(): void
     {
-        if (! $this->course->isOpen()) {
+        // Read the row, not the copy this session was built with: the write-up
+        // runs in its own session on the queue, so by the time a late answer
+        // arrives the status has moved underneath this instance. Until the
+        // turns were kept, the emptied transcript hid that (ledger D9, amended
+        // 2026-09-19).
+        $course = $this->course->fresh();
+
+        if ($course === null || ! $course->isOpen()) {
             throw CourseNotOpen::for($this->course);
         }
 
-        // `hasTutorTurn`, not `isEmpty`: a transcript holding only the
-        // opening turn is a conversation nobody has had, and both answering
+        // `hasTutorTurn`, not merely "has turns": a transcript holding only
+        // the opening turn is a conversation nobody has had, and both answering
         // it and summarizing it are meaningless. Done in particular must
         // refuse it -- summarizing it would write a WORKING_KNOWLEDGE
         // document made of one line the student never typed, over whatever
         // earlier courses in the subtopic recorded (ledger D7a).
-        if ($this->course->status !== $this->interview->status() || ! $this->transcript->hasTutorTurn()) {
+        if ($course->status !== $this->interview->status() || ! $this->transcript->hasTutorTurn()) {
             throw InterviewNotUnderway::for($this->course, $this->interview->kind()->value);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Admin\ViewingAs;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -76,6 +77,12 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+            ],
+            // The banner every student shell carries while an admin views as
+            // a student (13.4.4); `auth.user` is the student then.
+            'viewingAs' => fn (): ?array => ($viewing = ViewingAs::in($request->session())) === null ? null : [
+                'mode' => $viewing->isPreview() ? 'preview' : 'act_as',
+                'reason' => $viewing->reason,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

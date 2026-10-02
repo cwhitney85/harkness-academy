@@ -7,7 +7,7 @@ namespace App\Ai;
  *
  * The order is [persona | criteria | wk | guidance] -- most stable first --
  * because it is also the cached prefix of the lesson session (spec 5.1, and
- * the `system` breakpoint in PromptCaching). Reordering these is a cache
+ * the `system` breakpoint in AnthropicProvider). Reordering these is a cache
  * invalidation, not a formatting change.
  *
  * `persona.default` prepends here and nowhere else: no other prompt in the

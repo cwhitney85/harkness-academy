@@ -8,7 +8,7 @@
 
 | # | Subject | Status |
 |---|---|---|
-| D1 | Model sourcing — Anthropic-direct behind a provider abstraction | current |
+| D1 | Model sourcing — Anthropic-direct behind a provider abstraction | **amended 2026-09-20** — its "a config change" claim did not hold for the v1 code; spec 14 makes it hold |
 | D2 | Frontend — Inertia + React | current |
 | D3a | Memory storage — a virtual file tree in Postgres | current |
 | D3b | Memory writes — workflow-initiated only | current |
@@ -17,7 +17,7 @@
 | D6 | The v1 cut — what ships and what waits | current |
 | D7 | Data model — the approved tables | current |
 | D7a | Course exclusivity and exit — one open course per subtopic; exit deletes the row | **superseded by D7d** (exit-deletes first amended by D7b) |
-| D7b | Withdrawal replaces deletion; attempts replace lockout | **superseded by D7d** |
+| D7b | Withdrawal replaces deletion; attempts replace lockout | **superseded by D7d**; its highest-attempt rider superseded by D64 |
 | D7c | Both endings are dates, not statuses | **superseded by D7d** |
 | D7d | One status vocabulary; `withdrawn` and `completed` are derived | current |
 | D8 | WORKING_KNOWLEDGE scope — subtopic, not level | current |
@@ -29,14 +29,15 @@
 | W1 | Planning docs live in-repo under `docs/`, committed | current |
 | W2 | Build workflow — per-package specs, worktree lanes late | **amended by D27** — PLAN.md is no longer the tracker half |
 | W3 | Default branch — `master` | current |
-| W4 | Branching — hybrid trunk-based | current |
+| W4 | Branching — hybrid trunk-based | **amended by W6** — a multi-package unit has its own branch |
 | W5 | Session start — the `/package <n>` command | **amended by spec 9.6.2** — `/unit` is its companion for cross-cutting work |
+| W6 | A multi-package unit is built on a unit branch; each package branches off it and merges back | current |
 | D10 | The syllabus is rows, and four smaller things 4.5 forced | current |
 | D10.1 | Syllabus drafts are their own table, pinned to the inputs they saw | current |
 | D10.2 | Concept slugs stay in the JSON; there is no concepts table | current |
 | D10.3 | GUIDANCE.md renders from a PHP class, not a Blade template | current |
 | D10.4 | A failed generation writes nothing and moves nothing | current |
-| D10.5 | `lessons` carries exactly what D7 listed | current |
+| D10.5 | `lessons` carries exactly what D7 listed | **amended 2026-09-19** — `ai_model_id`, the model a lesson's session started on |
 | D11 | Plan is a string on `users`; the plans table is deferred | current |
 | D12 | The quiz tables land in package 5; 6.1 lands the service over them | current |
 | D13 | `wk.update`'s erosion guard reports and does not block | current |
@@ -51,12 +52,12 @@
 | D22 | Material carries meaning; assessment is not more lesson | current |
 | D23 | The in-lesson checkpoint is a margin question | current |
 | D24 | Radix and the copied shadcn primitives stay | current |
-| D25 | A `top`-tier generation is queued work, not request work | current |
-| D26 | A half-finished exam is a saved answer sheet | current |
+| D25 | A `top`-tier generation is queued work, not request work | **amended by D68** — a request row is kept once its work lands |
+| D26 | A half-finished exam is a saved answer sheet | **amended by D68** — the sheet is kept at hand-in; a re-sit opens a new one |
 | D27 | Documents are tiered by lifetime, and PLAN.md is scheduled for retirement | current |
 | D28 | The mounted-component defect is a class, and is fixed at the boundary | **amended 2026-09-08** — the class is narrower than stated, and its fourth instance is not one |
 | D29 | An acceptance test lives in a spec, one per package | current |
-| D30 | Three shells, not one, and the two things all of them share | current |
+| D30 | Three shells, not one, and the two things all of them share | **amended by D61** — admin is a fourth shell |
 | D31 | The resume table is code — `NextAction` — and a refusal speaks twice | current |
 | D32 | The worksheet has one disclosure path, and choosing an option is the hand-in | current |
 | D33 | The exam screen's three states are decided on the server | current |
@@ -78,11 +79,33 @@
 | D49 | Done's write-up goes to the queue with the tutor's | current |
 | D50 | The demo is the real pipeline on a shorter plan | **amended 2026-09-16 and 2026-09-17** — a welcome page with one button; the demo is lesson 1 of an ordinary course |
 | D51 | `plan` keys depth, and is not yet a table | current |
+| D52 | Tasks reach models through a database catalog; tiers are rows with backup models | **amended 2026-09-19** — the SDK's failover cannot reach a backup on the primary's own provider |
+| D53 | Prices belong to a model; token counting and cache markers belong to a provider class | current |
+| D54 | Prompt files are the reviewed baseline; the database is what runs | **superseded by D65** — the reconciliation it implies has no closed form |
+| D55 | An experiment's variant sticks to a course | current — binds whatever [D66](#d66) builds |
+| D56 | A usage row knows its course, lesson, prompt version, model, outcome and actor | current |
+| D57 | A removal is a record that marks everything it hides | current |
+| D58 | Documents have an owner, and each attempt its own folder | **amended by D69** — the owner is a type and a pointer, never an empty `course_id` |
+| D59 | One subtopics table holds catalog and student subtopics | **amended by D67** — no `created_by` |
+| D60 | Viewing as a student is read-only until you step up with a reason | **amended 2026-09-18** — preview also refuses a stream that would teach something new |
+| D61 | Role is a column, apart from plan and skill level; admin is a fourth shell | current |
+| D62 | Admin changes a user's plan; billing waits for a price | current |
+| D63 | Streamed generation moves to the queue in its own unit, before model switching | current |
+| D64 | Any withdrawn attempt may be resumed | current |
+| D65 | The database owns a prompt's body; a file seeds it and declares its contract | current |
+| D66 | A/B experiments wait for students; what returns is an evaluation package, not this one — **carries the quality-signal survey** | current |
+| D67 | `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student | current |
+| D68 | Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept | current — amends D25 and spec 6.3.4, 12.5.1 |
+| D69 | A document's owner is a type and a pointer; the writing course decides which | current — amends D58 |
+| D70 | A course removed while the model answers saves nothing, and its student is told | current |
+| D71 | Usage from before rows named their course stays unattributed, and admin says so | current — Colin to confirm |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
 Rejected: A (direct, no discipline — lock-in by accretion), B (OpenRouter — +5.5% fee, extra debug hop, beta features unreachable, buys flexibility with no v1 use).
 Rationale: list price, first-party caching, betas reachable; the Laravel AI SDK's provider abstraction makes later multi-provider a config change. Every Anthropic-ism is logged in a portability ledger (spec 2.5). User model selector deferred, not foreclosed.
+
+**Amended 2026-09-20 (spec 14.5.1).** The "config change" claim did not hold for the v1 code, and saying it did let the lock-in D1 rejected accumulate anyway: `PendingCall` never passed a provider, tier and price and timeout all read one config block, and cache markers and cost multipliers sat in the gateway (found by reading the code 2026-09-18, [D52](#d52-tasks-reach-models-through-a-database-catalog-tiers-are-rows-with-backup-models-resolved-2026-09-18-spec-14-items-1411416-colin)). Spec 14 makes it hold: a call reaches its model through `ai_models` and `ai_tiers`, and one class per provider owns that provider's markers, token counting and pricing ([D53](#d53-prices-belong-to-a-model-token-counting-and-cache-markers-belong-to-a-provider-class-resolved-2026-09-18-spec-14-items-1421424)). Adding a provider is now a row and a class, not a config edit — and not a change to any call site.
 
 ## D2. Frontend — **B: Inertia + React**
 
@@ -204,11 +227,15 @@ Two decisions 4.3 forced, both with consequences past package 4.
 **A conversational prompt file is a system prompt, not a turn.** `interview.knowledge` and `interview.goals` are briefs — they tell the model how to run the conversation. The gateway could only send a rendered prompt file *as the message*, which is fine for the opening turn and useless after it: there was nowhere to put what the student typed. `PendingCall::userTurn()` sends the student's text as the message and renders the brief into the instructions instead. Restricted to `output: stream` prompts, so it cannot become a general way to send text no prompt file produced — the one guard that keeps "prompts are files in `prompts/`" true. The usage row still names the brief's key, because that is what framed the call.
 Rider for 5.2: lesson Q&A turns take the same shape — `lesson.system` as instructions, the student's message as the turn.
 
-**Interview transcripts get their own short-lived table.** `interview_messages`, keyed to the course and to which of its two interviews, deleted the moment the document they produced is written. Rows, not a JSON blob on the course, per D7.
+**Interview transcripts get their own table.** `interview_messages`, keyed to the course and to which of its two interviews. Rows, not a JSON blob on the course, per D7.
 Rejected: building the general `messages` table now, shared with 5.2.6's lesson transcripts. Package 4 would be designing package 5's schema before 5.2.6's requirements (replay, reconnect, message ids) are known, and the two have opposite retention rules — lesson turns are kept, because 5.3 resumes from them; interview turns are garbage the moment they are summarized. One table holding both makes "is this row garbage?" a question you answer by reading a discriminator column.
 Rider: summarization runs when the stream *ends*, never inside the `signal_complete` tool call. The model is still writing when it calls the tool, so summarizing there would delete the transcript and then append the model's closing line to nothing. The student's Done button has no stream in flight and summarizes immediately; both doors reach the same method (2.3.4).
 Rider: an empty summary fails **closed** — transcript kept, course unmoved, student can end the interview again. 4.5.1's global rule points the same way here: failing closed destroys no progress, while writing the empty document would erase what earlier courses in the subtopic recorded (D7a).
 Accepted cost: a client that disconnects mid-stream after the model signalled leaves the interview un-summarized. It self-heals — the transcript is intact and the Done button still works — but nothing notices on its own.
+
+**Amended 2026-09-19 (Colin): the turns are kept.** This entry said the table was "short-lived" and that its rows were "garbage the moment they are summarized", and `Transcript::discard()` deleted them when the document landed. That retention rule was never a decision Colin was asked to make — the question this entry settled was *one table or two*, and "keep them" appears nowhere among the candidates it weighed. It is reversed: **nothing deletes a record of a model interaction.** A summary is a derived document, not a replacement for what was said, and an admin has every reason to read the conversation a `WORKING_KNOWLEDGE.md` was written from. The turns now live as long as their course does, and go only when it is deleted.
+Consequence: "has this interview been written up?" was answered by the transcript being empty. It is now answered by `courses.status`, which moves in the same transaction as the document and never leads back into an interview (`CourseStatus::successors`). `InterviewSession::assertUnderway()` reads that status from the row rather than from the copy the session was built with — the write-up runs in its own session on the queue, and the emptied transcript had been hiding the staleness.
+Open, and not settled here: whether the *content* of every model call — system prompt, messages, structured output, tool calls — is stored as well. `usage_events` records the meter reading and no content; laravel/ai's own `agent_conversation_messages` table exists and this project never adopted it. That is its own decision, with a privacy question attached, and it is not this one.
 
 ## R1. Personas — **repo prompt files** (`prompts/styles/*.md`), `courses.style` column stores file key. Prompts are code until users can edit them.
 
@@ -248,6 +275,16 @@ Commit messages carry no signing, co-author trailers, or attribution lines (foun
 
 Scope + boundaries + commit rules + exit ritual, versioned in-repo. Rejected: minimal prompt (scope discipline implicit only), pasted template (drifts outside the repo).
 
+
+## W6. A multi-package unit is built on a unit branch — **amends W4** (resolved 2026-09-18, admin-and-performance unit, Colin)
+
+A unit that spans packages gets one branch off `master`, `unit/<name>`, holding its specs and ledger entries. Each package branches off the unit branch as `pkg/<n>-<slug>` and merges back into it; Colin reviews and merges every package. The unit branch merges into `master` once its last package lands. If `master` moves mid-unit, it is merged into the unit branch.
+
+W2's lane rule reads against the base branch: a package may branch only once every interface it consumes has merged into the unit branch — or into `master`, for work outside a unit. Side-by-side packages run as worktrees, each with its own copies of the development and test databases, because both of those are shared by every checkout and the development one holds real work.
+
+W4 still governs work outside a unit: serial solo work commits to `master`.
+
+Rejected: packages merging straight to `master` (a half-built unit ships its first packages alone — the admin role without the screens that use it).
 ## Corrections during spec phase
 
 - **GUIDANCE.md is model-facing only** — read by exactly one consumer (lesson engine). User-facing syllabus view renders from the same frozen syllabus JSON; consistency by construction. CI check: no route/component reads GUIDANCE.md.
@@ -328,6 +365,8 @@ D7's organising rule decides it: the app queries position and status, and the mo
 
 Rejected: denormalising title, objective and slug onto the row — convenient for a lesson list, but the row and the JSON then drift, and a regenerated syllabus has two places to fix.
 Rejected: denormalising the whole lesson JSON — model-facing material in relational columns, against D7 outright.
+
+**Amended 2026-09-19 (spec 14.1.6, Colin).** `lessons.ai_model_id` holds the catalog model the lesson's session started on, stamped at its first call. It is app-queried state, not syllabus material, so D7's rule puts it on the row; the alternative, reading it back from the lesson's first usage row, would have made teaching depend on a billing log.
 
 Revisit if a lesson list needs to sort or paginate by title. Same shape as D7d's deferred generated column, and the same answer for now.
 
@@ -567,7 +606,9 @@ Raising the timeout was rejected even where it was possible. A phone holding a t
 
 Rider: this is also the first thing in production that *needs* a queue worker at all. `CompletionPipeline` has dispatched `ShouldQueue` jobs since package 5 and nothing has ever drained them, so homework and the working-knowledge summaries were queued and silently unprocessed — a landmine that would have gone off at the first completed lesson. `docs/deploy.md` deferred Cloud-side queue enablement to "when package 4 does queue work"; that day had already passed unnoticed.
 
-## D26. A half-finished exam is a saved answer sheet (resolved 2026-09-04, dogfood session, Colin)
+
+**Amended 2026-09-23 by [D68](#d68-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin).** A request row is no longer deleted when its work lands or on the retry after a failure: it is kept with its state, and the key becomes one open request per (course, kind) ([16.2.11](specs/16-catalog-removal-ownership.md)).
+## D26. A half-finished exam is a saved answer sheet (resolved 2026-09-04, dogfood session, Colin; **amended by [D68](#d68-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin)** — the sheet is kept at hand-in)
 
 Every other quiz in the system saves itself as you go. Choosing an option on a homework, a checkpoint or a refresher POSTs immediately, is graded, and hands back the key and the explanation — the row is in `quiz_attempts` the instant it is clicked. The final exam does none of that, and [D20](#d20-an-exam-measures-it-does-not-teach-resolved-2026-08-28-package-6-session-colin) is why: grading a final one question at a time would disclose the key mid-exam and a re-sit would be passable from memory. `QuizGrader::grade()` throws rather than allow it.
 
@@ -718,7 +759,7 @@ Rejected: **keeping the row and filtering it out at each reader.** Three readers
 
 **~~The cap ends the interview one model call earlier, never one later.~~** *(Superseded by the amendment.)* The capped answer was summarized rather than answered, so a five-question interview cost five conversation turns and a summary — and the tutor's closing line was fixed text rather than a generated turn, because generating it would have spent the call the cap had just saved.
 
-**~~And the closing line is not a transcript row.~~** *(Superseded.)* It went out as `turn.start` + `turn.delta` with no `turn.end`, since the summarization it followed had already discarded the transcript. The closing turn is now an ordinary tutor turn, which reaches the client the same way and — because the transcript goes with the summary — still carries no `turn.end`. That shape survived the amendment; only its author changed.
+**~~And the closing line is not a transcript row.~~** *(Superseded.)* It went out as `turn.start` + `turn.delta` with no `turn.end`, since the summarization it followed had already discarded the transcript. The closing turn is now an ordinary tutor turn, which reaches the client the same way and — because the transcript goes with the summary — still carries no `turn.end`. That shape survived the amendment; only its author changed. *(2026-09-19: the transcript no longer goes with the summary, so the closing turn does now carry a `turn.end` naming its row. The screen is unaffected — `turn.end` only marks the turn as written, and the reload that follows redirects, because the course has moved.)*
 
 Rejected: **stating the number in the prompt.** That is what `prompts/interview/knowledge.md` already did ("Eight to twelve exchanges is usually enough") and what the dogfood course proved worthless: a number in a prompt is guidance, and the interview ran until the student pressed Done. The prompts still name no number — `pacing` says "ask your next question" or "this is your last turn", never how many are left, so the model cannot pace itself towards an ending the cap has not reached.
 
@@ -957,3 +998,196 @@ D11 says `users.plan` becomes a `plans` table the moment a plan carries "a price
 **Chosen: `demo` is a config key, and D11's trigger has not fired.** Depth is already keyed by plan in `config/courses.php` — `depth.{skill_level}.{plan}` — so `demo` adds a key to a keyed structure rather than an attribute to a plan. Nothing about `demo` is a row's worth of data; it is three integers in a file that already holds three integers per plan. `users.plan` still has exactly one production reader.
 
 Falsified if: the second non-standard plan needs anything config cannot key — a price, a quota, a per-account entitlement, an expiry. That is the day this becomes a table, as D11 says.
+
+## D52. Tasks reach models through a database catalog; tiers are rows with backup models (resolved 2026-09-18, spec 14 items 14.1.1–14.1.6, Colin)
+
+D1 chose Anthropic-direct as the v1 step toward multiple providers, and said the SDK would make the move "a config change". Reading the v1 code on 2026-09-18 found that untrue: `PendingCall` never passes a provider, and tier, price and timeout all resolve from one config block. This entry is the move D1 planned, not a reversal of it.
+
+**Chosen: `ai_models` (provider, model id, prices) and `ai_tiers` (primary model, ordered backups, timeout).** A call names a task, the task a tier, the tier a catalog row. The SDK's own failover walks the backups. `cheap`/`mid`/`top` survive as vocabulary; a `session` prompt runs on the model its session started on.
+
+Rejected: a provider per tier in config (switching still needs a deploy) · tasks naming models directly (loses the tier vocabulary every call site uses) · an outside router such as OpenRouter or a LiteLLM proxy owning routing (usage and cost split across two systems; OpenRouter stays available as one catalog provider).
+
+Falsified if: a task needs a model choice the tier → model chain cannot express. Per-variant model pins (D55) are the one exception already allowed.
+
+**Amended 2026-09-19 (spec 14.1.5, Colin).** laravel/ai keys its failover list by provider (`['anthropic' => model]`), so it cannot fall back from one model to another on the same provider. With Anthropic the only provider class (14.6.1), no backup a tier can hold today is reachable: `Tier::failover()` drops a backup whose provider is already in the list. Colin chose to keep the SDK's failover as it is rather than have the gateway walk the list itself. **Same-provider fallback is a priority for the model-switching unit.**
+
+## D53. Prices belong to a model; token counting and cache markers belong to a provider class (resolved 2026-09-18, spec 14 items 14.2.1–14.2.4)
+
+The SDK's drivers disagree on what `promptTokens` means (confirmed 2026-09-18): Anthropic, OpenAI, Gemini, DeepSeek, xAI and Azure subtract cached tokens; OpenRouter, Groq and the OpenAI-compatible driver do not. v1's cost formula adds cache reads on top, so it would double-count on the second group, and it priced by tier with Anthropic's cache multipliers applied to everything.
+
+**Chosen: one class per provider normalises tokens (input means uncached input), places cache markers, and prices from the serving model's catalog prices.** A model cannot be activated without a class for its provider. `PromptCaching` moves into the Anthropic class.
+
+Rejected: importing LiteLLM's price file now (deferred to the model-switching unit, when the catalog grows) · trusting provider-reported cost (only OpenRouter reports one).
+
+## D54. Prompt files are the reviewed baseline; the database is what runs (resolved 2026-09-18, spec 15 items 15.1.1–15.2.5, Colin)
+
+Colin wants prompts editable live, variants per module eventually, and A/B tests, without losing git history. **Chosen: `prompt_versions`, immutable.** Deploy syncs each changed file into a new version; an admin edit makes a new version; one is active. A file version activates only if the active one came from a file, so a deploy never overrides a live edit. `prompts:pull` writes live versions back to files. `output` and `vars` — the contract with calling code — come only from files; live edits change body and tier.
+
+Rejected: files only, read-only in admin (no live tuning) · database only (live edits never reach git; repo and production drift) · a hosted registry such as Langfuse (an outside service and bill, and text near student data leaves the app). The chosen shape is the pull/push hybrid Braintrust uses.
+
+Amends 2.3.1: git is the history of file versions; `prompt_versions` is the history of what ran.
+
+## D55. An experiment's variant sticks to a course (resolved 2026-09-18, spec 15 item 15.3)
+
+A variant is a prompt version plus an optional model, with a weight. Assignment is a deterministic hash of experiment and course — user when there is no course — because a course that switched model mid-way would throw away its cached prefix and compare nothing cleanly. `lesson.section` and `lesson.qa` follow their `lesson.system`'s variant. Without quality scores (a later unit), an experiment compares cost, latency and failure rate.
+
+Rejected: Laravel Pennant for assignment (a package for what a hash does).
+
+## D56. A usage row knows its course, lesson, prompt version, model, outcome and actor (resolved 2026-09-18, spec 14 item 14.3)
+
+v1's row named a prompt key and a model string: no prompt version, no course, and a `user_id` the demo sweep nulls. **Chosen: add `course_id`, `lesson_id`, `ai_model_id`, `prompt_version_id`, `experiment_variant_id`, `reasoning_tokens`, `outcome` (`ok` | `failed` | `failed_over`), `acting_user_id` and `plan` to the row itself.** Every comparison the admin makes is a `group by` on one table, and demo cost survives the sweep through `plan`.
+
+Rejected: a separate context table joined to each row (a join on every report).
+
+## D57. A removal is a record that marks everything it hides (resolved 2026-09-18, spec 16 item 16.2, Colin)
+
+Colin's rules: removing a module or subtopic hides everything under it; removing a course hides that course; restore brings it back; a course restored while a newer one is open stays removed. **Chosen: a `removals` row, tied to its `admin_actions` row, and `deleted_at` + `removal_id` stamped on every hidden row.** Laravel's soft deletes hide them by default; restore unstamps exactly one removal's rows, so a child removed on its own stays removed when its parent is restored.
+
+Rejected: marking only the removed row and hiding descendants by joining up the tree (every query needs the join; one missed join shows hidden data) · hard delete with a backup.
+
+A removed subtopic's name cannot be typed back in as a student subtopic (16.2.7), which is what keeps a subtopic restore from ever colliding with a course started meanwhile.
+
+## D58. Documents have an owner, and each attempt its own folder (resolved 2026-09-18, spec 16 item 16.3, Colin; **owner shape amended by [D69](#d69-a-documents-owner-is-a-type-and-a-pointer-the-writing-course-decides-which-resolved-2026-09-23-spec-16-items-1631-1633-colin)**)
+
+v1 memories are keyed by user and path; nothing records which course wrote what, and a later attempt overwrites an earlier one's guidance and criteria at the same paths (D7b's rider). **Chosen: course documents carry `course_id` and live under `{module}/{subtopic}/{level}/a{attempt}/`; working knowledge stays subtopic-owned (D8), and every version records the course that wrote it.** Removing a course hides its documents and keeps working knowledge, because what the student knows is still true.
+
+Rejected: rolling working knowledge back when a course is removed (can discard real learning, and is an admin-triggered memory write) · per-course working knowledge (breaks D8: 201 builds on 101).
+
+**Why `a{attempt}` and not a bare `{attempt}`** (recorded 2026-09-23, Colin). A path is read by a model as a file name, and by a person in `memory:show` and the admin views. A bare number would sit between two others that mean different things, as in `spanish/101/2/03-ordering-food/`: the level, the attempt and the lesson position, with only the lesson's title saying which is which, so `101/2` reads as easily "level 101, part 2" as "attempt 2". One letter names the segment, and it cannot be mistaken for a level (always 101, 201 or 301) or a lesson (a two-digit position and a title). Code needs neither: path rules allow a digit-only segment, and one method builds every course path. The `a` is for the reader. Rejected: the bare number, which saves one character and costs that reading. Not solved by either: listing order is by character, so `a10` sorts before `a2`. Zero-padding (`a02`, as lesson folders use `01-`) would fix it, and is worth doing if double-digit attempts ever become real.
+
+## D59. One subtopics table holds catalog and student subtopics (resolved 2026-09-18, spec 16 item 16.1, Colin; **`created_by` dropped by [D67](#d67-subtopics-has-no-created_by-who-typed-a-subtopic-first-is-its-oldest-courses-student-resolved-2026-09-23-spec-16-item-1611-colin)**)
+
+Colin wants to see which free-text subtopics students start and promote the popular ones. **Chosen: `subtopics` gains `origin` (`catalog` | `student`), `listed` and `created_by`; promotion lists a row.** Two students typing the same name share one row through the existing (module, slug) key. Courses gain `subtopic_id` beside their frozen slugs. Refusals keep their own table — they never became a subtopic.
+
+Rejected: a separate `custom_subtopics` table (two ideas of a subtopic) · deriving demand from courses on read (cannot record a promotion or a removal).
+
+## D60. Viewing as a student is read-only until you step up with a reason (resolved 2026-09-18, spec 13 item 13.4, Colin)
+
+Colin wants to act fully as a student without corrupting the audit trail. **Chosen: preview by default — GET only, no AI calls — and act-as as a second step that requires a reason.** The acting admin rides in Laravel `Context` into queued jobs and is stamped on usage rows, memory versions and the action log, so cost reports can exclude the session.
+
+Rejected: preview only (cannot reproduce a write-path bug) · act-as with no step-up (every glance becomes a potential write to a real record).
+
+**Amended 2026-09-18 (package 13, item 13.4.1, Colin).** "GET only" was not read-only: the section stream is a GET, and teaching a section moves the student into it before the AI call that preview refuses. **Chosen: in preview, a section stream answers only by replaying a section already taught, and the interview stream — which only ever opens a new turn — is refused.** Colin: preview must not affect the course. Rejected: leaving streams to the gateway's refusal (the student's position would still move).
+
+## D61. Role is a column, apart from plan and skill level; admin is a fourth shell (resolved 2026-09-18, spec 13 items 13.1, 13.3)
+
+**Chosen: `users.role` (`student` | `admin`) behind one gate, granted only by an artisan command, with a second factor required for `/admin`.** Role never reads plan or skill level, as 4.5.6 already keeps those two apart. The admin area is a fourth shell beside D30's three, drawn on the canvas first.
+
+Rejected: an `is_admin` boolean (one level forever) · a roles-and-permissions package (structure for one admin).
+
+## D62. Admin changes a user's plan; billing waits for a price (resolved 2026-09-18, spec 17 item 17.1.3, Colin)
+
+Colin asked why billing should not be in admin. There is nothing to bill: no price, no checkout, no receipt exists. **Chosen: admin changes `users.plan` among config keys, logged.** D51's trigger for a `plans` table — a price, a quota, an expiry — has still not fired; charging money is its own unit when it does.
+
+## D63. Streamed generation moves to the queue in its own unit, before model switching (resolved 2026-09-18, admin-and-performance framing, Colin)
+
+The host cuts a response silent for 60 seconds (T10, spec 11). A slower model — a `top` tier or a reasoning model thinking before its first token — could exceed that before streaming anything (probable; unmeasured). Colin proposed Reverb. The SDK broadcasts a queued stream (`broadcastOnQueue`, confirmed) and Laravel Cloud offers managed Reverb. **Chosen: every streamed generation runs on the queue and broadcasts over Reverb, as its own unit, landing before the unit that switches models.** 11.8's reason — the student watching the tutor write is the product — survives; its rule does not.
+
+Until it lands, a prompt streaming inside the request may move only between `cheap` and `mid` (15.2.3).
+
+Rejected: queueing only slow models (two delivery paths forever).
+
+## D64. Any withdrawn attempt may be resumed (resolved 2026-09-18, spec 16 item 16.4, Colin) — **supersedes D7b's highest-attempt rider**
+
+D7b allowed resuming only the highest attempt because attempts shared document paths. D58 gives each attempt its own folder, removing the reason. Colin chose to lift the rule: a withdrawn attempt resumes while no other course on its subtopic is open — the open-course index already enforces that — and the return prompt asks which attempt when there is more than one.
+
+Rejected: keeping the rule (a restored older attempt would be a record, not a course) · lifting it only for restored courses (two rules for one thing).
+
+## D65. The database owns a prompt's body; a file seeds it and declares its contract (resolved 2026-09-21, spec 15 items 15.1.2–15.2.6, Colin; **amended 2026-10-01**) — **supersedes D54**
+
+D54 made the files the reviewed baseline and the database what runs, with `prompts:sync` reconciling the two and a rule that a deploy never overrides a live edit. Building 15.2 found that reconciliation has no closed form. Sync compares a file against the newest `file` version's hash, so once `prompts:pull` writes a live edit into its file, the next deploy sees a changed file, makes a version whose body duplicates the active one, and flags it — 15.2.5's own done-condition cannot pass. The root cause is that `source` was asked to answer "is a live edit outstanding?", which is a question about whether the file and the running text diverge, not about where a version came from.
+
+**Chosen: one writer per half.** The file owns `output` and `vars`, rewritten on every deploy, because the calling code depends on them. The editor owns the body and the tier. A file's body is read exactly once, to seed version 1 of a prompt that has none, so no deploy can change what a prompt says and there is nothing to reconcile. Nothing runs the other way: the files are starting text, and an edit reaches the repo only when Colin copies it there by hand.
+
+**Amended 2026-10-01 (review of the admin-and-performance unit, Colin).** `prompts:pull` and the seeded version's file hash are gone. Pull read the local database, so an edit made in production's editor had no way back to the repo, and keeping it meant the repo appeared to promise what production runs when it held what development runs. Colin: the database is the source of truth, and the repo is updated by hand. `prompts:sync` stays, smaller in what it promises rather than in what it does: a release that adds a prompt needs its row, and a release that changes what the code passes needs the contract to follow, or the editor would refuse a body using the new var. A file that adds a var the running text does not use is accepted and named by sync (15.1.8), marked on Admin → Prompts (15.2.6), and its calls run without the new material until the text is edited (15.1.9). Rejected: dropping sync with pull (new prompts never reach production, and a new var cannot be edited in) · refusing those calls until the edit (4.5.1 would allow it, since nothing is destroyed, but it stops the feature for every student over a gap the deployer closes in minutes).
+
+Rejected, in the order they were put:
+
+- **Adopt the pulled text as a new file version** (no schema change, no rule change) — costs a version row whose body duplicates its predecessor, which makes `prompt_versions` hold both "a text this prompt ran" and "this text is now in git".
+- **Compare the file to the active version first, then to the newest file version** — closes 15.2.5 with no migration, but after a pull the active version still records `source: admin`, so the next file edit waits for a manual activation.
+- **Repo-only, with a read-only editor** — deletes the most structure and keeps prompt changes inside the test suite, which matters because eight of the eighteen prompts must produce schema-valid JSON. Rejected because prompt tuning is the product work in this app and Colin wants it immediate; a two-minute deploy in that loop is a tax on the thing the app is for.
+- **A hosted registry** (Langfuse, LangSmith, PromptLayer, Braintrust) — re-examined rather than inherited from D54. Their free tiers would fit, but the half worth paying for is the eval and playground loop, which [15.3.6](specs/15-prompt-registry.md) marks WONT, and their traces would carry student interview transcripts and working-knowledge documents out of the app.
+
+**What it costs, recorded so it is not rediscovered.** Live editing routes around the test suite: `PromptRenderFixturesTest` and `LessonSystemPromptTest` hold the *files* to their contract, and what runs is by definition text they never saw. Copying an edit back into its file by hand is the only mitigation. And a code change that adds a variable cannot land its body with it — the file's `vars` imports and its body does not, so the new material does not reach the model until the text is edited; since 2026-10-01 that is reported rather than silent.
+
+Falsified if: a prompt body ever needs to ship with the code that calls it, at which point the question is whether the editor should exist at all, not how to merge two writers.
+
+## D66. A/B experiments wait for students; what returns is an evaluation package, not this one (resolved 2026-09-21, spec 15 item 15.3, Colin)
+
+15.3 was specced as SHOULD and marked "built in this package's session so they are not lost". Building 15.2 first made the case against building it at all yet.
+
+**Two reasons, and neither is about the machinery being wrong.** With quality scores excluded by 15.3.6, the only numbers a comparison screen can carry are cost, latency and failure rate, and between two wordings of one prompt on one model those differ by a few percent of token count — the screen would answer a question nobody asked. And there is nothing to split: the development database holds nine courses across three users, so a 50/50 assignment yields four courses against five. The assignment would have been correct, the screen would have rendered, and the result would have been noise.
+
+**Chosen: defer the whole of 15.3, and let what returns be its own package.** It is not what 15.3 specced — the axis inverts, the quality exclusion reopens, and a golden set appears that 15.3 never had — so it is a different package that inherits [D55](#d55-an-experiments-variant-sticks-to-a-course-resolved-2026-09-18-spec-15-item-153)'s assignment rule rather than an item of this one. The package is not written yet, deliberately: its done-conditions depend on which quality signal proves usable, which depends on data that does not exist.
+
+Rejected: **building it as specced** (correct machinery measuring noise, and the sunk shape would bias what is built later) · **building only the deterministic assignment now** and leaving the screen (a hash with nothing reading it) · **folding it into package 17's admin screens** (a comparison screen with nothing to compare is not an admin screen problem).
+
+**What is settled for whatever comes back.** A variant is authored by a save that does *not* activate, so a candidate never runs at 100% before the split — this amends [15.2.2](specs/15-prompt-registry.md), which activates on every save. The model is the primary axis and the prompt body the secondary one, because that is where the numbers actually move. And it needs a quality signal, which reopens 15.3.6's WONT; the candidates surveyed when this was deferred are below.
+
+### Candidates for the quality signal — surveyed 2026-09-21, none weighed
+
+*Recorded so the package that returns does not rederive them. The useful split is not cheap against expensive, it is **works with one student** against **needs volume**.*
+
+**Works at n=1.**
+
+- **Contract compliance.** Eight of the eighteen prompts must return JSON against a schema — `syllabus.generate`, `syllabus.revise`, `exam.final`, `homework.generate`, `quiz.refresher`, `checkpoint.generate`, `lesson.summarize`, `subtopic.check`. For those, part of "quality" is "obeyed its own contract", and that is mechanically checkable with no judge: did it parse, did the quiz have four options with exactly one correct, did the syllabus have the right lesson count, did `explainer.select` stay under the 200 words its body demands. Half-built already — a failed parse lands as `failed` in `usage_events.outcome`. Weakest signal, lowest cost, and the only one that needs no human at all.
+- **The golden set.** A fixed set of captured inputs, run through two prompt versions, outputs read side by side. Not a score — a reproducible comparison, which is what turns "I think B is better" into something checkable while Colin is the only judge. `tests/fixtures/prompts/*.txt` already pins what each prompt *renders to*; the missing half is captured model *replies*. **Recommended first build**, because it is the only candidate that pays off before there are students.
+- **Colin's own rating.** A 1–5 or thumbs on a generated section or syllabus, stored against the call that produced it. Cheap to build, expensive to run, and the only signal that directly encodes taste. It is also the calibration set any LLM judge would need, so it is not skippable by building the judge instead.
+
+**Needs volume.**
+
+- **Student assessment outcomes — the signal this app has and a chatbot does not.** The app grades the student, so it holds ground truth about whether the teaching worked: whether the checkpoint was answered right first try for a section taught by one variant against another, homework and final-exam scores per concept (`final_exam_concepts` already carries the emphasis), and refresher results weeks later, which measure retention rather than comprehension. The data is already accumulating — nine courses hold 45 quizzes and 171 graded attempts as of this entry. Best signal, slowest, and heavily confounded: an exam score reflects a whole course, not one section's wording, so it needs enough courses to average the confounds out.
+- **Confusion proxies, derivable from rows already written.** A Q&A turn immediately after a section, or `explainer.select` called against it, means the prose did not land. Both are already recorded — the turns in `lesson_messages`, the explainer calls as `usage_events` rows naming their lesson — so this costs a query rather than a feature.
+
+**Either, once calibrated.**
+
+- **An LLM judge.** A cheap model scores an output against a rubric. Fast and scalable, with a known bias toward longer and more confident writing, which would quietly select for a wordier tutor. Only trustworthy once calibrated against human ratings — so it is not a shortcut past hand-scoring, it is what is built *after* hand-scoring to stop doing it. It would be a prompt like any other: an inventory row (2.3.2), a usage row, a tier.
+
+**The plumbing that makes any of them usable.** A score must attach to the `usage_events` row that produced the output. That row already knows the prompt version, the model, the course and the lesson, so a score hung there is attributable to a version and a model for free. A score stored anywhere else — on the lesson, on the course, in a file — cannot be attributed to a prompt version, and no comparison screen can ever read it. Likeliest shape is a small table pointing at a usage row, one row per score, so that several kinds of signal can coexist against the same call.
+
+Falsified if: the app reaches enough students that a split is informative before any quality signal exists, at which point cost and latency per variant are worth having on their own.
+
+## D67. `subtopics` has no `created_by`; who typed a subtopic first is its oldest course's student (resolved 2026-09-23, spec 16 item 16.1.1, Colin)
+
+D59 listed a `created_by` column. Building 16.1 asked what it holds on a catalog row, and what happens to it when the student who first typed a name deletes their account, since a student subtopic is shared by everyone who types that name. Colin rejected the first answer, a column with NULL on catalog rows (*"I really, really don't like null to confer any meaning"*), and asked what the column was for. Nothing new. A student subtopic is created in the same transaction as its first course, so who typed it first is the student on its oldest course, and with nothing hard-deleted ([D68](#d68-nothing-is-hard-deleted-but-an-unclaimed-demo-accounts-soft-delete-requests-and-drafts-are-kept-resolved-2026-09-23-spec-16-items-1621016213-colin)) that course always exists. Demand never reads it, and who *promoted* a subtopic is the `subtopic.promoted` row in `admin_actions`. **Chosen: no column.**
+
+Rejected: **no foreign key, NULL on catalog rows** (a NULL that meant "catalog", and a second copy of a fact the courses table owns) · **an admin id on catalog rows** (no admin created the seeded catalog; one would have to be invented) · **a foreign key to the student** (cascade deletes a row other students' courses point at; restrict blocks the account's deletion; set null makes NULL mean "creator gone").
+
+## D68. Nothing is hard-deleted but an unclaimed demo; accounts soft-delete, requests and drafts are kept (resolved 2026-09-23, spec 16 items 16.2.10–16.2.13, Colin)
+
+Colin: *"we never want to actually delete anything. We should always be using soft deletes in case we need to restore an account or a course or subtopic."* D57 already made removal soft for modules, subtopics, courses and memory documents. Four hard deletes remained, found by reading the code 2026-09-23: a student deleting their own account, the demo sweep, a generation request once its work lands (or on the retry after a failure), and an exam's draft answer sheet at hand-in. The two user deletes cascade through twenty-one foreign keys: courses, memory, quizzes, attempts, refusals.
+
+**Chosen:**
+- **A student who deletes their account is soft-deleted.** Nothing under the row is touched, and the account cannot sign in. It comes back by an admin restoring it. Its email stays taken, so signing up again with it is refused rather than making a second account.
+- **An unclaimed demo is the one hard delete.** The sweep ([12.5.1](specs/12-demo.md)) keeps deleting `demo`-plan rows that never converted after `demo_account_days`, which is the timer Colin proposed. A demo that converts is the same row moved to `standard` ([12.4.2](specs/12-demo.md)), so it is never swept. Its `usage_events` survive as before, so what demos cost stays countable.
+- **A generation request is kept when its work lands, and when it fails.** Amends [D25](#d25-a-top-tier-generation-is-queued-work-not-request-work-resolved-2026-09-02-dogfood-session-colin): the row's existence stops meaning "pending", so the row carries its state, and the one-row-per-(course, kind) key becomes one *open* request per (course, kind).
+- **An exam's answer sheet is kept at hand-in.** Amends [6.3.4](specs/06-assessment.md): a re-sit still opens an empty book, and it opens a new sheet instead of emptying the old one.
+
+Rejected: **hard delete on self-deletion** (irreversible, and the account cannot be restored) · **soft-deleting unclaimed demos too** (a visitor who never signed up has no one to restore them for, and the cost record survives without the row) · **erasing personal data now** (deferred as 16.2.13, its own question when a privacy request makes it one).
+
+## D69. A document's owner is a type and a pointer; the writing course decides which (resolved 2026-09-23, spec 16 items 16.3.1, 16.3.3, Colin)
+
+D58 gave `memories` a `course_id`, empty for working knowledge. Colin rejected the empty value when 16.3.1 came to be built: *"not a fan of using null to confer meaning … The memory belongs to something. Making it null implies otherwise and can't be relied upon."* **Chosen: `memories.owner_type` and `owner_id`, neither ever empty, the type held by a database check to a course or a subtopic.** Working knowledge points at its subtopic row (D8); criteria, guidance and summaries at their course. Those are the only two: the module rollup is rendered on read and never stored (3.3). A new owner is one more value in the check when something else is first stored. Every version names the course that wrote it, in `memory_versions.course_id`, also never empty: every write the app makes is some course's workflow.
+
+**`put` takes the writing course, not an owner.** A document can belong only to the course writing it or to that course's subtopic, so the owner follows from the path. The course's working-knowledge path is the subtopic's; anything under its own folder is the course's; any other path is refused. Passing an owner in would let a caller name a wrong one, and the refusal would have nothing to check against.
+
+Rejected: **an empty `course_id` for working knowledge** (D58 as written) · **the path alone naming the case**, with a check tying an empty `course_id` to working-knowledge paths (no pointer to the subtopic, and still an empty value to read) · **a pivot table per owner** (one document with two owners, or none, could not be refused).
+
+The migration found two documents in development whose course had been deleted by hand on 2026-09-09, before D68. It refuses to run while any document or version has no course to match, and lists them. Colin chose to delete the two by hand rather than have a migration do it.
+
+## D70. A course removed while the model answers saves nothing, and its student is told (resolved 2026-09-23, spec 16 items 16.2.4, 16.2.8, Colin)
+
+16.2.8 as specced had a queued job check for its course when it starts. A syllabus or exam call runs for minutes, and a removal landing in that window still saved what the model wrote. Colin: *"if a removal occurs during the AI call it should fail to save … show the user a message informing them about the removal and redirecting them."* **Chosen: the gateway checks once more when a non-streamed call answers.** The usage row is written first, because the call happened and was paid for (2.2); then, if the course the call is about has been removed, nothing is returned to save. The one check covers every queued generation, because every course-bound call names its course. Jobs end quietly, and retry loops let it through instead of paying for a second call on a course that is gone. **A student who reaches any screen of their own removed course lands on the dashboard with a message naming it.** That replaces 16.2.4's bare 404, and it is the same answer for the student whose syllabus screen was polling when the course went. To anyone else a removed course is still a 404.
+
+Rejected: **the start check alone** (the spec as written; leaves the window) · **re-checking inside each generator's write** (five places to keep in step, and each still pays for its retry) · **holding a lock on the course row for the length of the call** (minutes of lock, which blocks the removal itself).
+
+A streamed turn is not covered. The student is watching it arrive, and the removal meets them on their next screen.
+
+## D71. Usage from before rows named their course stays unattributed, and admin says so (resolved 2026-09-24, spec 17 items 17.1.2, 17.2.2, build session — Colin to confirm)
+
+Spec 14.3 gave each usage row a `course_id`, with no backfill. Every row in the development database predates it, so every course of Colin's costs $0 on Admin → Users and Courses, while the account has cost $7.44. A bare $0 reads as a free course. **Chosen: leave the rows as they are, and show the account's unattributed sum as its own line under its courses**: the subtopic check, which runs before a course exists, plus every call from before rows named their course. A course page with no attributed calls says where they are.
+
+Rejected: **a heuristic backfill** that matches a call to a course by its student, time and feature. A student can have several courses open across subtopics at once, so it would write guesses into what is otherwise a receipt table, and no later reader could tell a guess from a record. 14.3.4 made the same choice for `plan`.
+
+Falsified if: Colin wants 17.2.2's acceptance step, "open your course: every part renders", to show his existing courses' costs. Then a one-off, labelled attribution is the question, not a silent backfill.
+

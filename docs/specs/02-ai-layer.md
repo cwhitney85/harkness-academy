@@ -4,8 +4,8 @@
 
 **Decisions that bind this spec** ([ledger](../02-design.md), index at its head): [D1](../02-design.md) Anthropic-direct behind a provider abstraction · [D4](../02-design.md) one real agent, everything else scripted · [D14](../02-design.md) a Q&A turn gets its own inventory row · [D19](../02-design.md) `homework_results` on `wk.update` · [D25](../02-design.md) `top`-tier calls run on the queue. Anthropic-isms: [docs/anthropic-specific.md](../anthropic-specific.md).
 
-- **2.1 MUST** — Provider gateway: all calls through one service wrapping laravel/ai; call sites name a capability tier. *Done: grep finds zero model IDs outside config.*
-  - **2.1.1 MUST** — Tier→model map in `config/ai.php` (`tiers.{tier}.model`): `cheap`=claude-haiku-4-5, `mid`=claude-sonnet-5, `top`=claude-opus-5 (v1 defaults). Plan-based routing and provider migration are edits to this block only. *Done: three tiers resolve to three distinct models in a config test; changing `tiers.mid.model` alters the lesson fixture's model with no other diff.*
+- **2.1 MUST** — Provider gateway: all calls through one service wrapping laravel/ai; call sites name a capability tier. *Done: no call site names a model — the rule and its test belong to [14.1.4](14-routing-and-usage.md).*
+  - **2.1.1 MUST** — Tier→model resolution. **Rewritten 2026-09-20 ([14.5.1](14-routing-and-usage.md)); the map is no longer config.** A tier is a row in `ai_tiers` naming a primary model, ordered backups and a timeout; a model is a row in `ai_models` carrying its provider and its prices. Spec [14.1](14-routing-and-usage.md) owns both tables, [14.2](14-routing-and-usage.md) owns the class per provider, and this item owns only the call-site contract it always did: **a call site names `cheap`, `mid`, `top` or `session`, and nothing else in the app names a model.** Plan-based routing and adding a provider are a row and a class, not an edit here. *Done: `Tier::model()` resolves through `App\Ai\Catalog`; changing `mid`'s row alters the lesson fixture's model with no code diff (14.1.2).*
 - **2.2 MUST** — Usage instrumentation: every call writes `usage_events` (feature, tier, model, input/cached/output tokens, latency). *Done: seeded demo cycle yields per-feature cost report from SQL alone.*
   - **2.2.1 SHOULD** — `php artisan usage:latency` reports each prompt's call count, average and worst latency beside its tier's timeout and the host's between-bytes ceiling. Added 2026-09-12: 2.2's report is readable "from SQL alone" only where there is a SQL prompt, and the deployed environment has none — the numbers are wanted where the ceilings are real, and the ceilings are what [T10](../lessons.md) is about. *Done: the command names every prompt that has run, and flags one whose worst latency reaches `--ceiling`.*
 - **2.4 MUST** — Prompt-caching spike (**first task of week 1** — outcome can reorder caching design): verify `cache_control` reaches Anthropic; work around laravel/ai#119 for system prompts. *Done: `cache_read_input_tokens > 0` on second call of a repeated-prefix test.* Riskiest cell in the spec.
@@ -13,7 +13,7 @@
 
 ## 2.3 Prompt inventory & contracts
 
-- **2.3.1 Conventions — MUST.** Files in `prompts/`, YAML frontmatter (`key`, `tier`, `output: stream|json/<schema>`, `vars: [...]`) + template body. Render fails on missing/undeclared vars. Git = version history; prompt edits invalidate that prompt's cache prefix on deploy (accepted). *Done: loader test — missing var throws; unknown key throws; tier consumed by gateway.*
+- **2.3.1 Conventions — MUST.** Files in `prompts/`, YAML frontmatter (`key`, `tier`, `output: stream|json/<schema>`, `vars: [...]`) + template body. Render fails on missing/undeclared vars. Prompt edits invalidate that prompt's cache prefix on deploy (accepted). **Amended 2026-09-20 ([D54](../02-design.md), [15.1](15-prompt-registry.md)): a file is the reviewed baseline, not what runs.** `prompts:sync` reads the tree into `prompt_versions` on deploy, and the gateway renders the active version; git is the history of file versions, `prompt_versions` the history of what ran. `output` and `vars` still come only from the file, so this item still owns the frontmatter contract and the render rules. *Done: loader test — missing var throws; unknown key throws; tier consumed by gateway — and [15.1.5](15-prompt-registry.md) proves the same two against the database-backed repository.*
 - **2.3.2 Inventory — MUST.** Any AI call site without a row here is a spec violation.
 
 | Key | Tier | Inputs | Output | Consumer |
@@ -50,7 +50,7 @@ Deliberate absences: grading (code, 5.2.4), module rollup (derived, 3.3), GUIDAN
 Against a truncated `usage_events` table:
 
 1. Drive one `mid`-tier call and one `top`-tier call from anywhere in the app. Both write a `usage_events` row carrying feature, tier, model, input / cached / output tokens, latency and cost — and the total spend of those two calls is one SQL query.
-2. Every `feature` written is a key in 2.3.2's inventory, and every model named is one `config/ai.php` resolves. `grep` for a model ID anywhere outside that file returns nothing.
+2. Every `feature` written is a key in 2.3.2's inventory, and every model named is one the catalog holds. `grep` for a model ID anywhere in `app/`, `config/` or `prompts/` returns nothing ([14.1.4](14-routing-and-usage.md)).
 3. Repeat a call over the same stable prefix. The second row's cached-read tokens are above zero — the prefix was read from cache, not rewritten.
-4. Edit `tiers.mid.model` to another model and repeat step 1. The `mid` row names the new model and nothing else in the diff changed.
+4. Point `mid`'s row at another model and repeat step 1. The `mid` row names the new model, and there is no diff at all ([14.1.2](14-routing-and-usage.md)).
 5. Render a prompt with a variable missing from its frontmatter, and one with an undeclared variable supplied. Both throw rather than rendering a hole.
