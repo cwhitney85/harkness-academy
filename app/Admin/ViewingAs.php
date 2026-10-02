@@ -106,6 +106,15 @@ final class ViewingAs
     }
 
     /**
+     * Whether an admin is viewing as the student in this request, in either
+     * mode.
+     */
+    public static function viewing(): bool
+    {
+        return Context::has('viewing_as');
+    }
+
+    /**
      * Whether this request is a preview, and so may write nothing.
      */
     public static function previewing(): bool

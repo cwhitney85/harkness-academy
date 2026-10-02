@@ -266,3 +266,11 @@ Adding `SoftDeletes` to a model has two effects that reach code nobody is editin
 The performance table groups a million rows by three text columns and takes percentiles. It ran 0.8–1.0 s over thirty days and 1.3–1.7 s over ninety. EXPLAIN showed a sort spilling 20 MB to disk, so the obvious fixes were tried first. **Raising `work_mem` to 64 MB gained nothing, and made the ninety-day query worse. An index on `created_at` gained nothing either.** Asking for both percentiles as one `percentile_cont(array[…])` gained nothing too, because Postgres already shares one sort between ordered-set aggregates with the same `ORDER BY`. The cost was comparing strings under the database's language collation, a million times over.
 
 **Group report keys with `collate "C"` when they are identifiers rather than words** — prompt keys, model ids, tiers, slugs. Byte order sorts them just as well and halved the query. And never group by an expression that only exists to fold a column into one value (`string_agg(distinct tier)`): it put that column in the sort key anyway. Make it a real group key.
+
+## T26. Fortify's password confirmation belongs to the session, not to the user
+
+*Found 2026-10-01, reviewing spec 13.4 before the admin-and-performance unit merged.*
+
+`password.confirm` passes when the session holds a recent `auth.password_confirmed_at`, whoever the request's user is. Viewing as a student keeps the admin's session and swaps only the request's user, so an admin who had confirmed their own password in the last three hours — which setting up the second factor `/admin` requires does — passed every confirmation gate on the student's account. In preview, the student's two-factor secret and recovery codes were one GET away; in act-as, so was disabling their second factor or registering a passkey that signs in as them outside any audit.
+
+**Anything that changes the request's user without changing the session inherits the session's confirmations. List the routes behind `password.confirm` and `RequirePassword`, and refuse them while the user is borrowed.**

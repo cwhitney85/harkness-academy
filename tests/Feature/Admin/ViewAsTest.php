@@ -234,6 +234,51 @@ class ViewAsTest extends SectionStreamTestCase
         $this->get('/admin/log')->assertOk();
     }
 
+    /**
+     * Spec 13.4.8 -- Fortify's password confirmation lives in the session, so
+     * an admin who confirmed their own password would pass every
+     * `password.confirm` gate on the student's sign-in ([T26](docs/lessons.md)).
+     */
+    #[Test]
+    public function the_students_sign_in_settings_are_unreachable_in_either_mode(): void
+    {
+        $this->student->forceFill([
+            'two_factor_secret' => encrypt('student-secret'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['student-recovery-code'])),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->preview();
+
+        // The admin confirmed their own password a moment ago.
+        $this->withSession(['auth.password_confirmed_at' => time()]);
+
+        foreach (['/settings/security', '/user/two-factor-secret-key', '/user/two-factor-recovery-codes', '/user/two-factor-qr-code', '/user/passkeys/options', '/user/confirm-password'] as $url) {
+            $this->get($url)
+                ->assertRedirect(route('dashboard'))
+                ->assertDontSee('student-secret')
+                ->assertDontSee('student-recovery-code');
+        }
+
+        $this->post('/admin/view-as/step-up', ['reason' => 'Reproducing a bug']);
+
+        $this->delete('/user/two-factor-authentication')->assertRedirect(route('dashboard'));
+        $this->post('/user/passkeys', [])->assertRedirect(route('dashboard'));
+        $this->put('/settings/password', [])->assertRedirect(route('dashboard'));
+
+        $this->assertTrue($this->student->fresh()->hasEnabledTwoFactorAuthentication());
+
+        // Password resets go to the email, so it stays too; the rest of the
+        // profile can still be saved.
+        $this->patch('/settings/profile', ['name' => 'Renamed', 'email' => 'admin@example.test'])
+            ->assertSessionHasErrors('email');
+        $this->patch('/settings/profile', ['name' => 'Renamed', 'email' => $this->student->email])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($this->student->email, $this->student->fresh()->email);
+        $this->assertSame('Renamed', $this->student->fresh()->name);
+    }
+
     #[Test]
     public function another_admin_cannot_be_viewed(): void
     {
