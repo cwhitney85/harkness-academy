@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified', 'can:admin', RequireSecondFactor::class])
         Route::get('/', [UserController::class, 'index'])->name('admin.home');
         Route::get('users/{user}', [UserController::class, 'show'])->withTrashed()->name('admin.users.show');
         Route::put('users/{user}/plan', [UserController::class, 'plan'])->name('admin.users.plan');
+        Route::post('users/{user}/restore', [UserController::class, 'restore'])->withTrashed()->name('admin.users.restore');
 
         // Every course, one course taken apart, and removing one; restoring
         // one is Catalog → Removed's route (17.2).

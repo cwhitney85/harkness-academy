@@ -150,6 +150,29 @@ class UserController extends Controller
     }
 
     /**
+     * Bring back an account its student deleted (17.1.6, ledger D68).
+     *
+     * Pre:  the account is deleted; a live one is a 409.
+     * Post: it signs in again with everything under it as it was -- deleting
+     *       it touched nothing below the user row -- and one `admin_actions`
+     *       row holds the reason, committed with it.
+     */
+    public function restore(Request $request, User $user, ActionLog $log): RedirectResponse
+    {
+        abort_unless($user->trashed(), 409, 'This account is not deleted.');
+
+        $reason = $request->validate(['reason' => ['required', 'string', 'max:500']])['reason'];
+
+        DB::transaction(function () use ($request, $user, $reason, $log): void {
+            $user->restore();
+
+            $log->record($request->user(), AdminActionType::AccountRestored, $user, $reason);
+        });
+
+        return back();
+    }
+
+    /**
      * Move an account to another plan in config (17.1.3, ledger D62).
      *
      * Post: `users.plan` is a config key other than the one it held; one

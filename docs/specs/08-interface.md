@@ -307,7 +307,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
 | `well-known.passkeys` | machine endpoint; no student edge |
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |
-| `admin.users.show` · `admin.users.plan` | admin, outside the thirteen (spec 17.1) |
+| `admin.users.show` · `admin.users.plan` · `admin.users.restore` | admin, outside the thirteen (spec 17.1) |
 | `admin.courses.index` · `admin.courses.show` · `admin.courses.remove` | admin, outside the thirteen (spec 17.2) |
 | `admin.usage.overview` · `admin.usage.performance` · `admin.usage.events` | admin, outside the thirteen (spec 17.3) |
 | `admin.users.view-as` · `admin.view-as.step-up` · `admin.view-as.exit` | viewing as a student (13.4); lands on and returns from S1 |

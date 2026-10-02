@@ -165,6 +165,11 @@ class AdminWritesTest extends TestCase
                 return fn () => $test->post("/admin/courses/{$course->id}/remove", ['reason' => 'A reason']);
             },
             'admin.users.plan' => fn (self $test, User $student) => fn () => $test->put("/admin/users/{$student->id}/plan", ['plan' => 'demo']),
+            'admin.users.restore' => function (self $test, User $student) {
+                $student->delete();
+
+                return fn () => $test->post("/admin/users/{$student->id}/restore", ['reason' => 'A reason']);
+            },
             'admin.users.view-as' => fn (self $test, User $student) => fn () => $viewing($test, $student),
             'admin.view-as.step-up' => function (self $test, User $student) use ($viewing) {
                 $viewing($test, $student);

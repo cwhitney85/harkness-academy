@@ -146,6 +146,52 @@ class UsersScreenTest extends TestCase
             ->where('documents.0.versions.1.content', 'after attempt 2'));
     }
 
+    /**
+     * Spec 17.1.6 -- a deleted account comes back with everything under it,
+     * and signs in again.
+     */
+    #[Test]
+    public function restoring_a_deleted_account_needs_a_reason_brings_it_back_and_is_logged(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->create(['email' => 'maria@example.test', 'password' => 'secret-password']);
+        $course = Course::factory()->for($student, 'student')->create();
+
+        $student->delete();
+
+        $this->actingAs($admin)->post("/admin/users/{$student->id}/restore")->assertSessionHasErrors('reason');
+        $this->assertTrue($student->fresh()->trashed(), 'A restore with no reason writes nothing.');
+
+        $this->actingAs($admin)
+            ->post("/admin/users/{$student->id}/restore", ['reason' => 'Deleted by mistake, asked by email'])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse($student->fresh()->trashed());
+        $this->assertTrue($course->student->is($student->fresh()));
+
+        $logged = AdminAction::query()->sole();
+        $this->assertSame(AdminActionType::AccountRestored, $logged->action);
+        $this->assertSame('Deleted by mistake, asked by email', $logged->reason);
+        $this->assertTrue($logged->subject->is($student));
+
+        $this->post('/logout');
+        $this->post('/login', ['email' => 'maria@example.test', 'password' => 'secret-password']);
+        $this->assertAuthenticatedAs($student->fresh());
+    }
+
+    #[Test]
+    public function an_account_that_is_not_deleted_cannot_be_restored(): void
+    {
+        $student = User::factory()->create();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post("/admin/users/{$student->id}/restore", ['reason' => 'A reason'])
+            ->assertStatus(409);
+
+        $this->assertSame(0, AdminAction::query()->count());
+    }
+
     #[Test]
     public function changing_a_plan_is_logged(): void
     {

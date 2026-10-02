@@ -20,4 +20,5 @@ enum AdminActionType: string
     case Restored = 'removal.restored';
     case RestoreRefused = 'removal.restore_refused';
     case PlanChanged = 'user.plan_changed';
+    case AccountRestored = 'user.restored';
 }

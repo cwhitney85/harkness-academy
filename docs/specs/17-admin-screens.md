@@ -13,6 +13,7 @@
 - **17.1.3 MUST** — Changing a plan offers only the plans in config, and is logged. *Done: feature test; a plan not in config is refused.*
 - **17.1.4 MUST** — Preview and act-as start here ([13.4](13-admin-foundation.md)). This replaces the stand-in student list 13 ships at `/admin` and its rail link, "View as a student".
 - **17.1.5 WONT** — Editing memories or a student's profile.
+- **17.1.6 MUST** — An account its student deleted is restored from its page, with a reason, logged ([D68](../02-design.md)). It signs in again with every course and document as it was, since deleting it touched nothing below the user row. *Done: feature test — refused without a reason; restored, logged and able to sign in with one; a live account is a 409.*
 
 ## 17.2 Courses
 

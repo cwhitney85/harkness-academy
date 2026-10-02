@@ -1,17 +1,20 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 import { Fact, PreviewButton } from '@/components/admin-controls';
 import AdminShell from '@/components/admin-shell';
+import ReasonForm from '@/components/reason-form';
 import { money } from '@/lib/utils';
 import { home } from '@/routes/admin';
 import { show as showCourse } from '@/routes/admin/courses';
-import { plan as changePlan } from '@/routes/admin/users';
+import { plan as changePlan, restore } from '@/routes/admin/users';
 
 /**
  * One account (spec 17.1.2): its profile and plan, every course it has had,
  * what it cost by feature, and its memory tree read-only — each version naming
  * the course that wrote it and any admin who was acting as the student
- * (16.3.4). Nothing here edits a memory or the profile (17.1.5).
+ * (16.3.4). Nothing here edits a memory or the profile (17.1.5). An account
+ * the student deleted is restored here, with a reason (17.1.6).
  */
 
 type Course = {
@@ -61,6 +64,8 @@ export default function AdminUser({
     };
     documents: Document[];
 }) {
+    const [restoring, setRestoring] = useState(false);
+
     return (
         <AdminShell current="users" title={user.name}>
             <Head title={user.name} />
@@ -83,7 +88,25 @@ export default function AdminUser({
 
             <div className="mb-11 flex flex-wrap items-end gap-x-5 gap-y-3">
                 {user.deleted ? (
-                    <Fact term="Plan">{user.plan}</Fact>
+                    <>
+                        <Fact term="Plan">{user.plan}</Fact>
+                        {restoring ? (
+                            <ReasonForm
+                                form={restore.form(user.id)}
+                                verb="Restore account"
+                                consequence={`${user.name} can sign in again, with every course and document as they left them.`}
+                                onDone={() => setRestoring(false)}
+                            />
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setRestoring(true)}
+                                className="label min-h-11 border border-wine px-3 text-wine hover:bg-wine hover:text-ground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+                            >
+                                Restore account
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <Form
                         {...changePlan.form(user.id)}
