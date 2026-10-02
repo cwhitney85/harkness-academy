@@ -58,6 +58,12 @@ nine courses there is nothing to split. What returns is its own package — a go
 run through two prompt versions and read side by side, then a quality signal attached to the usage row,
 then the split. The model is its primary axis, not the prompt body.
 
+**Email that is actually sent.** Not specced. Production was never given a mail service, so a
+password reset — and anything else the app emails — is written to the log instead of sent, and a student
+who forgets their password is locked out. A mail provider configured through environment variables, a
+step in [docs/deploy.md](docs/deploy.md), and a reset run end to end in production. Small, and worth doing
+before more students are invited.
+
 **Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
 and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.
 
