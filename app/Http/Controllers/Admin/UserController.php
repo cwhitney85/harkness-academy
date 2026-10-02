@@ -85,6 +85,12 @@ class UserController extends Controller
 
         $history = $memory->history($user);
 
+        // Every version was written by one of this account's own courses
+        // (16.3.3): `Spanish 101, attempt 2`.
+        $attempts = $courses->mapWithKeys(fn (Course $course): array => [
+            $course->id => "{$course->subtopic_title} {$course->skill_level->value}, attempt {$course->attempt}",
+        ]);
+
         $admins = User::withTrashed()
             ->whereIn('id', collect($history)->pluck('versions')->flatten(1)->pluck('acting_user_id')->filter()->unique())
             ->pluck('name', 'id');
@@ -133,8 +139,7 @@ class UserController extends Controller
                 'removed' => $document['removed'],
                 'versions' => array_map(fn (array $version): array => [
                     'version' => $version['version'],
-                    // `Spanish 101, attempt 2`
-                    'course' => with($courses->find($version['course_id']), fn (Course $course): string => "{$course->subtopic_title} {$course->skill_level->value}, attempt {$course->attempt}"),
+                    'course' => $attempts[$version['course_id']],
                     'admin' => $version['acting_user_id'] === null ? null : $admins[$version['acting_user_id']],
                     'when' => $version['created_at']->format('j M Y H:i'),
                     'content' => $version['content'],

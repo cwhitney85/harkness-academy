@@ -98,8 +98,9 @@ class CourseController extends Controller
             ->mapWithKeys(fn (array $document): array => [$document['path'] => last($document['versions'])['content']]);
 
         $syllabi = $course->syllabi()->orderBy('generation')->get();
-        $titles = collect($syllabi->firstWhere('approved_at', '!==', null)?->syllabus_json['lessons'] ?? [])
-            ->pluck('title', 'position');
+        /** @var list<array{position: int, title: string}> $approved */
+        $approved = $syllabi->firstWhere('approved_at', '!==', null)?->syllabus_json['lessons'] ?? [];
+        $titles = collect($approved)->pluck('title', 'position');
 
         $lessons = $course->lessons()->with(['messages' => fn ($messages) => $messages->orderBy('position')])->orderBy('position')->get();
 
@@ -246,7 +247,7 @@ class CourseController extends Controller
      * no marks yet is a sitting still open.
      *
      * @param  array<int, int>  $positions  lesson id => position
-     * @return list<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     private function quizzes(Course $course, array $positions): array
     {

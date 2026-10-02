@@ -7,6 +7,7 @@ use App\Models\UsageEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,19 +34,12 @@ class UsageController extends Controller
     {
         [$range, $events] = $this->range($request);
 
-        $sum = fn (string $column) => (clone $events)
-            ->toBase()
-            ->selectRaw("{$column} as key, count(*) as calls, sum(cost_usd) as cost")
-            ->groupByRaw($column)
-            ->get()
-            ->map(fn (object $row): array => ['key' => (string) $row->key, 'calls' => (int) $row->calls, 'cost' => (float) $row->cost]);
-
         return Inertia::render('admin/usage/overview', [
             'range' => $range,
             'total' => (float) (clone $events)->sum('cost_usd'),
-            'days' => $sum('created_at::date')->sortBy('key')->values(),
-            'features' => $sum('feature')->sortByDesc('cost')->values(),
-            'plans' => $sum("coalesce(plan, 'unrecorded')")->sortByDesc('cost')->values(),
+            'days' => $this->costBy($events, 'created_at::date')->sortBy('key')->values(),
+            'features' => $this->costBy($events, 'feature')->sortByDesc('cost')->values(),
+            'plans' => $this->costBy($events, "coalesce(plan, 'unrecorded')")->sortByDesc('cost')->values(),
         ]);
     }
 
@@ -153,6 +147,23 @@ class UsageController extends Controller
                 'models' => (clone $events)->distinct()->orderBy('model')->pluck('model'),
             ],
         ]);
+    }
+
+    /**
+     * Calls and cost grouped by one SQL expression, for the overview.
+     *
+     * @param  Builder<UsageEvent>  $events
+     * @param  literal-string  $key
+     * @return Collection<int, array{key: string, calls: int, cost: float}>
+     */
+    private function costBy(Builder $events, string $key): Collection
+    {
+        return (clone $events)
+            ->toBase()
+            ->selectRaw("{$key} as key, count(*) as calls, sum(cost_usd) as cost")
+            ->groupByRaw($key)
+            ->get()
+            ->map(fn (object $row): array => ['key' => (string) $row->key, 'calls' => (int) $row->calls, 'cost' => (float) $row->cost]);
     }
 
     /**

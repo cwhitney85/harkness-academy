@@ -106,14 +106,18 @@ class CatalogController extends Controller
      */
     public function removed(): Response
     {
-        $removals = Removal::query()
-            ->with(['action.actor:id,name', 'action.subject' => fn (MorphTo $subject) => $subject->withTrashed()->morphWith([
-                Subtopic::class => ['module' => fn ($module) => $module->withTrashed()],
-                Course::class => ['student' => fn ($student) => $student->withTrashed()],
-            ])])
+        $removals = Removal::with(['action.actor:id,name', 'action.subject' => fn (MorphTo $subject) => $subject->withTrashed()->morphWith([
+            Subtopic::class => ['module' => fn ($module) => $module->withTrashed()],
+            Course::class => ['student' => fn ($student) => $student->withTrashed()],
+        ])])
             ->latest('id')
             ->get()
-            ->filter(fn (Removal $removal): bool => $removal->action->subject?->removal_id === $removal->id);
+            ->filter(function (Removal $removal): bool {
+                /** @var Module|Subtopic|Course|null $subject */
+                $subject = $removal->action->subject;
+
+                return $subject?->removal_id === $removal->id;
+            });
 
         $courses = Course::onlyTrashed()
             ->whereIn('removal_id', $removals->modelKeys())
@@ -123,6 +127,7 @@ class CatalogController extends Controller
 
         return Inertia::render('admin/catalog/removed', [
             'removals' => $removals->map(function (Removal $removal) use ($courses): array {
+                /** @var Module|Subtopic|Course $subject the filter above kept only removals whose subject exists */
                 $subject = $removal->action->subject;
 
                 return [
