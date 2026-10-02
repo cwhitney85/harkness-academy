@@ -265,6 +265,8 @@ Adding `SoftDeletes` to a model has two effects that reach code nobody is editin
 
 The performance table groups a million rows by three text columns and takes percentiles. It ran 0.8–1.0 s over thirty days and 1.3–1.7 s over ninety. EXPLAIN showed a sort spilling 20 MB to disk, so the obvious fixes were tried first. **Raising `work_mem` to 64 MB gained nothing, and made the ninety-day query worse. An index on `created_at` gained nothing either.** Asking for both percentiles as one `percentile_cont(array[…])` gained nothing too, because Postgres already shares one sort between ordered-set aggregates with the same `ORDER BY`. The cost was comparing strings under the database's language collation, a million times over.
 
+(Remeasured 2026-10-02 on a million rows spread over 180 days, an index on `created_at` did pay: four to seven times on the seven- and thirty-day sums on Prompts, Models and Usage, and 311 → 181 ms on this table over thirty days. An index only skips what the range leaves out, so it gains little when the range is most of the table.)
+
 **Group report keys with `collate "C"` when they are identifiers rather than words** — prompt keys, model ids, tiers, slugs. Byte order sorts them just as well and halved the query. And never group by an expression that only exists to fold a column into one value (`string_agg(distinct tier)`): it put that column in the sort key anyway. Make it a real group key.
 
 ## T26. Fortify's password confirmation belongs to the session, not to the user

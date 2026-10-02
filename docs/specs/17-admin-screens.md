@@ -17,7 +17,7 @@
 
 ## 17.2 Courses
 
-- **17.2.1 MUST** — The list shows student, module and subtopic, level, attempt, standing (including removed), cost and created, with filters. *Done: fixture.*
+- **17.2.1 MUST** — The list shows student, module and subtopic, level, attempt, standing (including removed), cost and created, with filters. A page loads in well under a second over a million usage rows. *Done: fixture; a page measured at 5 ms over a million rows with `usage_events.course_id` indexed (8.6 s without).*
 - **17.2.2 MUST** — The detail shows criteria and working knowledge; the syllabus and its revisions; lessons with sections and messages; checkpoints and results; homework, quizzes and attempts; the final exam; generation requests and failures; cost by feature and the course's usage rows. *Done: renders Colin's course.*
 - **17.2.3 MUST** — Remove and Restore ([16.2](16-catalog-removal-ownership.md)).
 - **17.2.4 WONT** — Interview transcripts; they are discarded after summary ([11.4](11-generation-off-the-request.md), confirmed).
