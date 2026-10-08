@@ -153,6 +153,52 @@ No output means the record is missing or has not propagated.
 
 TLS is provisioned and renewed automatically for each custom domain; there is nothing to install and no renewal to diary. The Starter plan includes 10 custom domains per organization, so this one costs nothing.
 
+## Email
+
+The app sends one kind of email: the password-reset link. It goes through Resend, from `noreply@harkness.academy` as `Harkness Academy` (spec [18.1](specs/18-email-and-google-sign-in.md), ledger [D72](02-design.md)). Nothing receives mail at that address. Do this after the custom domain is connected, because the reset link is built from `APP_URL`.
+
+**1. Attach Resend to the environment.** Laravel Cloud has a Resend integration: it adds a sending domain at organization level and attaches a sender to each environment. Use it if the dashboard offers it. Add the sending domain `harkness.academy` in region `us-east-1`. Then attach Resend to the production environment with from address `noreply@harkness.academy`, from name `Harkness Academy`, and a new sending key.
+
+**If the dashboard has no Resend option**, do the same thing from Resend's own account. Sign up at resend.com, add the domain `harkness.academy` in `us-east-1`, and create an API key with **Sending access** for that domain only. Store the key as a linked secret named `RESEND_API_KEY`, the same way as `ANTHROPIC_API_KEY` (step 6 above). Then set the three variables in the table below as custom variables.
+
+**2. Check the injected variables.** In General Settings, the app needs exactly these:
+
+| Variable | Value |
+|---|---|
+| `MAIL_MAILER` | `resend` |
+| `RESEND_API_KEY` | the sending key; `config/services.php` reads it by this name only |
+| `MAIL_FROM_ADDRESS` | `noreply@harkness.academy` |
+| `MAIL_FROM_NAME` | `Harkness Academy` |
+
+The integration's own documentation doesn't say which variables it injects, so trust this list over it. If the key arrives under any other name, the app sees no key and every reset fails. Don't fix that by copying the key into a second custom variable, because a later rotation would never reach it. Detach the integration and use the Resend-account path instead.
+
+**3. Add the DNS records at Porkbun.** Resend, or Cloud's sending-domain screen, prints a list of records with type, name and value. Copy them exactly as printed, not from this file. They are a DKIM key, which signs each message, and records on a `send` subdomain, which make the bounce address pass SPF. Porkbun → Domain Management → `harkness.academy` → **DNS**. For each record, put only the part before `harkness.academy` in the **Host** field, because Porkbun adds the domain itself. Leave the TTL at its default.
+
+Add a DMARC record of your own as well. Resend does not print it:
+
+| Type | Host | Answer |
+|---|---|---|
+| TXT | `_dmarc` | `v=DMARC1; p=none;` |
+
+`p=none` reports nothing and blocks nothing. Gmail only requires a DMARC record from senders of 5,000 or more emails a day. This app sends far fewer, but it costs one record (spec [18.1.3](specs/18-email-and-google-sign-in.md)).
+
+Check each record from the terminal:
+
+```sh
+dig TXT _dmarc.harkness.academy +short
+dig <type> <name>.harkness.academy +short   # once per record Resend printed
+```
+
+If a lookup returns nothing, the record is missing or hasn't propagated yet. If a record shows up under `….harkness.academy.harkness.academy`, the Host field was given the full name.
+
+**4. Verify the domain, then deploy.** Press **Verify** on the domain in Resend or Cloud, and refresh until it says **verified**. Then deploy: variables only reach the app on a deploy (step 6).
+
+**5. Send yourself a reset.** On `https://harkness.academy/forgot-password`, enter your own account's email. The message should reach a Gmail inbox, not spam, within a minute. In Gmail, open the message → ⋮ → **Show original**. Both `SPF` and `DKIM` should read `PASS`, and the `DMARC` line should read `PASS` too.
+
+If nothing arrives, check Resend's **Emails** log first. If the message is there, the problem is delivery: check spam and the records above. If it isn't there, the app never reached Resend: check the environment's logs and the variables in step 2.
+
+Resend's free plan covers this app: 3,000 emails a month and 100 a day, on one domain. Development and the test suite never send real mail: `.env.example` sets `MAIL_MAILER=log`, and `phpunit.xml` sets `array` (spec [18.1.4](specs/18-email-and-google-sign-in.md)).
+
 ## Cost control
 
 Set a **spending limit** (Organization → Usage), not just a billing alert. Alerts only email you at 50/80/100% and spending continues past them; a spending limit halts new resource provisioning and pauses compute when hit. v1 prototype settings: limit $30, alert $15.
