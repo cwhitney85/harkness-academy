@@ -17,3 +17,4 @@
 - Laravel's `resend` transport needs `resend/resend-php`, which was not installed — without it production would fail at the first send. Installed (^1.16); the transport resolves locally with a dummy key. The four `composer audit` advisories (framework, commonmark ×2, flysystem) predate it.
 - Cloud's Resend integration exists in its API (`POST /environments/{env}/resend` takes `from_address`, `from_name`; org-level sending domains carry `records` and a verification `status`). No guide page documents it, and nothing says which variables it injects.
 - 2026-10-07: `harkness.academy` NS is Porkbun; no TXT, MX or `_dmarc` records exist.
+- 2026-10-07, in Colin's dashboard: no Resend integration offered. Checked Org Settings → Integrations (Slack only), the environment's General settings, the canvas, the options menu and ⌘K search. The runbook now uses the Resend account and linked-secret path, per 18.1.1's fallback. Production region is US East (Ohio).
