@@ -276,3 +276,12 @@ Remeasured 2026-10-02 on a million rows spread over 180 days, the same index did
 `password.confirm` passes when the session holds a recent `auth.password_confirmed_at`, whoever the request's user is. Viewing as a student keeps the admin's session and swaps only the request's user, so an admin who had confirmed their own password in the last three hours — which setting up the second factor `/admin` requires does — passed every confirmation gate on the student's account. In preview, the student's two-factor secret and recovery codes were one GET away; in act-as, so was disabling their second factor or registering a passkey that signs in as them outside any audit.
 
 **Anything that changes the request's user without changing the session inherits the session's confirmations. List the routes behind `password.confirm` and `RequirePassword`, and refuse them while the user is borrowed.**
+
+## T27. A Cloud variable that names a driver breaks production if it is deployed before the driver's package
+
+*2026-10-07, landing spec 18.1. Reached production; the only request it failed was Colin's own test.*
+
+`MAIL_MAILER=resend` was set in Cloud and deployed while the commit adding `resend/resend-php` was still unpushed. That deploy built the old `master`, so every forgot-password request 500'd with `Class "Resend" not found`. Before the change, the same request had quietly written the email to the log.
+
+**A variable reaches the app on the next deploy, whatever code that deploy builds. Push the code a variable depends on first, then set the variable.** Laravel's API mail drivers — Resend, Postmark, Mailgun, SES — each need a package of their own.
+
