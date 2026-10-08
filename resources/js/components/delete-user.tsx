@@ -1,4 +1,4 @@
-import { Form } from '@inertiajs/react';
+import { Form, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
@@ -16,8 +16,14 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
+/**
+ * A student with a password types it to delete the account. A Google sign-up
+ * has none, so the server sends them to Confirm with Google first, if they
+ * haven't confirmed recently (spec 18.4.5).
+ */
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
+    const hasChosenPassword = usePage().props.auth.user.has_chosen_password;
 
     return (
         <div className="space-y-6">
@@ -49,9 +55,10 @@ export default function DeleteUser() {
                         </DialogTitle>
                         <DialogDescription>
                             Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            and data will also be permanently deleted.{' '}
+                            {hasChosenPassword
+                                ? 'Please enter your password to confirm you would like to permanently delete your account.'
+                                : 'You may be asked to confirm with Google first.'}
                         </DialogDescription>
 
                         <Form
@@ -65,24 +72,28 @@ export default function DeleteUser() {
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
                                 <>
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="password"
-                                            className="sr-only"
-                                        >
-                                            Password
-                                        </Label>
+                                    {hasChosenPassword && (
+                                        <div className="grid gap-2">
+                                            <Label
+                                                htmlFor="password"
+                                                className="sr-only"
+                                            >
+                                                Password
+                                            </Label>
 
-                                        <PasswordInput
-                                            id="password"
-                                            name="password"
-                                            ref={passwordInput}
-                                            placeholder="Password"
-                                            autoComplete="current-password"
-                                        />
+                                            <PasswordInput
+                                                id="password"
+                                                name="password"
+                                                ref={passwordInput}
+                                                placeholder="Password"
+                                                autoComplete="current-password"
+                                            />
 
-                                        <InputError message={errors.password} />
-                                    </div>
+                                            <InputError
+                                                message={errors.password}
+                                            />
+                                        </div>
+                                    )}
 
                                     <DialogFooter className="gap-2">
                                         <DialogClose asChild>

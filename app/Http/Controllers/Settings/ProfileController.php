@@ -46,10 +46,21 @@ class ProfileController extends Controller
     /**
      * Delete the user's profile: a soft delete, so nothing under it goes and
      * an admin can bring it back (spec 16.2.10, ledger D68).
+     *
+     * Pre: an account with a password of its own typed it (ProfileDeleteRequest);
+     * one without -- a Google sign-up -- confirmed recently, which it does with
+     * Google (spec 18.4.5). Unconfirmed, it is sent to confirm and comes back
+     * to this page.
      */
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        $confirmedFor = time() - $request->session()->get('auth.password_confirmed_at', 0);
+
+        if (! $user->has_chosen_password && $confirmedFor > config('auth.password_timeout')) {
+            return redirect()->guest(route('password.confirm'));
+        }
 
         Auth::logout();
 

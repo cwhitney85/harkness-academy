@@ -17,8 +17,9 @@ class ProfileDeleteRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'password' => $this->currentPasswordRules(),
-        ];
+        // A Google sign-up has no password to type; it confirms instead (18.4.5).
+        return $this->user()->has_chosen_password
+            ? ['password' => $this->currentPasswordRules()]
+            : [];
     }
 }

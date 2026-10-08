@@ -105,6 +105,36 @@ class WithoutAPasswordTest extends TestCase
     }
 
     #[Test]
+    public function a_google_only_student_deletes_the_account_after_confirming_with_google(): void
+    {
+        // 18.4.5
+        $student = $this->googleOnly();
+        $this->actingAs($student);
+
+        $this->from(route('profile.edit'))->delete(route('profile.destroy'))->assertRedirect(route('password.confirm'));
+        $this->assertFalse($student->fresh()->trashed());
+
+        $this->google('sub-1')->assertRedirect(route('profile.edit'));
+
+        $this->delete(route('profile.destroy'))->assertRedirect('/');
+        $this->assertTrue($student->fresh()->trashed());
+        $this->assertGuest();
+    }
+
+    #[Test]
+    public function an_account_with_its_own_password_still_types_it_to_delete(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('profile.destroy'))
+            ->assertSessionHasErrors('password');
+
+        $this->assertFalse($user->fresh()->trashed());
+    }
+
+    #[Test]
     public function a_reset_marks_the_password_chosen(): void
     {
         // 18.4.1: the reset way of setting one.

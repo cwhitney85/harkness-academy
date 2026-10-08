@@ -283,8 +283,8 @@ class ViewAsTest extends SectionStreamTestCase
     }
 
     /**
-     * Spec 18.4.4 -- Confirm with Google and Set a password are the
-     * student's sign-in too. A Google round-trip here would otherwise confirm
+     * Spec 18.4.4 -- Confirm with Google, Set a password and a Google-only
+     * student's account deletion are the student's sign-in too. A Google round-trip here would otherwise confirm
      * the admin's session with the student's Google account, or connect the
      * admin's Google account to the student.
      */
@@ -302,6 +302,8 @@ class ViewAsTest extends SectionStreamTestCase
             $this->get(route('google.redirect')),
             $this->get(route('google.callback')),
             $this->post(route('user-password.store'), ['password' => 'chosen-password', 'password_confirmation' => 'chosen-password']),
+            // 18.4.5: the admin's confirmation would otherwise delete it.
+            $this->delete(route('profile.destroy')),
         ];
 
         foreach ($routes() as $response) {
@@ -315,6 +317,7 @@ class ViewAsTest extends SectionStreamTestCase
         }
 
         $this->assertFalse($this->student->fresh()->has_chosen_password);
+        $this->assertFalse($this->student->fresh()->trashed());
     }
 
     #[Test]

@@ -19,7 +19,8 @@
 - [x] **18.4.1** — `users.has_chosen_password`, NOT NULL, appended; true on existing standard rows.
 - [x] **18.4.2** — Confirm with Google on the confirm screen; matching `sub` only.
 - [x] **18.4.3** — Set a password, no current-password field, behind confirmation.
-- [x] **18.4.4** — view-as refuses 18.4.2's and 18.4.3's routes.
+- [x] **18.4.4** — view-as refuses 18.4.2's, 18.4.3's and 18.4.5's routes.
+- [x] **18.4.5** — deleting the account: a Google-only student confirms with Google instead of typing a password.
 - [x] **18.5.1** — Keep with Google; finishes on 18.3.4's page; same row.
 - [x] **18.5.2** — taken email or connected `sub` refuses keeping; row unchanged.
 
@@ -27,7 +28,7 @@
 
 ## Open questions for Colin
 
-*Answered 2026-10-08:* 1 — yes, stay signed in. 2 — yes; written into the spec as 18.3.3.2. 3 — Colin asked whether it's normal; it isn't (apps confirm deletion with the sign-in method). Offered: deletion behind `password.confirm` for a Google-only student, like 18.4.3. Awaiting his yes.
+*Answered 2026-10-08:* 1 — yes, stay signed in. 2 — yes; written into the spec as 18.3.3.2. 3 — not the normal pattern, so built as spec 18.4.5: a Google-only student confirms with Google to delete; view-as refuses `profile.destroy` (13.4.8 amended).
 
 1. **Remember the device on a Google sign-in?** Built as yes (`GoogleSignIn::complete`, `remember: true`), because there is no checkbox on the Google path and the installed app shouldn't sign students out. Password sign-in leaves Remember me unticked.
 2. **An account already connected to a different Google account.** The spec doesn't cover this. If a second Google account with the same email signs in, the build refuses with "This account signs in with a different Google account." Without that check the student would hit a 500 from the unique index. If Colin agrees, it becomes a spec sub-item (18.3.3.2) at landing.
