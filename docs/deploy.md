@@ -213,7 +213,18 @@ Students can sign up, sign in, confirm it is them and keep a demo with Google, t
 - **Audience**: **External**.
 - **Contact information**: your own email.
 
-Then **Audience → Publish app**, so its status reads **In production**. An app left in **Testing** signs in only the test users listed on that page, and its grants expire after seven days.
+**Get started is not enough to publish.** Open **Branding** and fill in every field it marks as required, then save:
+
+| Field | Value |
+|---|---|
+| App logo | Leave empty. A logo sends the app through brand verification, which takes days (spec 18.6.6). |
+| Application home page | `https://harkness.academy` |
+| Application privacy policy link | Harkness has no privacy page yet. If Branding requires this field, the page has to be written first. |
+| Application terms of service link | `https://harkness.academy/terms` |
+| Authorized domains | `harkness.academy` |
+| Developer contact information | your own email |
+
+Then **Audience → Publish app**, so its status reads **In production**. While Branding is incomplete, the button is disabled and the page says so. An app left in **Testing** signs in only the test users listed on that page, and its grants expire after seven days. Nothing needs adding under **Data Access**: `openid`, `email` and `profile` are asked for by the app itself.
 
 **2. Create the client.** **Clients → Create client**, type **Web application**, named `Harkness Academy`:
 
@@ -224,7 +235,7 @@ Then **Audience → Publish app**, so its status reads **In production**. An app
 
 The redirect URI must match exactly, scheme and path included. The app builds it from the host the request came in on (`config/services.php`), so a sign-in started on the `*.laravel.cloud` domain fails with `redirect_uri_mismatch` unless that URI is added too. To try Google sign-in locally, add your local callback, `http://localhost:8000/auth/google/callback`, as a second redirect URI.
 
-Copy the **client ID** and the **client secret**. Google shows the secret again, but treat it like `ANTHROPIC_API_KEY`.
+Copy the **client ID** and the **client secret** before closing the dialog. Google may not show the secret again, so press **Download JSON** as well, and keep the file out of the repository. Treat the secret like `ANTHROPIC_API_KEY`.
 
 **3. Set the variables.** `GOOGLE_CLIENT_ID` is not a secret; add it as a custom environment variable. `GOOGLE_CLIENT_SECRET` is one: make it a linked secret, the same way as `ANTHROPIC_API_KEY` (step 6 above), and don't also set it as a custom variable. Then deploy.
 
