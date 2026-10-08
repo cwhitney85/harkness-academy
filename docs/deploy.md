@@ -203,6 +203,35 @@ If nothing arrives, check Resend's **Emails** log first. If the message is there
 
 Resend's free plan covers this app: 3,000 emails a month and 100 a day, on one domain. Development and the test suite never send real mail: `.env.example` sets `MAIL_MAILER=log`, and `phpunit.xml` sets `array` (spec [18.1.4](specs/18-email-and-google-sign-in.md)).
 
+## Google sign-in
+
+Students can sign up, sign in, confirm it is them and keep a demo with Google, through one OAuth client in Google Cloud (spec [18.2](specs/18-email-and-google-sign-in.md)). The app asks Google only for `openid`, `email` and `profile`. Those scopes are not sensitive, so the consent screen shows no unverified-app warning and Google needs no review. Do this after the custom domain is connected, because Google only redirects back to an address registered in advance.
+
+**1. Create the project and the consent screen.** At console.cloud.google.com, create a project named `Harkness Academy`. Open **Google Auth Platform** and press **Get started**:
+
+- **App name** `Harkness Academy`, **support email** your own.
+- **Audience**: **External**.
+- **Contact information**: your own email.
+
+Then **Audience → Publish app**, so its status reads **In production**. An app left in **Testing** signs in only the test users listed on that page, and its grants expire after seven days.
+
+**2. Create the client.** **Clients → Create client**, type **Web application**, named `Harkness Academy`:
+
+| Field | Value |
+|---|---|
+| Authorized JavaScript origins | `https://harkness.academy` |
+| Authorized redirect URIs | `https://harkness.academy/auth/google/callback` |
+
+The redirect URI must match exactly, scheme and path included. The app builds it from the host the request came in on (`config/services.php`), so a sign-in started on the `*.laravel.cloud` domain fails with `redirect_uri_mismatch` unless that URI is added too. To try Google sign-in locally, add your local callback, `http://localhost:8000/auth/google/callback`, as a second redirect URI.
+
+Copy the **client ID** and the **client secret**. Google shows the secret again, but treat it like `ANTHROPIC_API_KEY`.
+
+**3. Set the variables.** `GOOGLE_CLIENT_ID` is not a secret; add it as a custom environment variable. `GOOGLE_CLIENT_SECRET` is one: make it a linked secret, the same way as `ANTHROPIC_API_KEY` (step 6 above), and don't also set it as a custom variable. Then deploy.
+
+**4. Check it.** In a private window, open `https://harkness.academy/login` and press **Continue with Google**. Google's screen should name `Harkness Academy` with no "Google hasn't verified this app" warning. Choosing an account Harkness has never seen lands on **Finish signing up**.
+
+Google's own brand verification puts the Harkness logo on that screen. It is optional and takes three to five days (spec [18.6.6](specs/18-email-and-google-sign-in.md)).
+
 ## Cost control
 
 Set a **spending limit** (Organization → Usage), not just a billing alert. Alerts only email you at 50/80/100% and spending continues past them; a spending limit halts new resource provisioning and pauses compute when hit. v1 prototype settings: limit $30, alert $15.
