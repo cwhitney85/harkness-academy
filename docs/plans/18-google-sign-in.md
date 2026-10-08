@@ -27,11 +27,15 @@
 
 ## Open questions for Colin
 
+*Answered 2026-10-08:* 1 — yes, stay signed in. 2 — yes; written into the spec as 18.3.3.2. 3 — Colin asked whether it's normal; it isn't (apps confirm deletion with the sign-in method). Offered: deletion behind `password.confirm` for a Google-only student, like 18.4.3. Awaiting his yes.
+
 1. **Remember the device on a Google sign-in?** Built as yes (`GoogleSignIn::complete`, `remember: true`), because there is no checkbox on the Google path and the installed app shouldn't sign students out. Password sign-in leaves Remember me unticked.
 2. **An account already connected to a different Google account.** The spec doesn't cover this. If a second Google account with the same email signs in, the build refuses with "This account signs in with a different Google account." Without that check the student would hit a 500 from the unique index. If Colin agrees, it becomes a spec sub-item (18.3.3.2) at landing.
 3. **Deleting the account still asks for a password.** `profile.destroy` validates `current_password`, and the spec's list of four password checks leaves it out. A Google-only student has to set a password before they can delete their account. Options: accept that, or put deletion behind `password.confirm` the way 18.4.3 does.
 
 ## Log
+
+- 2026-10-08, Colin locally: "Missing required parameter: client_id" from Google. Local `.env` has no `GOOGLE_*` values; the client isn't created yet. Not a code fault.
 
 Design, before building:
 
