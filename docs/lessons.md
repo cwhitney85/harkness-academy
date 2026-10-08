@@ -285,3 +285,19 @@ Remeasured 2026-10-02 on a million rows spread over 180 days, the same index did
 
 **A variable reaches the app on the next deploy, whatever code that deploy builds. Push the code a variable depends on first, then set the variable.** Laravel's API mail drivers — Resend, Postmark, Mailgun, SES — each need a package of their own.
 
+## T28. Google's Publish app button names what it is missing only in a tooltip, and a privacy policy is one of them
+
+*2026-10-08, setting up Google sign-in (spec 18.2.1). Cost a round of Colin's time in the console.*
+
+Google Auth Platform → Audience → **Publish app** stays greyed out with "complete configuration on the Branding page", and Branding marks nothing as missing. Hovering the disabled button lists the requirement: app name, support email, **home page URL and privacy policy URL**. Filling the two URLs then makes Authorized domains required too. Harkness had no privacy page, so one had to be written and deployed first (18.2.5).
+
+**Before an outside service's console is part of a plan, check its current requirements — a web search, not memory — and say up front what it needs: accounts, secrets, legal pages, DNS.** The runbook is [`docs/deploy.md`](deploy.md) → Google sign-in.
+
+## T29. A unique violation inside a test's transaction poisons every query after it on Postgres
+
+*2026-10-08, testing `google_accounts`' unique indexes (spec 18.2.2).*
+
+`RefreshDatabase` runs each test inside one transaction. On Postgres, the first failed statement aborts that transaction, so a second `assertThrows(…, UniqueConstraintViolationException::class)` in the same test fails with "current transaction is aborted" — a `QueryException`, not the violation it was looking for — and so does anything else the test does afterwards.
+
+**Wrap each statement expected to violate a constraint in `DB::transaction(fn () => …)`.** Nested inside the test's transaction it becomes a savepoint, and the rollback leaves the outer transaction usable.
+

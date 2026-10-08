@@ -104,6 +104,7 @@
 | D74 | A student without a password of their own confirms with Google, and may set one later | current |
 | D75 | Two-factor applies whatever the sign-in | current |
 | D76 | Email ships before Google sign-in; a demo can be kept with Google, and a taken email is refused | current — amends spec 12.4.2, 12.6.4 |
+| D77 | One way out to Google and one way back; the callback reads who is signed in, and a Google sign-in stays signed in | current |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1230,3 +1231,13 @@ Rejected: **refusing Google sign-in to admin accounts** (protects only the admin
 **A demo can be kept with Google.** Colin: *"You should be able to 'Keep with Google' after a demo."* It finishes on D73's page, because keeping already requires the code and the attestation (12.4.3), and attaches the connection to the demo row. This amends 12.6.4, which ruled social sign-in out of the demo, and 12.4.2, where a Google connection now stands in for the password. **If Google's email already has an account, keeping is refused** with "sign in instead", exactly as keeping with a password already refuses a taken email.
 
 Rejected: **email and Google together** (a locked-out student waits on the larger work) · **keeping a demo with a password only** (Colin) · **moving the demo course into the existing account** (12.4.2 keeps a demo the same row so that nothing is ever copied).
+
+## D77. One way out to Google and one way back; the callback reads who is signed in, and a Google sign-in stays signed in (resolved 2026-10-08, spec 18 items 18.2.1, 18.3.2, 18.4.2, 18.4.3, 18.5.1, build session and Colin)
+
+Google is reached for three reasons — signing in, keeping a demo, confirming a password — and each returns to the app. **Chosen: one start route and one callback.** Who is signed in when Google answers says which trip it was: a guest is signing in, a demo is keeping its course, anyone else is confirming. Socialite's `state` ties the answer to the session that asked, so the three cannot be crossed. Google's console carries one redirect URI per host.
+
+**Set a password is its own route** (`user-password.store`), behind password confirmation and refused to an account that has chosen one; Update password keeps asking for the current one. Each route has one precondition, rather than one route switching its rules on a column.
+
+**A Google sign-in remembers the device.** Colin: *"yes users should stay signed in after Google."* The Google path has no Remember me box, and the installed app should not sign students out; password sign-in keeps its box, unticked.
+
+Rejected: **a start route and callback per purpose** (three redirect URIs to register and keep in step, for state the session already holds) · **the purpose written into the session at the start** (a second fact that must agree with who is signed in, and can disagree) · **one password route switching on `has_chosen_password`** (a crafted PUT would need both rules right at once) · **Google sign-in following the password form's unticked default** (a student on the installed app signs in again every session).

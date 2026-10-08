@@ -48,6 +48,9 @@ browser and again on a phone, with no developer touching the database
   2026-10-02) — an admin area with view-as, a model catalog with per-model cost behind every AI
   call, prompts edited live, removal and restore of modules, subtopics and courses, and screens for
   users, courses and usage.
+- **Email and Google sign-in** (spec [18](docs/specs/18-email-and-google-sign-in.md), 2026-10-08) —
+  password resets arrive by email, and Continue with Google signs up, signs in and keeps a demo,
+  behind the same invitation code.
 
 What comes next, in the order it is worth doing:
 
@@ -57,10 +60,6 @@ experiments were specced inside 15 and deferred ([D66](docs/02-design.md)): with
 nine courses there is nothing to split. What returns is its own package — a golden set of captured inputs
 run through two prompt versions and read side by side, then a quality signal attached to the usage row,
 then the split. The model is its primary axis, not the prompt body.
-
-**Email and Google sign-in.** Spec [18](docs/specs/18-email-and-google-sign-in.md), specced 2026-10-07.
-Email shipped 2026-10-07: password resets now arrive, sent through Resend (18.1). Next is
-"Continue with Google" to sign up, sign in and keep a demo, behind the same invitation code (18.2–18.5).
 
 **Streaming from the queue.** Ledger [D63](docs/02-design.md): every streamed generation runs on the queue
 and broadcasts over Reverb, so no model is ever too slow for the host's 60-second ceiling.
