@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { home } from '@/routes';
+import { home, privacy } from '@/routes';
 
 export default function Terms() {
     return (
@@ -36,6 +36,17 @@ export default function Terms() {
                         study aid, not professional advice.
                     </p>
                 </section>
+
+                <p>
+                    What we keep, and who else handles it, is in the{' '}
+                    <Link
+                        href={privacy()}
+                        className="underline underline-offset-4"
+                    >
+                        Privacy Policy
+                    </Link>
+                    .
+                </p>
 
                 <Link
                     href={home()}

@@ -45,6 +45,14 @@ class GoogleSignInTest extends TestCase
     }
 
     #[Test]
+    public function the_privacy_policy_google_links_to_renders_signed_out(): void
+    {
+        // 18.2.5
+        $this->get(route('privacy'))->assertOk()->assertInertia(fn ($page) => $page->component('privacy'));
+        $this->assertGuest();
+    }
+
+    #[Test]
     public function sign_in_and_register_reach_the_same_route(): void
     {
         // 18.3.1: both screens render the one button, whose link is the route.

@@ -219,12 +219,12 @@ Students can sign up, sign in, confirm it is them and keep a demo with Google, t
 |---|---|
 | App logo | Leave empty. A logo sends the app through brand verification, which takes days (spec 18.6.6). |
 | Application home page | `https://harkness.academy` |
-| Application privacy policy link | Harkness has no privacy page yet. If Branding requires this field, the page has to be written first. |
+| Application privacy policy link | `https://harkness.academy/privacy` — required: hovering the greyed-out **Publish app** button says so, and Branding itself doesn't. Deploy the page before saving it. |
 | Application terms of service link | `https://harkness.academy/terms` |
 | Authorized domains | `harkness.academy` |
 | Developer contact information | your own email |
 
-Then **Audience → Publish app**, so its status reads **In production**. While Branding is incomplete, the button is disabled and the page says so. An app left in **Testing** signs in only the test users listed on that page, and its grants expire after seven days. Nothing needs adding under **Data Access**: `openid`, `email` and `profile` are asked for by the app itself.
+Then **Audience → Publish app**, so its status reads **In production**. While Branding is incomplete, the button is disabled; hover it for the list Google wants — app name, support email, home page and privacy policy. An app left in **Testing** signs in only the test users listed on that page, and its grants expire after seven days. Nothing needs adding under **Data Access**: `openid`, `email` and `profile` are asked for by the app itself.
 
 **2. Create the client.** **Clients → Create client**, type **Web application**, named `Harkness Academy`:
 

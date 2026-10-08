@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::inertia('terms', 'terms')->name('terms');
+Route::inertia('privacy', 'privacy')->name('privacy');
 
 // Screen S0 (spec 8.13), and the edge 8.6's map draws for the entry URL:
 // signed in --> S1, otherwise the landing page. It sits outside the auth group

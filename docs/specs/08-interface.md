@@ -90,6 +90,7 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
 ```
   GET /            ──► signed in ──► S1; otherwise renders S0
   GET terms        ──  linked from registration
+  GET privacy      ──  linked from terms, and from Google's consent screen (18.2.5)
   GET install      ──  linked from the user menu: how to put Harkness Academy on a phone's home screen (spec 7.1)
 
   S13 DEMO WELCOME                                     GET /demo   (shown to everyone who opens the link)
@@ -301,6 +302,7 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 |---|---|
 | `home` | entry ──► S1 |
 | `terms` | linked from registration |
+| `privacy` | linked from terms and from Google's consent screen (spec 18.2.5) |
 | `install` | linked from the user menu; spec 7.1's install-instructions page, since iOS offers no install prompt |
 | `dashboard` | **S1** |
 | `courses.withdraw` | S1 ──► S1, the card moved to the set-aside list |

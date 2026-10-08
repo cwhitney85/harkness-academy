@@ -33,6 +33,7 @@
 - **18.2.2 MUST** — A connection is a row in `google_accounts` holding `user_id` and Google's `sub`, each unique: an account has at most one Google account, and a Google account at most one account. `users` gains no nullable column for it. *Done: the migration adds no nullable column to `users`, and a second connection for either side violates a unique index.*
 - **18.2.3 MUST** — A connection is found by `sub`, never by email. Google's email for a person can change; its `sub` cannot. *Falsified if: a student whose Google address changes can no longer sign in with Google.*
 - **18.2.4 MUST** — What Google returns is held in the session between the callback and the screens of 18.3 and 18.5, never in form fields. *Done: a crafted POST to the finish or connect screen naming a `sub` the session did not receive from Google creates nothing.*
+- **18.2.5 MUST** — `GET /privacy` is a short privacy policy: what the app keeps, that lessons are written by an AI model sent what the student writes, and that nothing is sold or tracked. It names no personal contact. Google's Branding page will not publish an app without a privacy policy link. *Added 2026-10-08, found setting up the consent screen. Done: the page renders signed out, the terms page links to it, and Google's Branding page accepts the link.*
 
 ## 18.3 Signing in and signing up
 
