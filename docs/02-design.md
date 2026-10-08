@@ -99,6 +99,11 @@
 | D69 | A document's owner is a type and a pointer; the writing course decides which | current — amends D58 |
 | D70 | A course removed while the model answers saves nothing, and its student is told | current |
 | D71 | Usage from before rows named their course stays unattributed, and admin says so | current — Colin to confirm |
+| D72 | Resend sends the app's email | current |
+| D73 | Google sign-up finishes on a page of its own; joining an existing account takes its password once | current — amends spec 1.6 |
+| D74 | A student without a password of their own confirms with Google, and may set one later | current |
+| D75 | Two-factor applies whatever the sign-in | current |
+| D76 | Email ships before Google sign-in; a demo can be kept with Google, and a taken email is refused | current — amends spec 12.4.2, 12.6.4 |
 
 ## D1. Model sourcing — **C: Anthropic-direct with clean provider abstraction**
 
@@ -1191,3 +1196,37 @@ Rejected: **a heuristic backfill** that matches a call to a course by its studen
 
 Falsified if: Colin wants 17.2.2's acceptance step, "open your course: every part renders", to show his existing courses' costs. Then a one-off, labelled attribution is the question, not a silent backfill.
 
+
+## D72. Resend sends the app's email (resolved 2026-10-07, spec 18 item 18.1.1, Colin)
+
+Production had no mail service, so a password reset was written to the log and a student who forgot their password was locked out. **Chosen: Resend** — through Laravel Cloud's Resend integration if its dashboard offers one, otherwise from Resend's own account with the key as a linked secret. Either way it is the same service, so the fallback costs nothing. Its free plan, 3,000 emails a month and 100 a day on one domain, covers friends-and-family volume, and Laravel 13 ships its driver.
+
+Rejected: **Postmark** (the strongest record for transactional mail, bought at a monthly price and an account review this volume does not need) · **Amazon SES** (the cheapest per message, and the most setup: an AWS account, a request to leave its sandbox, a key pair and a region).
+
+## D73. Google sign-up finishes on a page of its own; joining an existing account takes its password once (resolved 2026-10-07, spec 18 items 18.3.3, 18.3.4, Colin)
+
+Registration requires the invitation code and the 18-or-older attestation (1.6, 1.2), and Google supplies neither. 12.6.4 had deferred social sign-in because it "will need a D45 answer of its own". **Chosen: a Google sign-in for an unknown person lands on Finish signing up**, which asks for the code and the attestation, with the name and email filled in from Google. One Google button then behaves the same on Sign in and Register. D45 stands untouched; the code is checked on one more form, by the same rules.
+
+**A Google sign-in whose email belongs to an existing account asks once for that account's password**, then joins the two. Colin: *"my instinct is same account but whatever is best practice for this sort of thing."* The account ends as one; the password step is what makes that safe. The app has never verified an email (spec 12), so anyone with the code can register someone else's address, and an automatic join would hand that person's later Google sign-in to the registrant, whose password still works — the pattern of CVE-2026-53516 and CVE-2026-35511. Asking for the existing password is Google's own recommended flow for linking a legacy account. A connection is keyed on Google's `sub`, never the email, per Google's guidance, in a `google_accounts` table rather than a nullable column on `users`.
+
+Rejected: **Google only for existing accounts** (Colin wanted Google sign-up "like Register") · **the code first, then Google** (a newcomer pressing Google on Sign in has to be bounced to Register anyway) · **joining automatically** (the takeover above) · **joining automatically when Google vouches for the address** (the weak side is the account made here, not Google's claim) · **joining, then wiping the old password and sessions** (the real owner's password stops working without warning) · **turning on email verification app-wide** (closes the same hole at several times the scope, and every existing student has to click a link).
+
+## D74. A student without a password of their own confirms with Google, and may set one later (resolved 2026-10-07, spec 18 items 18.4.1–18.4.3, Colin)
+
+Colin: *"I think using social sign in should probably not require a password."* The starter kit's security screens assume a password, and four places demand it. Asked why this was a question at all — *"It seems like there is an accepted pattern here because I see it everywhere"* — **Chosen: the accepted pattern.** A student who signed up with Google never sees a password box: wherever the app re-checks who they are, they confirm with Google, and security settings offer Set a password for anyone who wants one. Underneath, the account carries a random password, as a demo row does (12.1.2), and `has_chosen_password`, a NOT NULL boolean, says whether settings should ask for the current one.
+
+Rejected: **an email link to set a password, on the confirm screen** (the least new structure, and the first recommendation; not what apps do, and an email round-trip to open settings) · **confirming with a passkey** (adding a passkey itself needs confirming first) · **an empty password column** (12.1.2 kept it NOT NULL on purpose, and an empty column would carry the meaning).
+
+## D75. Two-factor applies whatever the sign-in (resolved 2026-10-07, spec 18 item 18.3.2.1, Colin)
+
+Fortify's two-factor challenge is a step of its password sign-in, so a Google sign-in skips it, and `RequireSecondFactor` checks only that an admin has a second factor, not that the session passed it. **Chosen: an account with two-factor on is sent to the existing challenge after Google, admin or student.**
+
+Rejected: **refusing Google sign-in to admin accounts** (protects only the admin; a student who turned two-factor on still has it skipped) · **trusting Google's own two-factor** (admin would pass with no second factor here).
+
+## D76. Email ships before Google sign-in; a demo can be kept with Google, and a taken email is refused (resolved 2026-10-07, spec 18 items 18.1, 18.5.1, 18.5.2, Colin)
+
+**Email ships first, on its own.** It is settings, DNS and a runbook step, and it unlocks a locked-out student the day it lands; the README called it "small, and worth doing before more students are invited."
+
+**A demo can be kept with Google.** Colin: *"You should be able to 'Keep with Google' after a demo."* It finishes on D73's page, because keeping already requires the code and the attestation (12.4.3), and attaches the connection to the demo row. This amends 12.6.4, which ruled social sign-in out of the demo, and 12.4.2, where a Google connection now stands in for the password. **If Google's email already has an account, keeping is refused** with "sign in instead", exactly as keeping with a password already refuses a taken email.
+
+Rejected: **email and Google together** (a locked-out student waits on the larger work) · **keeping a demo with a password only** (Colin) · **moving the demo course into the existing account** (12.4.2 keeps a demo the same row so that nothing is ever copied).

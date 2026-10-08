@@ -41,7 +41,7 @@ Three properties of the running system make this small, each confirmed by readin
 ## 12.4 Conversion
 
 - **12.4.1 MUST** — After lesson 1, the demo's next move is signing up. S7 and S8 say "Sign up to carry on", and lesson 2 onward sends a demo visitor to sign-up on the screen and refuses on every other lesson route. *Done: a `demo`-plan lesson 1 carries the sign-up link and lesson 2 redirects to it; a `standard`-plan course does neither.*
-- **12.4.2 MUST** — Conversion attaches name, email and password to the existing row and moves it to `standard`. Nothing is copied, because the row does not change. *Done: the working-knowledge document's version before conversion is the version after it.*
+- **12.4.2 MUST** — Conversion attaches name, email and password — or name, Google's email and a Google connection ([18.5.1](18-email-and-google-sign-in.md), [D76](../02-design.md), amended 2026-10-07) — to the existing row and moves it to `standard`. Nothing is copied, because the row does not change. *Done: the working-knowledge document's version before conversion is the version after it.*
 - **12.4.3 MUST** — Conversion requires the invitation code, exactly as registration does. [D45](../02-design.md) stands untouched. *Done: a conversion with no code, or a wrong one, leaves the row on the `demo` plan and says so on the code field ([D41](../02-design.md), [1.6.3](01-foundation.md)).*
 - **12.4.4 MUST** — The course carries on. Nothing about it changes at sign-up; lesson 2 simply opens. No interview is repeated and no syllabus is redrawn. *Done: after conversion the course has no `withdrawn_at` and lesson 2 renders.*
 
@@ -54,7 +54,7 @@ Three properties of the running system make this small, each confirmed by readin
 - **12.6.1 WONT** — No spend cap, quota or ceiling on the demo. [1.6.5](01-foundation.md) extends to it unchanged: `usage_events` records what was spent and nothing reads it back as a limit. *Falsified if: a budget check appears in the demo or generation path.*
 - **12.6.2 WONT** — No final exam in the demo. The exam screen sends a demo visitor to sign-up, and asking for an exam is refused. *Falsified if: `course.final_exam` writes a `usage_events` row for a `demo`-plan user.*
 - **12.6.3 WONT** — No link on the landing page. [8.13.4](08-interface.md)'s "the only two things on the page that navigate are the buttons" holds and [D46](../02-design.md) is not amended. The link is one Colin sends. *Falsified if: S0 gains a third navigating element.*
-- **12.6.4 WONT** — No email capture, no social sign-in, no analytics. Social sign-in was raised with this work on 2026-09-15 and deferred by Colin as its own problem; it will need a D45 answer of its own. *Falsified if: any of the three appears.*
+- **12.6.4 WONT** — No email capture, no analytics. Social sign-in was raised with this work on 2026-09-15 and deferred by Colin as its own problem; spec 18 answers it, and a demo can be kept with Google ([18.5](18-email-and-google-sign-in.md), [D76](../02-design.md), amended 2026-10-07). *Falsified if: either appears.*
 - **12.6.5 WONT** — No demo branch in the lesson or completion pipelines. The chain order is untouched and homework arrives when it arrives, behind a completion screen the student already has. *Falsified if: `LessonPipelineJobs::forLesson` reads a plan.*
 
 ## Acceptance test
