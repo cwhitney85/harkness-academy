@@ -14,6 +14,14 @@ return [
     |
     */
 
+    // Google sign-in (spec 18.2.1). A relative redirect resolves against the
+    // request's host, so the custom domain is the one Google sees.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => '/auth/google/callback',
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

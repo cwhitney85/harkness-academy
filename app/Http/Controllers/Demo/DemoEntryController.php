@@ -55,6 +55,7 @@ class DemoEntryController extends Controller
             'email' => 'demo-'.Str::uuid().'@harkness.invalid',
             'password' => Str::random(64),
             'plan' => 'demo',
+            'has_chosen_password' => false,
         ]);
         $visitor->save();
 

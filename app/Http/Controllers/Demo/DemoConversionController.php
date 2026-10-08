@@ -65,6 +65,7 @@ class DemoConversionController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
+            'has_chosen_password' => true,
             'tos_accepted_at' => now(),
             'plan' => 'standard',
         ])->save();

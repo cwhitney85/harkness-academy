@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -32,6 +33,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at the student deleted the account (spec 16.2.10)
+ * @property bool $has_chosen_password false while the password is one nobody was shown (spec 18.4.1)
+ * @property-read GoogleAccount|null $googleAccount
  */
 #[Fillable(['name', 'email', 'password', 'tos_accepted_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -54,7 +57,18 @@ class User extends Authenticatable implements PasskeyUser
     protected $attributes = [
         'plan' => 'standard',
         'role' => 'student',
+        'has_chosen_password' => true,
     ];
+
+    /**
+     * The Google sign-in connected to this account, if any (spec 18.2.2).
+     *
+     * @return HasOne<GoogleAccount, $this>
+     */
+    public function googleAccount(): HasOne
+    {
+        return $this->hasOne(GoogleAccount::class);
+    }
 
     /**
      * Whether this account came in through the demo link and has not been kept
@@ -87,6 +101,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'tos_accepted_at' => 'datetime',
             'password' => 'hashed',
+            'has_chosen_password' => 'boolean',
             'role' => Role::class,
             /* @chisel-2fa */
             'two_factor_confirmed_at' => 'datetime',
