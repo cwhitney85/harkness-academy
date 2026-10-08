@@ -88,7 +88,10 @@ class FortifyServiceProvider extends ServiceProvider
         /* @end-chisel-2fa */
 
         /* @chisel-password-confirmation */
-        Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
+        // A student with Google connected may confirm with it instead (18.4.2).
+        Fortify::confirmPasswordView(fn (Request $request) => Inertia::render('auth/confirm-password', [
+            'canConfirmWithGoogle' => $request->user()->googleAccount()->exists(),
+        ]));
         /* @end-chisel-password-confirmation */
     }
 

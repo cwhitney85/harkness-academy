@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleConnectionController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\GoogleSignUpController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Demo\DemoConversionController;
 use App\Http\Controllers\Demo\DemoEntryController;
@@ -22,6 +25,21 @@ Route::get('/', fn () => Auth::check()
 // Screen S13 (spec 12.1): the demo's welcome page, and the press that mints a
 // `demo`-plan account and lands on S2. Outside the auth group for the reason
 // `home` is -- the visitor has no account yet.
+// Google sign-in (spec 18). One way out and one way back for signing in,
+// keeping a demo and confirming a password alike; the callback reads who is
+// signed in to know which.
+Route::get('auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
+Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
+Route::get('auth/google/sign-up', [GoogleSignUpController::class, 'create'])->name('google.sign-up');
+Route::post('auth/google/sign-up', [GoogleSignUpController::class, 'store'])->name('google.sign-up.store');
+
+Route::middleware('guest')->group(function () {
+    Route::get('auth/google/connect', [GoogleConnectionController::class, 'create'])->name('google.connect');
+    Route::post('auth/google/connect', [GoogleConnectionController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('google.connect.store');
+});
+
 Route::get('demo', [DemoEntryController::class, 'show'])->name('demo');
 Route::post('demo', [DemoEntryController::class, 'store'])->name('demo.store');
 

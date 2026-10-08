@@ -100,13 +100,31 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
       │   reached from S7 and S8 after lesson 1, from lesson 2 onward and S9 for a demo (12.4.1, 12.6.2),
       │   and from the Demo marker in every signed-in header (12.1.6)
       ├─ POST /demo/account  (demo.account.store) ──► S1, the account standard and its course carrying on (12.4.2, 12.4.4)
-      └─ 422 no code, a wrong one, or no attestation ──► S14, the error on the field; the row still demo (12.4.3)
+      ├─ 422 no code, a wrong one, or no attestation ──► S14, the error on the field; the row still demo (12.4.3)
+      └─ "Keep with Google" ──► GOOGLE, as a demo ──► Finish signing up ──► S1, the same row standard (18.5.1)
+            └─ Google's email or account already has an account ──► S14, "sign in instead"; the row still demo (18.5.2)
 
   S0  LANDING                                          GET /   (signed out only)
       ├─ "Log in" ───────────────────────────────►    the sign-in screen ──► S1
       └─ "Register" ─────────────────────────────►    the register screen (invitation code, spec 1.6)
             ├─ accepted ──► S1
             └─ 422 no code, or a wrong one ──► the register screen, the error on the code field
+      "Continue with Google", on the sign-in and register screens alike (18.3.1) ──► GOOGLE, as a guest
+
+  GOOGLE (spec 18; outside the thirteen)               GET auth/google  (google.redirect) ──► Google ──►
+                                                       GET auth/google/callback  (google.callback)
+      │   one way out and one way back; who is signed in says what the trip was for
+      ├─ a guest, a connected account (18.3.2) ──► S1; two-factor on ──► the two-factor challenge first (18.3.2.1)
+      ├─ a guest, Google's email has an account ──► GET auth/google/connect  (google.connect): Connect Google (18.3.3)
+      │     ├─ POST auth/google/connect  (google.connect.store), its password ──► S1, as 18.3.2
+      │     └─ 422 a wrong password ──► Connect Google, nothing connected; "Forgot your password?" ──► reset
+      ├─ a guest, Google's email has none ──► GET auth/google/sign-up  (google.sign-up): Finish signing up (18.3.4)
+      │     ├─ POST auth/google/sign-up  (google.sign-up.store) ──► S1, a new standard account
+      │     └─ 422 no code, a wrong one, or no attestation ──► Finish signing up, the error on the field
+      ├─ a deleted account, by connection or by email ──► the sign-in screen, refused as a password is (18.3.2.2)
+      ├─ a demo ──► Finish signing up, keeping its course (18.5.1); or S14, refused (18.5.2)
+      ├─ anyone else ──► the screen that asked for confirmation, confirmed if Google returned their own account (18.4.2)
+      └─ Cancel at Google ──► where the trip started
 
   S1  DASHBOARD                                        GET /dashboard
       ├─ "Start a course" ────────────────────────►    S2
@@ -195,6 +213,9 @@ S14 is where a demo's lesson 1 leads: the register form, onto the account the de
 
   SETTINGS (outside the twelve; reached from the user menu, returns there)
       GET settings ──► GET settings/profile ⇄ GET settings/security
+      │   behind the confirm screen, which offers "Confirm with Google" to a connected account ──► GOOGLE (18.4.2)
+      ├─ Update password ──► PUT settings/password  (user-password.update), with the current one
+      └─ Set a password, for a Google sign-up ──► POST settings/password  (user-password.store) (18.4.3)
       GET settings/appearance is unreachable from the UI (8.5.6) and stays so until dark mode ships
       GET .well-known/passkey-endpoints answers password managers, never a student
 
@@ -303,7 +324,8 @@ Model binding follows what is already there: `{course}`, `{lesson}`, `{module}`,
 | `refreshers.show` | **S11** |
 | `refreshers.answers.store` | S11 ──► S11 marked |
 | `profile.edit` · `profile.update` · `profile.destroy` | settings, outside the twelve |
-| `security.edit` · `user-password.update` | settings, outside the twelve |
+| `security.edit` · `user-password.update` · `user-password.store` | settings, outside the twelve |
+| `google.redirect` · `google.callback` · `google.connect` · `google.connect.store` · `google.sign-up` · `google.sign-up.store` | Google sign-in (spec 18), outside the thirteen; lands on S1 or S14, or back on the confirm screen |
 | `appearance.edit` | reachable by URL only; no edge points at it (8.5.6) |
 | `well-known.passkeys` | machine endpoint; no student edge |
 | `admin.home` · `admin.log` | admin, outside the thirteen (spec 13) |

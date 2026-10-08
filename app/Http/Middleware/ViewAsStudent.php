@@ -22,9 +22,9 @@ use Symfony\Component\HttpFoundation\Response;
  *   - an expired session ends, logged, back to `/admin` (13.4.5);
  *   - `/admin*` is unreachable except step-up and Exit: it sends the admin
  *     back to the student's dashboard, banner and all (13.4.6);
- *   - the student's sign-in -- password, two-factor, passkeys and the
- *     password confirmation guarding them -- in either mode, the same way
- *     (13.4.8);
+ *   - the student's sign-in -- password, two-factor, passkeys, Google and
+ *     the password confirmation guarding them -- in either mode, the same
+ *     way (13.4.8, 18.4.4);
  *   - in preview, every non-GET request except logout (13.4.1).
  * Logout ends the session, logged, and signs the admin out (13.4.5).
  */
@@ -35,7 +35,7 @@ class ViewAsStudent
      * in the session, not on the user, so the admin's own would open every
      * `password.confirm` gate here ([T26](docs/lessons.md)).
      */
-    private const SIGN_IN_ROUTES = ['security.edit', 'user-password.update', 'password.*', 'two-factor.*', 'passkey.*'];
+    private const SIGN_IN_ROUTES = ['security.edit', 'user-password.update', 'user-password.store', 'password.*', 'two-factor.*', 'passkey.*', 'google.*'];
 
     public function handle(Request $request, Closure $next): Response
     {

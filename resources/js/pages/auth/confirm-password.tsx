@@ -1,4 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import GoogleButton from '@/components/google-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -13,10 +14,25 @@ import {
 import PasskeyVerify from '@/components/passkey-verify';
 /* @end-chisel-passkeys */
 
-export default function ConfirmPassword() {
+type Props = {
+    canConfirmWithGoogle: boolean;
+};
+
+export default function ConfirmPassword({ canConfirmWithGoogle }: Props) {
+    const { errors } = usePage().props;
+
     return (
         <>
             <Head title="Confirm password" />
+
+            {canConfirmWithGoogle && (
+                <div className="mb-3">
+                    <GoogleButton
+                        label="Confirm with Google"
+                        error={errors.google}
+                    />
+                </div>
+            )}
 
             {/* @chisel-passkeys */}
             <PasskeyVerify

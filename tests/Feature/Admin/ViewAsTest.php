@@ -14,6 +14,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Socialite\Socialite;
+use Laravel\Socialite\Two\User as GoogleUser;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -278,6 +280,41 @@ class ViewAsTest extends SectionStreamTestCase
 
         $this->assertSame($this->student->email, $this->student->fresh()->email);
         $this->assertSame('Renamed', $this->student->fresh()->name);
+    }
+
+    /**
+     * Spec 18.4.4 -- Confirm with Google and Set a password are the
+     * student's sign-in too. A Google round-trip here would otherwise confirm
+     * the admin's session with the student's Google account, or connect the
+     * admin's Google account to the student.
+     */
+    #[Test]
+    public function the_students_google_sign_in_and_set_a_password_are_unreachable_in_either_mode(): void
+    {
+        $this->student->forceFill(['has_chosen_password' => false])->save();
+        $this->student->googleAccount()->create(['sub' => 'student-sub']);
+        Socialite::fake('google', GoogleUser::fake(['id' => 'student-sub', 'email' => $this->student->email, 'name' => 'Student']));
+
+        $this->preview();
+        $this->withSession(['auth.password_confirmed_at' => time()]);
+
+        $routes = fn () => [
+            $this->get(route('google.redirect')),
+            $this->get(route('google.callback')),
+            $this->post(route('user-password.store'), ['password' => 'chosen-password', 'password_confirmation' => 'chosen-password']),
+        ];
+
+        foreach ($routes() as $response) {
+            $response->assertRedirect(route('dashboard'));
+        }
+
+        $this->post('/admin/view-as/step-up', ['reason' => 'Reproducing a bug']);
+
+        foreach ($routes() as $response) {
+            $response->assertRedirect(route('dashboard'));
+        }
+
+        $this->assertFalse($this->student->fresh()->has_chosen_password);
     }
 
     #[Test]

@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import GoogleButton from '@/components/google-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -26,9 +27,13 @@ export default function Login({ status, canResetPassword }: Props) {
         <>
             <Head title="Log in" />
 
-            {/* @chisel-passkeys */}
-            <PasskeyVerify />
-            {/* @end-chisel-passkeys */}
+            <div className="grid gap-3">
+                <GoogleButton label="Continue with Google" />
+
+                {/* @chisel-passkeys */}
+                <PasskeyVerify />
+                {/* @end-chisel-passkeys */}
+            </div>
 
             <Form
                 {...store.form()}

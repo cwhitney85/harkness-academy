@@ -18,6 +18,8 @@ import ManageTwoFactor from '@/components/manage-two-factor';
 /* @end-chisel-2fa */
 
 type Props = {
+    /** False for a Google sign-up, who has no password to give (18.4.3). */
+    hasChosenPassword: boolean;
     passwordRules: string;
     passwordRequirements: string[];
 } /* @chisel-passkeys */ & ManagePasskeysProps /* @end-chisel-passkeys */ /* @chisel-2fa */ &
@@ -36,12 +38,22 @@ export default function Security(props: Props) {
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Update password"
-                    description="Ensure your account is using a long, random password to stay secure"
+                    title={
+                        props.hasChosenPassword
+                            ? 'Update password'
+                            : 'Set a password'
+                    }
+                    description={
+                        props.hasChosenPassword
+                            ? 'Ensure your account is using a long, random password to stay secure'
+                            : 'You sign in with Google. Set a password to sign in with your email as well'
+                    }
                 />
 
                 <Form
-                    {...SecurityController.update.form()}
+                    {...(props.hasChosenPassword
+                        ? SecurityController.update.form()
+                        : SecurityController.store.form())}
                     options={{
                         preserveScroll: true,
                     }}
@@ -64,22 +76,26 @@ export default function Security(props: Props) {
                 >
                     {({ errors, processing }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
-                                    Current password
-                                </Label>
+                            {props.hasChosenPassword && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="current_password">
+                                        Current password
+                                    </Label>
 
-                                <PasswordInput
-                                    id="current_password"
-                                    ref={currentPasswordInput}
-                                    name="current_password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="current-password"
-                                    placeholder="Current password"
-                                />
+                                    <PasswordInput
+                                        id="current_password"
+                                        ref={currentPasswordInput}
+                                        name="current_password"
+                                        className="mt-1 block w-full"
+                                        autoComplete="current-password"
+                                        placeholder="Current password"
+                                    />
 
-                                <InputError message={errors.current_password} />
-                            </div>
+                                    <InputError
+                                        message={errors.current_password}
+                                    />
+                                </div>
+                            )}
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">New password</Label>

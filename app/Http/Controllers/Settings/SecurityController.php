@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Auth\PasswordRequirements;
+use App\Concerns\PasswordValidationRules;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,6 +16,8 @@ use Laravel\Fortify\Features;
 
 class SecurityController extends Controller
 {
+    use PasswordValidationRules;
+
     /**
      * Show the user's security settings page.
      */
@@ -42,6 +46,7 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             /* @end-chisel-passkeys */
+            'hasChosenPassword' => $request->user()->has_chosen_password,
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
             'passwordRequirements' => PasswordRequirements::inWords(),
         ];
@@ -56,6 +61,28 @@ class SecurityController extends Controller
         /* @end-chisel-2fa */
 
         return Inertia::render('settings/security', $props);
+    }
+
+    /**
+     * Set a password for an account whose own was never shown to anyone -- a
+     * Google sign-up (spec 18.4.3, ledger D74). There is no current password
+     * to ask for, so the route sits behind password confirmation instead,
+     * which a Google-only student passes with Google (18.4.2).
+     *
+     * Pre: the account has not chosen a password; one that has changes it
+     * with `update`, which asks for the current one.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        abort_if($request->user()->has_chosen_password, 403);
+
+        $validated = $request->validate(['password' => $this->passwordRules()]);
+
+        $request->user()->forceFill(['password' => $validated['password'], 'has_chosen_password' => true])->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password set.')]);
+
+        return back();
     }
 
     /**

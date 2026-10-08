@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import GoogleButton from '@/components/google-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import PasswordRequirements from '@/components/password-requirements';
@@ -23,6 +24,10 @@ export default function Register({
     return (
         <>
             <Head title="Register" />
+            <GoogleButton
+                label="Continue with Google"
+                separator="Or register with email"
+            />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}

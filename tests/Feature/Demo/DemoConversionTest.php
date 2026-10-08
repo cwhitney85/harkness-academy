@@ -2,8 +2,14 @@
 
 namespace Tests\Feature\Demo;
 
+use App\Http\Controllers\Auth\GoogleController;
 use App\Memory\MemoryTree;
 use App\Models\Course;
+use App\Models\GoogleAccount;
+use App\Models\User;
+use Illuminate\Testing\TestResponse;
+use Laravel\Socialite\Socialite;
+use Laravel\Socialite\Two\User as GoogleUser;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Feature\Assessment\AssessmentTestCase;
 
@@ -69,6 +75,7 @@ class DemoConversionTest extends AssessmentTestCase
         $student->refresh();
         $this->assertSame('standard', $student->plan);
         $this->assertSame('kept@example.com', $student->email);
+        $this->assertTrue($student->has_chosen_password);
         $this->assertNotNull($student->tos_accepted_at);
         $this->assertAuthenticatedAs($student);
 
@@ -76,6 +83,62 @@ class DemoConversionTest extends AssessmentTestCase
         $this->assertNull($course->refresh()->withdrawn_at);
         $this->assertSame($before, $tree->document($student, $course->workingKnowledgePath())->versionId);
         $this->get(route('lessons.show', $this->lesson($course, 2)))->assertOk();
+    }
+
+    #[Test]
+    public function keeping_with_google_opens_the_rest_of_the_same_course(): void
+    {
+        // 18.5.1
+        $course = $this->demo();
+        $student = $course->student;
+        $tree = app(MemoryTree::class);
+        $before = $tree->document($student, $course->workingKnowledgePath())->versionId;
+
+        $this->actingAs($student);
+        $this->google('sub-1', 'kept@example.com')->assertRedirect(route('google.sign-up'));
+        $this->assertTrue($this->inertiaProps($this->get(route('google.sign-up')))['keeping']);
+
+        $this->post(route('google.sign-up.store'), ['name' => 'Kept Student', 'tos_accepted' => true, 'invitation_code' => 'not-the-code'])
+            ->assertSessionHasErrors('invitation_code');
+        $this->assertTrue($student->refresh()->isDemo());
+        $this->assertNull($student->googleAccount);
+
+        $this->post(route('google.sign-up.store'), ['name' => 'Kept Student', 'tos_accepted' => true, 'invitation_code' => self::CODE])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('dashboard'));
+
+        $student->refresh();
+        $this->assertSame(['standard', 'kept@example.com', 'Kept Student', false], [$student->plan, $student->email, $student->name, $student->has_chosen_password]);
+        $this->assertSame('sub-1', $student->googleAccount->sub);
+        $this->assertSame(1, User::query()->count());
+        $this->assertAuthenticatedAs($student);
+
+        // Nothing copied: the same row, the same memory, lesson 2 open.
+        $this->assertSame($before, $tree->document($student, $course->workingKnowledgePath())->versionId);
+        $this->get(route('lessons.show', $this->lesson($course, 2)))->assertOk();
+    }
+
+    #[Test]
+    public function keeping_with_a_google_account_that_already_has_an_account_is_refused(): void
+    {
+        // 18.5.2: by email, and by connection.
+        $course = $this->demo();
+        $member = User::factory()->create(['email' => 'member@example.com']);
+        $member->googleAccount()->create(['sub' => 'member-sub']);
+
+        $this->actingAs($course->student);
+
+        foreach ([['other-sub', 'member@example.com'], ['member-sub', 'changed@example.com']] as [$sub, $email]) {
+            $this->google($sub, $email)
+                ->assertRedirect(route('demo.account.create'))
+                ->assertSessionHasErrors(['google' => GoogleController::TAKEN]);
+        }
+
+        $this->post(route('google.sign-up.store'), ['name' => 'Kept Student', 'tos_accepted' => true, 'invitation_code' => self::CODE]);
+
+        $this->assertTrue($course->student->refresh()->isDemo());
+        $this->assertNull($course->student->googleAccount);
+        $this->assertSame(1, GoogleAccount::query()->count());
     }
 
     #[Test]
@@ -126,9 +189,16 @@ class DemoConversionTest extends AssessmentTestCase
     {
         $course = $this->activeCourse();
         $this->completeLesson($this->lesson($course, 1));
-        $course->student->forceFill(['plan' => 'demo'])->save();
+        $course->student->forceFill(['plan' => 'demo', 'has_chosen_password' => false])->save();
 
         return $course->refresh();
+    }
+
+    private function google(string $sub, string $email): TestResponse
+    {
+        Socialite::fake('google', GoogleUser::fake(['id' => $sub, 'email' => $email, 'name' => 'Google Name']));
+
+        return $this->get(route('google.callback'));
     }
 
     /**

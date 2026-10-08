@@ -1,4 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import GoogleButton from '@/components/google-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import PasswordRequirements from '@/components/password-requirements';
@@ -21,15 +22,23 @@ type Props = {
  *
  * The register form, onto the account the demo already made: the same fields,
  * the same attestation and the same invitation code (12.4.3). The course stays
- * as it is and the lessons after the first open.
+ * as it is and the lessons after the first open. Keep with Google is the
+ * other way to the same row (18.5.1).
  */
 export default function KeepCourse({
     passwordRules,
     passwordRequirements,
 }: Props) {
+    const { errors } = usePage().props;
+
     return (
         <>
             <Head title="Sign up" />
+            <GoogleButton
+                label="Keep with Google"
+                error={errors.google}
+                separator="Or with a password"
+            />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
